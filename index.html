@@ -1,7 +1,7 @@
 <title>JP Library</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Caveat:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&family=Bricolage+Grotesque:wght@500;700&family=Caveat:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: one column app. Library grid -> notebook (section rows) -> section (tab chain) -> tab (connection, idea, sketch, try it, check). */
 :root{
@@ -12,6 +12,7 @@
   --f-display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
   --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --f-serif:'Playfair Display',Georgia,serif; --f-serif2:'Cormorant Garamond',Georgia,serif;
   --f-hand:'Caveat','Segoe Print','Bradley Hand',cursive;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -208,31 +209,86 @@ a.card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 18px 36px -1
 .card.empty{padding-left:20px}.card.empty::before,.card.empty::after{display:none}
 .sec{transition:transform .15s,border-color .15s}a.sec:hover{transform:translateX(4px)}
 
-/* Cover */
-.cover{min-height:calc(100vh - 80px);display:grid;place-items:center;text-align:center;position:relative;overflow:hidden;border-radius:22px;padding:48px 20px;color:#F4F7FB;
-  background:radial-gradient(700px 420px at 50% 0%,#2B3F8F 0%,transparent 70%),radial-gradient(600px 400px at 100% 100%,#6D28D9 0%,transparent 65%),linear-gradient(160deg,#0B1226,#101A38 55%,#0A1020);
-  box-shadow:0 30px 60px -30px rgba(10,16,32,.8);border:1px solid rgba(255,255,255,.12)}
-.cover::before{content:"";position:absolute;inset:14px;border:1px solid rgba(240,200,120,.45);border-radius:14px;pointer-events:none}
-.cover::after{content:"";position:absolute;inset:20px;border:1px solid rgba(240,200,120,.18);border-radius:10px;pointer-events:none}
-.cover-in{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:640px}
-.cover .art{width:min(300px,64vw);aspect-ratio:1/1;margin-bottom:6px}
-.cover .art svg{width:100%;height:100%;display:block}
-.cover .orb{transform-origin:150px 150px;animation:spin 26s linear infinite}
-.cover .orb.b{animation-duration:38s;animation-direction:reverse}
-.cover .orb.c{animation-duration:54s}
-@keyframes spin{to{transform:rotate(360deg)}}
-.cover .eyebrow{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.32em;text-transform:uppercase;color:#F0C878}
-.cover h1{font-size:clamp(56px,13vw,112px);font-weight:700;letter-spacing:-.02em;line-height:.95;background:linear-gradient(180deg,#FFFFFF,#AFC2FF);-webkit-background-clip:text;background-clip:text;color:transparent}
-.cover .full{font-family:var(--f-display);font-size:clamp(17px,3.2vw,22px);color:#C9D4EE}
-.cover .rule{width:90px;height:2px;background:linear-gradient(90deg,transparent,#F0C878,transparent);margin:4px 0}
-.cover .tag{font-family:var(--f-hand);font-size:clamp(24px,4.6vw,32px);color:#F0C878;margin:0}
-.cover .stats{display:flex;gap:26px;font-family:var(--f-mono);font-size:12.5px;color:#9FB0D6;margin-top:4px}
-.cover .stats b{display:block;font-size:24px;color:#fff;font-weight:500}
-.cover .open{margin-top:10px;padding:13px 30px;font-size:16px;font-weight:600;border-radius:999px;border:0;color:#0B1226;text-decoration:none;
-  background:linear-gradient(135deg,#F7DDA0,#F0B35A);box-shadow:0 10px 30px -8px rgba(240,179,90,.7);transition:transform .15s,box-shadow .15s}
-.cover .open:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 16px 36px -8px rgba(240,179,90,.85)}
-.cover .foot{font-family:var(--f-mono);font-size:11.5px;color:#7F90B8;margin-top:6px}
-@media (prefers-reduced-motion:reduce){.cover .orb{animation:none}}
+
+
+/* ---- Book covers ---- */
+.book{container-type:inline-size;position:relative;aspect-ratio:2/3;border-radius:3px 8px 8px 3px;overflow:hidden;color:#F3E6C4;
+  background:linear-gradient(160deg,var(--b),var(--a) 72%);
+  box-shadow:inset 7px 0 10px -5px rgba(0,0,0,.6),0 18px 30px -12px rgba(0,0,0,.7);
+  min-width:0;width:100%}
+.bk-in{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:15cqw 13cqw 11cqw 15cqw}
+.book::before{content:"";position:absolute;left:5cqw;top:0;bottom:0;width:1px;background:rgba(0,0,0,.35);box-shadow:1px 0 0 rgba(255,255,255,.12)}
+.book::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,.16),transparent 30%,transparent 72%,rgba(0,0,0,.28));pointer-events:none}
+.book .pat{position:absolute;inset:0}.book .pat svg{width:100%;height:100%;display:block}
+.book .pat .f{fill:#E8C77A;fill-opacity:.45;stroke:none}
+.book .frame{position:absolute;inset:5cqw 5cqw 5cqw 9cqw;border:1px solid rgba(232,199,122,.65);border-radius:2px;pointer-events:none}
+.book .frame::after{content:"";position:absolute;inset:2cqw;border:1px solid rgba(232,199,122,.28)}
+.bk-top,.bk-imp{font-family:var(--f-mono);font-size:4.8cqw;letter-spacing:.32em;text-transform:uppercase;color:#E8C77A;position:relative}
+.bk-title{font-family:var(--f-serif);font-weight:700;font-size:13cqw;line-height:1.04;margin-top:auto;position:relative;text-wrap:balance;text-shadow:0 2px 10px rgba(0,0,0,.55)}
+.bk-orn{color:#E8C77A;font-size:7cqw;margin:3.5cqw 0;position:relative}
+.bk-sub{font-family:var(--f-serif2);font-style:italic;font-size:6.6cqw;line-height:1.25;color:#EADFC6;position:relative;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.bk-imp{margin-top:auto;font-size:4.2cqw}
+.book .prog{z-index:2;position:absolute;left:0;right:0;bottom:0;height:2.4cqw;background:rgba(0,0,0,.45)}
+.book .prog i{display:block;height:100%;background:#E8C77A}
+.book.blank{background:transparent;border:1.5px dashed rgba(232,199,122,.4);box-shadow:none;color:#CDBFA6}
+.book.blank .bk-in{justify-content:center;gap:4cqw}
+.book.blank::before,.book.blank::after{display:none}
+.book.blank .plus{font-family:var(--f-serif);font-size:24cqw;color:#E8C77A;line-height:1}
+.book.blank .t{font-family:var(--f-serif2);font-style:italic;font-size:9cqw}
+
+/* ---- Home: the reading room ---- */
+body.home{padding:0;background:#0E0A08}
+body.home #app{max-width:none}
+.hm{min-height:100vh;color:#EFE6D4;background:radial-gradient(1200px 640px at 72% -12%,rgba(232,170,90,.16),transparent 60%),linear-gradient(#17110D,#0E0A08 60%)}
+.hm-nav{position:absolute;top:0;left:0;right:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:22px clamp(18px,4vw,56px)}
+.hm-logo{font-family:var(--f-serif);font-weight:700;font-size:27px;color:#E8C77A;text-decoration:none;line-height:1}
+.hm-logo small{display:block;font-family:var(--f-mono);font-weight:400;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:#9C8E76;margin-top:5px}
+.hm-lnk{color:#E3D6BC;text-decoration:none;font-size:13.5px;border:1px solid rgba(232,199,122,.35);padding:8px 16px;border-radius:999px;transition:background .2s}
+.hm-lnk:hover{background:rgba(232,199,122,.12)}
+.hero{position:relative;min-height:min(80vh,700px);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);align-items:center;gap:40px;padding:120px clamp(18px,4vw,56px) 90px;overflow:hidden}
+.hero .glow{position:absolute;inset:0;background:radial-gradient(760px 520px at 74% 48%,var(--b),transparent 68%);opacity:.6}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,10,8,.85),transparent 55%),linear-gradient(transparent 62%,#0E0A08);pointer-events:none}
+.hero>*:not(.glow){position:relative;z-index:2}
+.hero .eb{font-family:var(--f-mono);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#E8C77A}
+.hero h1{font-family:var(--f-serif);font-weight:700;font-size:clamp(42px,7.4vw,92px);line-height:.98;margin:16px 0;color:#FBF4E4;text-shadow:0 4px 30px rgba(0,0,0,.5)}
+.hero p{font-family:var(--f-serif2);font-style:italic;font-size:clamp(19px,2.3vw,25px);line-height:1.35;color:#DCCFB5;max-width:44ch;margin:0}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-family:var(--f-mono);font-size:13px;color:#B9AA8E;margin:24px 0 10px}
+.hero .meta b{color:#F3E6C4;font-weight:500}
+.hbar{height:3px;max-width:380px;background:rgba(255,255,255,.12);border-radius:2px;margin-bottom:28px;overflow:hidden}
+.hbar i{display:block;height:100%;background:#E8C77A}
+.hbtns{display:flex;flex-wrap:wrap;gap:12px}
+.hb{display:inline-flex;align-items:center;gap:10px;padding:13px 26px;border-radius:6px;font-weight:600;font-size:16px;text-decoration:none;transition:transform .15s,background .15s}
+.hb:hover{transform:translateY(-1px)}
+.hb.go{background:#F3E6C4;color:#17110D}.hb.go:hover{background:#FFFFFF}
+.hb.alt{background:rgba(255,255,255,.12);color:#F3E6C4;backdrop-filter:blur(6px)}.hb.alt:hover{background:rgba(255,255,255,.2)}
+.stage{justify-self:center;width:min(290px,62vw);perspective:1400px;display:block}
+.stage .book{transform:rotateY(-20deg) rotateX(3deg);transition:transform .6s;box-shadow:inset 7px 0 10px -5px rgba(0,0,0,.6),30px 40px 60px -20px rgba(0,0,0,.85),0 0 80px -20px var(--b)}
+.stage:hover .book{transform:rotateY(-6deg) translateY(-6px)}
+.rows{position:relative;z-index:3;margin-top:-50px;padding-bottom:40px}
+.row-t{font-family:var(--f-serif);font-weight:600;font-size:23px;color:#F3E6C4;padding:0 clamp(18px,4vw,56px);margin:22px 0 0;display:flex;align-items:baseline;gap:12px}
+.row-t span{font-family:var(--f-mono);font-weight:400;font-size:12px;color:#8F826C}
+.strip{display:flex;gap:26px;overflow-x:auto;padding:22px clamp(18px,4vw,56px) 44px;scrollbar-width:thin;scrollbar-color:#4A3626 transparent;
+  background:linear-gradient(to bottom,transparent calc(100% - 46px),#5A3B24 calc(100% - 46px),#3E2716 calc(100% - 32px),rgba(0,0,0,.55) calc(100% - 32px),transparent calc(100% - 16px))}
+.tile{flex:0 0 clamp(150px,16vw,196px);text-decoration:none;color:inherit;display:block;border-radius:8px}
+.tile .book{transition:transform .28s,box-shadow .28s}
+.tile:hover .book,.tile:focus-visible .book{transform:translateY(-10px) scale(1.05);box-shadow:inset 7px 0 10px -5px rgba(0,0,0,.6),0 30px 40px -14px rgba(0,0,0,.9),0 0 0 1px rgba(232,199,122,.55)}
+.tile:focus-visible{outline:none}
+.hm-foot{text-align:center;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:#6F634F;padding:10px 0 40px}
+@media (max-width:560px){.hm-logo small{display:none}.hm-lnk{font-size:12px;padding:6px 12px}}
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr;padding-top:100px;text-align:left}
+  .stage{grid-row:1;width:min(200px,52vw)}
+}
+@media (prefers-reduced-motion:reduce){.stage .book,.tile .book{transition:none}}
+
+/* ---- Book page header ---- */
+.nb-hero{display:grid;grid-template-columns:190px minmax(0,1fr);gap:30px;align-items:center;margin-bottom:6px}
+.nb-hero .book{width:190px}
+.nb-hero .eb{font-family:var(--f-mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber)}
+.nb-hero h1{font-family:var(--f-serif);font-size:clamp(32px,5.5vw,50px);margin:8px 0}
+.nb-hero p{font-family:var(--f-serif2);font-style:italic;font-size:21px;line-height:1.35;color:var(--muted);margin:0 0 16px;max-width:52ch}
+.nb-hero .bar{max-width:380px}
+@media (max-width:560px){.nb-hero{grid-template-columns:120px minmax(0,1fr);gap:18px}.nb-hero .book{width:120px}.nb-hero p{font-size:18px}}
 </style>
 
 <div id="app"></div>
@@ -754,42 +810,72 @@ const tabCount=nb=>nb.sections.reduce((a,s)=>a+s.tabs.length,0);
 const doneCount=nb=>nb.sections.reduce((a,s,i)=>a+s.tabs.filter((_,j)=>isDone(nb,i,j)).length,0);
 const crumbs=(...it)=>h('nav',{class:'crumbs','aria-label':'Breadcrumb'},it.flatMap((x,i)=>[i?h('span',{class:'sep'},'/'):null,x.href?h('a',{href:x.href},x.t):h('span',null,x.t)]));
 
-function viewCover(){
-  app.textContent='';
-  const nbs=NB.list.length,tabs=NB.list.reduce((a,n)=>a+tabCount(n),0),dn=NB.list.reduce((a,n)=>a+doneCount(n),0);
-  const art=`<svg viewBox="0 0 300 300" aria-hidden="true">
-    <defs><radialGradient id="cg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F7DDA0"/><stop offset="1" stop-color="#F0B35A"/></radialGradient></defs>
-    <circle cx="150" cy="150" r="140" fill="none" stroke="#F0C878" stroke-opacity=".25"/>
-    <g class="orb"><ellipse cx="150" cy="150" rx="128" ry="46" fill="none" stroke="#7EA2FF" stroke-width="1.5"/><circle cx="278" cy="150" r="7" fill="#7EA2FF"/></g>
-    <g class="orb b"><g transform="rotate(60 150 150)"><ellipse cx="150" cy="150" rx="128" ry="46" fill="none" stroke="#C4A8FF" stroke-width="1.5"/><circle cx="278" cy="150" r="6" fill="#C4A8FF"/></g></g>
-    <g class="orb c"><g transform="rotate(120 150 150)"><ellipse cx="150" cy="150" rx="128" ry="46" fill="none" stroke="#5EEAD4" stroke-width="1.5"/><circle cx="278" cy="150" r="6" fill="#5EEAD4"/></g></g>
-    <circle cx="150" cy="150" r="26" fill="url(#cg)"/>
-    <text x="150" y="160" text-anchor="middle" font-family="Bricolage Grotesque,sans-serif" font-weight="700" font-size="28" fill="#0B1226">JP</text></svg>`;
-  app.append(h('section',{class:'cover'},h('div',{class:'cover-in'},
-    h('div',{class:'art',html:art}),
-    h('div',{class:'eyebrow'},'Personal collection'),
-    h('h1',null,'JP Library'),
-    h('div',{class:'full'},'Joshi Prathamesh Library'),
-    h('div',{class:'rule'}),
-    h('p',{class:'tag'},'Read it. Sketch it. Own it.'),
-    h('div',{class:'stats'},h('span',null,h('b',null,String(nbs)),nbs===1?'notebook':'notebooks'),h('span',null,h('b',null,String(tabs)),'lessons'),h('span',null,h('b',null,String(dn)),'finished')),
-    h('a',{class:'open',href:'#shelf'},'Open the library →'),
-    h('div',{class:'foot'},'Vol. I · Science, systems & ideas worth keeping'))));
+const PAL=[['#4A1414','#86302B'],['#16332A','#2E6049'],['#141F3D','#2C4478'],['#33173D','#64306F'],['#0D3434','#1D6765'],['#4B300E','#8D5D1F'],['#2B1A12','#5E3A24']];
+const PATS=[
+  ()=>{let s='';for(let r=14;r<210;r+=15)s+=`<circle cx="100" cy="112" r="${r}"/>`;return s;},
+  ()=>{let s='';for(let y=24;y<300;y+=17)s+=`<path d="M-10 ${y} Q40 ${y-13} 90 ${y} T190 ${y} T290 ${y}"/>`;return s;},
+  ()=>{let s='';for(let y=10;y<300;y+=15)for(let x=10;x<200;x+=15)s+=`<circle class="f" cx="${x}" cy="${y}" r="1.3"/>`;return s;},
+  ()=>{let s='';for(let d=-84;d<=84;d+=7){const r=d*Math.PI/180;s+=`<line x1="100" y1="320" x2="${(100+420*Math.sin(r)).toFixed(1)}" y2="${(320-420*Math.cos(r)).toFixed(1)}"/>`;}return s;},
+  ()=>{let s='';for(let i=0;i<10;i++){const r=8+i*13;s+=`<polygon points="100,${112-r} ${100+r},112 100,${112+r} ${100-r},112"/>`;}return s;}
+];
+const hashStr=t=>{let x=2166136261;for(const c of t){x^=c.charCodeAt(0);x=Math.imul(x,16777619);}return x>>>0;};
+const roman=n=>{let r='';[[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']].forEach(([v,l])=>{while(n>=v){r+=l;n-=v;}});return r;};
+const bookPal=nb=>{const c=nb.cover||{};return PAL[(c.palette!=null?c.palette:hashStr(nb.id))%PAL.length];};
+function bookCover(nb){
+  const c=nb.cover||{},k=hashStr(nb.id),pal=bookPal(nb),i=NB.list.indexOf(nb);
+  const pat=PATS[(c.pattern!=null?c.pattern:(k>>>5))%PATS.length]();
+  const tot=tabCount(nb),dn=doneCount(nb);
+  return h('div',{class:'book',style:`--a:${pal[0]};--b:${pal[1]}`},
+    h('div',{class:'pat',html:`<svg viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g fill="none" stroke="#E8C77A" stroke-opacity=".2" stroke-width="1">${pat}</g></svg>`}),
+    h('div',{class:'frame'}),
+    h('div',{class:'bk-in'},
+      h('div',{class:'bk-top'},'Vol. '+roman(i+1)),
+      h('div',{class:'bk-title'},nb.title),
+      h('div',{class:'bk-orn','aria-hidden':'true'},'❦'),
+      h('div',{class:'bk-sub'},nb.subtitle),
+      h('div',{class:'bk-imp'},'JP Library')),
+    dn?h('div',{class:'prog'},h('i',{style:'width:'+(100*dn/tot)+'%'})):null);
 }
+function nextTab(nb){
+  for(let i=0;i<nb.sections.length;i++)for(let j=0;j<nb.sections[i].tabs.length;j++)if(!isDone(nb,i,j))return '#'+nb.id+'-s'+(i+1)+'-t'+(j+1);
+  return '#'+nb.id+'-s1-t1';
+}
+const lastId=()=>{try{return localStorage.getItem('jpLibrary.last');}catch(e){return null;}};
 function viewLibrary(){
   app.textContent='';
-  const cards=NB.list.map((nb,i)=>{
-    const tot=tabCount(nb),dn=doneCount(nb),ok=!nb._errors.length;
-    return h('a',{class:'card',href:'#'+nb.id},
-      h('span',{class:'no'},'Notebook '+(i+1)),h('h3',null,nb.title),h('p',null,nb.subtitle),
-      h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),
-      h('div',{class:'meta'},h('span',null,nb.sections.length+' sections · '+tot+' tabs'),h('span',null,dn+'/'+tot+' done')),
-      ok?null:h('div',{class:'err'},'Needs fixes ('+nb._errors.length+'): '+nb._errors.slice(0,2).join('; ')));
+  const list=NB.list,feat=nbById(lastId())||list[0];
+  const tile=nb=>h('a',{class:'tile',href:'#'+nb.id,title:nb.title},bookCover(nb));
+  const addTile=h('a',{class:'tile',href:'#how-to-write',title:'Add a volume'},h('div',{class:'book blank'},h('div',{class:'bk-in'},h('div',{class:'plus'},'+'),h('div',{class:'t'},'Add a volume'))));
+  let hero;
+  if(feat){
+    const tot=tabCount(feat),dn=doneCount(feat),started=dn>0&&dn<tot,pal=bookPal(feat);
+    hero=h('section',{class:'hero',style:`--b:${pal[1]}`},h('div',{class:'glow'}),
+      h('div',null,
+        h('div',{class:'eb'},started?'Continue reading':dn===tot&&tot?'Finished · read again':'Featured volume'),
+        h('h1',null,feat.title),h('p',null,feat.subtitle),
+        h('div',{class:'meta'},h('span',null,h('b',null,String(feat.sections.length)),' chapters'),h('span',null,h('b',null,String(tot)),' lessons'),h('span',null,h('b',null,Math.round(tot?100*dn/tot:0)+'%'),' read')),
+        h('div',{class:'hbar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),
+        h('div',{class:'hbtns'},h('a',{class:'hb go',href:nextTab(feat)},'▶ ',started?'Continue':'Start reading'),h('a',{class:'hb alt',href:'#'+feat.id},'Open book'))),
+      h('a',{class:'stage',href:'#'+feat.id,'aria-label':'Open '+feat.title},bookCover(feat)));
+  }else{
+    hero=h('section',{class:'hero',style:'--b:#5E3A24'},h('div',{class:'glow'}),
+      h('div',null,h('div',{class:'eb'},'Welcome'),h('h1',null,'The shelves are empty'),h('p',null,'Write your first volume and it will appear here.'),
+        h('div',{class:'hbtns',style:'margin-top:26px'},h('a',{class:'hb go',href:'#how-to-write'},'How to write a notebook'))));
+  }
+  const rows=h('div',{class:'rows'});
+  const reading=list.filter(n=>{const d=doneCount(n);return d>0&&d<tabCount(n);});
+  if(reading.length)rows.append(h('h2',{class:'row-t'},'Continue reading',h('span',null,String(reading.length))),h('div',{class:'strip'},reading.map(tile)));
+  const cats=[...new Set(list.map(n=>n.category||'The collection'))];
+  if(!cats.length)cats.push('The collection');
+  cats.forEach((c,ci)=>{
+    const items=list.filter(n=>(n.category||'The collection')===c).map(tile);
+    if(ci===cats.length-1)items.push(addTile);
+    rows.append(h('h2',{class:'row-t'},c,h('span',null,items.length-(ci===cats.length-1?1:0)+' volumes')),h('div',{class:'strip'},items));
   });
-  NB.loadErrors.forEach(e=>cards.push(h('div',{class:'card'},h('h3',null,'Could not load'),h('p',null,e))));
-  cards.push(h('div',{class:'card empty'},h('h3',null,'Next notebook'),h('p',null,'Write it with the instructions, then add its file to notebooks/index.js.')));
-  app.append(crumbs({t:'Cover',href:'#'},{t:'Shelf'}),h('div',{class:'lib-head'},h('div',null,h('h1',null,'The shelf'),h('p',null,'Short steps, each one connected to the next, each with a sketch to redraw. Pick a book.')),
-    h('a',{class:'btn',href:'#how-to-write'},'How to write a notebook')),h('div',{class:'grid'},cards));
+  NB.loadErrors.forEach(e=>rows.append(h('div',{class:'msg',style:'margin:12px clamp(18px,4vw,56px);color:#FF8A8A'},e)));
+  app.append(h('div',{class:'hm'},
+    h('nav',{class:'hm-nav'},h('a',{class:'hm-logo',href:'#'},'JP Library',h('small',null,'Joshi Prathamesh Library')),h('a',{class:'hm-lnk',href:'#how-to-write'},'How to write a notebook')),
+    hero,rows,h('div',{class:'hm-foot'},'JP Library · Est. 2026')));
 }
 function viewHowTo(){
   app.textContent='';
@@ -798,7 +884,7 @@ function viewHowTo(){
   const copy=h('button',{class:'btn pri',type:'button',onclick:async()=>{
     try{await navigator.clipboard.writeText(txt);st.textContent='Copied.';}
     catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);st.textContent='Selected. Press copy on your keyboard.';}}},'Copy instructions');
-  app.append(crumbs({t:'Library',href:'#shelf'},{t:'How to write a notebook'}),
+  app.append(crumbs({t:'Library',href:'#'},{t:'How to write a notebook'}),
     h('div',{class:'howto'},h('h1',{style:'font-size:clamp(26px,5vw,38px)'},'How to write a notebook'),
       h('p',null,'Paste these instructions into any LLM, then tell it the topic. It returns one file. Add the file name to the list in notebooks/index.js and the notebook appears in the library.'),
       h('div',{class:'row'},copy,st),pre));
@@ -811,8 +897,8 @@ function viewNotebook(nb){
       h('div',{class:'dots'},s.tabs.map((_,j)=>h('i',{class:isDone(nb,i,j)?'on':'',title:s.tabs[j].title})))));
     if(i<nb.sections.length-1)secs.push(h('div',{class:'link-between'},h('b',null,'Leads to section '+(i+2)+'. '),s.bridge));
   });
-  app.append(crumbs({t:'Library',href:'#shelf'},{t:nb.title}),
-    h('div',{class:'nb-head'},h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin-top:6px'},dn+' of '+tot+' tabs done')),
+  app.append(crumbs({t:'Library',href:'#'},{t:nb.title}),
+    h('div',{class:'nb-hero'},bookCover(nb),h('div',null,h('div',{class:'eb'},'Vol. '+roman(NB.list.indexOf(nb)+1)+' \u00b7 JP Library'),h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin:6px 0 16px'},dn+' of '+tot+' lessons done'),h('a',{class:'btn pri',href:nextTab(nb)},dn&&dn<tot?'Continue reading':'Start reading'))),
     nb._errors.length?h('div',{class:'msg',style:'margin-top:16px;color:var(--bad)'},'Validator: '+nb._errors.join(' | ')):'',
     h('div',{class:'secs'},secs));
 }
@@ -830,7 +916,7 @@ function viewSection(nb,si,ti){
   s.tabs.forEach((t,j)=>{if(j)chain.append(h('span',{class:'join'}));
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
   const body=h('div');
-  app.append(crumbs({t:'Library',href:'#shelf'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
+  app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
     h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),chain,body);
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
@@ -862,17 +948,17 @@ function checkBlock(c){
     if(locked)return;if(i===c.answer){locked=true;opts[i].classList.add('right');why.hidden=false;}else{opts[i].classList.add('wrong');}}},t));
   return h('div',{class:'check'},h('div',{class:'blockhead',style:'margin:0'},h('h3',null,'Check yourself')),h('div',{class:'q'},c.q),h('div',{class:'opts'},opts),why);
 }
-function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#shelf'},'Back to the library'));}
+function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#'},'Back to the library'));}
 
 function route(){
   const hs=decodeURIComponent(location.hash.slice(1));let m;
   window.scrollTo(0,0);
-  if(!hs)return viewCover();
-  if(hs==='shelf')return viewLibrary();
+  document.body.classList.toggle('home',!hs||hs==='shelf');
+  if(!hs||hs==='shelf')return viewLibrary();
   if(hs==='how-to-write')return viewHowTo();
-  if(m=hs.match(/^(.+)-s(\d+)-t(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1]&&nb.sections[m[2]-1].tabs[m[3]-1])return viewSection(nb,+m[2]-1,+m[3]-1);}
+  if(m=hs.match(/^(.+)-s(\d+)-t(\d+)$/)){const nb=nbById(m[1]);if(nb)try{localStorage.setItem('jpLibrary.last',nb.id);}catch(e){}if(nb&&nb.sections[m[2]-1]&&nb.sections[m[2]-1].tabs[m[3]-1])return viewSection(nb,+m[2]-1,+m[3]-1);}
   if(m=hs.match(/^(.+)-s(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1])return viewSection(nb,+m[2]-1,0);}
-  const nb=nbById(hs);if(nb)return viewNotebook(nb);
+  const nb=nbById(hs);if(nb){try{localStorage.setItem('jpLibrary.last',nb.id);}catch(e){}return viewNotebook(nb);}
   viewNotFound();
 }
 window.addEventListener('hashchange',route);
