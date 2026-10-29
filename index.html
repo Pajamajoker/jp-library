@@ -1,0 +1,826 @@
+<title>QEC Notebook Library</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Caveat:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column app. Library grid -> notebook (section rows) -> section (tab chain) -> tab (connection, idea, sketch, try it, check). */
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --ink:#101A26; --muted:#5A6878; --line:#D3DAE3;
+  --accent:#1D4ED8; --accent-ink:#FFFFFF; --amber:#B45309; --ok:#15803D; --bad:#B91C1C; --soft:#E6ECF7;
+  --sk-paper:#FBFCFE; --sk-grid:#E1E8F2; --sk-ink:#1B2A3A; --sk-red:#D6372F; --sk-blue:#1D4ED8; --sk-green:#15803D;
+  --sk-yellow:#FFE45C; --sk-pink:#FFB3C7; --sk-mint:#9DEBC3;
+  --f-display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --f-hand:'Caveat','Segoe Print','Bradley Hand',cursive;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C131C; --surface:#131D29; --ink:#E7EDF4; --muted:#93A1B3; --line:#243244;
+  --accent:#7EA2FF; --accent-ink:#0C131C; --amber:#F0B35A; --ok:#4ADE80; --bad:#FF8A8A; --soft:#182638;
+  --sk-paper:#17202B; --sk-grid:#223244; --sk-ink:#E9EEF5; --sk-red:#FF7B72; --sk-blue:#8DB0FF; --sk-green:#6EE7A0;
+  --sk-yellow:#C9A92B; --sk-pink:#C0587A; --sk-mint:#2E9C6E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C131C; --surface:#131D29; --ink:#E7EDF4; --muted:#93A1B3; --line:#243244;
+  --accent:#7EA2FF; --accent-ink:#0C131C; --amber:#F0B35A; --ok:#4ADE80; --bad:#FF8A8A; --soft:#182638;
+  --sk-paper:#17202B; --sk-grid:#223244; --sk-ink:#E9EEF5; --sk-red:#FF7B72; --sk-blue:#8DB0FF; --sk-green:#6EE7A0;
+  --sk-yellow:#C9A92B; --sk-pink:#C0587A; --sk-mint:#2E9C6E; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+#app{max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);margin-bottom:22px}
+.crumbs a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
+.crumbs a:hover{color:var(--ink)}
+.crumbs .sep{opacity:.5}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-size:14px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.sm{padding:5px 10px;font-size:13px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px}
+
+/* Library */
+.lib-head{display:flex;flex-wrap:wrap;gap:14px 24px;justify-content:space-between;align-items:flex-end;margin-bottom:26px}
+.lib-head h1{font-size:clamp(30px,6vw,46px);font-weight:700}
+.lib-head p{margin:8px 0 0;color:var(--muted);max-width:52ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;text-decoration:none;color:inherit;min-width:0}
+a.card:hover{border-color:var(--accent)}
+.card .no{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.card h3{font-size:22px}
+.card p{margin:0;color:var(--muted);font-size:14.5px}
+.card .meta{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.card .err{font-size:13px;color:var(--bad);font-family:var(--f-mono)}
+.card.empty{border-style:dashed;background:transparent;color:var(--muted);justify-content:center;align-items:flex-start}
+
+/* Notebook */
+.nb-head h1{font-size:clamp(28px,5.5vw,42px)}
+.nb-head p{color:var(--muted);margin:8px 0 16px;max-width:60ch}
+.nb-head .bar{max-width:380px}
+.secs{margin-top:28px;display:flex;flex-direction:column}
+.sec{display:grid;grid-template-columns:1fr;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;text-decoration:none;color:inherit}
+a.sec:hover{border-color:var(--accent)}
+.sec .lab{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.sec h3{font-size:22px}
+.sec p{margin:0;color:var(--muted);font-size:15px}
+.dots{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.dots i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--muted);display:block}
+.dots i.on{background:var(--ok);border-color:var(--ok)}
+.link-between{margin:0 0 0 22px;padding:12px 6px 12px 18px;border-left:2px solid var(--accent);color:var(--muted);font-size:14.5px;max-width:70ch}
+.link-between b{color:var(--ink);font-weight:600}
+
+/* Section + tabs */
+.sec-head h1{font-size:clamp(26px,5vw,38px)}
+.sec-head p{color:var(--muted);margin:8px 0 18px;max-width:62ch}
+.chain{display:flex;gap:0;overflow-x:auto;padding:4px 2px 12px;margin-bottom:6px;scrollbar-width:thin}
+.chip{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px 6px 8px;font-size:13.5px;max-width:230px;white-space:nowrap}
+.chip .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;background:var(--soft);flex:none}
+.chip .t{overflow:hidden;text-overflow:ellipsis}
+.chip.on{border-color:var(--accent);background:var(--soft);font-weight:600}
+.chip.on .n{background:var(--accent);color:var(--accent-ink)}
+.chip.done .n{background:var(--ok);color:#fff}
+.join{flex:0 0 22px;align-self:center;height:2px;background:var(--line)}
+
+.tab{display:flex;flex-direction:column;gap:20px}
+.tab>h2{font-size:clamp(24px,4.6vw,34px)}
+.conn{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.conn>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:5px;font-size:14px;min-width:0}
+.conn .k{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.conn button.ref{align-self:flex-start;border:0;background:var(--soft);color:var(--accent);border-radius:6px;padding:3px 9px;font-weight:600;font-size:13.5px;text-align:left}
+.conn button.ref:hover{text-decoration:underline}
+.conn p{margin:0;color:var(--muted)}
+.idea{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.idea li{font-size:18.5px;line-height:1.45;padding-left:22px;position:relative;max-width:62ch}
+.idea li::before{content:"";position:absolute;left:0;top:.62em;width:11px;height:2px;background:var(--accent);transform:rotate(-8deg);border-radius:2px}
+.idea b{font-weight:600;color:var(--accent)}
+.blockhead{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:8px}
+.blockhead h3{font-size:13px;font-family:var(--f-mono);font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sw{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;user-select:none}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw .tr{width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;transition:background .15s}
+.sw .tr::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.sw input:checked+.tr{background:var(--accent)}
+.sw input:checked+.tr::after{transform:translateX(14px)}
+.sw input:focus-visible+.tr{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Sketch */
+.sketch{background:var(--sk-paper);border:1px solid var(--line);border-radius:12px;padding:10px 10px 14px;
+  background-image:linear-gradient(var(--sk-grid) 1px,transparent 1px),linear-gradient(90deg,var(--sk-grid) 1px,transparent 1px);background-size:24px 24px;background-position:-1px -1px}
+.sketch svg{display:block;width:100%;height:auto;max-height:480px;touch-action:manipulation}
+.sketch text{font-family:var(--f-hand);font-weight:700;dominant-baseline:alphabetic}
+.sketch .ph{fill:var(--sk-paper);stroke:var(--sk-ink);stroke-width:1.6;stroke-dasharray:5 4;opacity:.9;cursor:pointer}
+.sketch .phq{font-family:var(--f-hand);font-size:22px;fill:var(--sk-ink);opacity:.55;pointer-events:none}
+.take{margin:8px 6px 0;padding:10px 16px;border:2.5px solid var(--sk-ink);border-radius:255px 18px 225px 18px/18px 225px 18px 255px;
+  font-family:var(--f-hand);font-weight:700;font-size:clamp(22px,4.4vw,28px);line-height:1.2;color:var(--sk-ink);background:color-mix(in srgb,var(--sk-yellow) 35%,transparent);
+  opacity:0;transform:translateY(4px) rotate(-.6deg);transition:opacity .4s,transform .4s}
+.take.on{opacity:1;transform:rotate(-.6deg)}
+.hint{font-size:13px;color:var(--muted);margin:8px 2px 0}
+
+/* Widgets */
+.w{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:18px;min-width:0}
+.w-qubit{grid-template-columns:minmax(0,1fr)}
+.w-qubit.hasbloch{grid-template-columns:minmax(220px,300px) minmax(0,1fr)}
+.w canvas{width:100%;aspect-ratio:1/1;display:block;border-radius:10px;background:var(--soft)}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sl{display:grid;grid-template-columns:76px 1fr 64px;gap:10px;align-items:center;font-size:14px}
+.sl label{font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.sl output{font-family:var(--f-mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);min-width:0}
+.pbar{display:grid;grid-template-columns:44px 1fr;gap:4px 10px;align-items:center;font-size:14px}
+.pbar .lab{font-family:var(--f-mono);font-size:13px}
+.pbar .trk{height:20px;border-radius:5px;background:var(--soft);overflow:hidden;position:relative}
+.pbar .trk i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.pbar .trk i.b{background:var(--amber)}
+.pbar .sub{grid-column:2;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:-2px}
+.ro{display:grid;grid-template-columns:36px 1fr;gap:4px 10px;align-items:center;font-size:13px}
+.ro .nm{font-family:var(--f-mono);font-weight:500}
+.ro .split{display:flex;height:20px;border-radius:5px;overflow:hidden;background:var(--soft);font-family:var(--f-mono);font-size:12px}
+.ro .split span{display:grid;place-items:center;color:#fff;white-space:nowrap;overflow:hidden;transition:flex-basis .25s}
+.ro .split .p{background:var(--accent);color:var(--accent-ink)}
+.ro .split .m{background:var(--amber);color:#fff}
+.mini{font-size:12.5px;color:var(--muted);font-family:var(--f-mono)}
+.msg{font-size:14px;padding:9px 12px;border-radius:8px;background:var(--soft);min-height:40px;font-family:var(--f-mono);font-size:13px;line-height:1.5}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.hist{display:grid;grid-template-columns:50px 1fr 46px;gap:6px 10px;align-items:center;font-family:var(--f-mono);font-size:12.5px}
+.hist .trk{height:16px;background:var(--soft);border-radius:4px;overflow:hidden}
+.hist .trk i{display:block;height:100%;background:var(--accent)}
+.hist .trk i.b{background:var(--amber)}
+select{font:inherit;font-size:13.5px;padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.amps{display:grid;gap:6px}
+.amp{display:grid;grid-template-columns:54px minmax(0,1fr) 92px;gap:10px;align-items:center;font-family:var(--f-mono);font-size:13px}
+.amp .trk{height:22px;background:var(--soft);border-radius:5px;overflow:hidden}
+.amp .trk i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.amp.zero{opacity:.38}
+.amp .v{text-align:right;font-variant-numeric:tabular-nums}
+.test{display:grid;gap:4px;font-family:var(--f-mono);font-size:13px;padding:10px 12px;border:1px dashed var(--line);border-radius:8px}
+.test .verdict{font-weight:600;font-size:14px}
+.test .verdict.yes{color:var(--ok)} .test .verdict.no{color:var(--amber)}
+
+/* Check */
+.check{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.check .q{font-size:17px;font-weight:500}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 12px;font-size:15px}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.why{font-size:14.5px;color:var(--muted)}
+
+.nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding-top:6px}
+.bridge{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.bridge .k{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bridge p{margin:0;font-size:16.5px;max-width:64ch}
+
+/* How to */
+.howto pre{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;max-height:64vh;overflow:auto;margin:14px 0 0}
+.howto p{color:var(--muted);max-width:62ch}
+
+@media (max-width:640px){
+  .conn{grid-template-columns:1fr}
+  .w-qubit.hasbloch{grid-template-columns:minmax(0,1fr)}
+  .w canvas{max-width:320px;margin:0 auto}
+  .sl{grid-template-columns:62px 1fr 56px}
+  .amp{grid-template-columns:46px minmax(0,1fr) 78px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="app"></div>
+
+<script type="text/plain" id="howto-src">
+HOW TO WRITE A NOTEBOOK FOR MY LIBRARY
+
+You are writing ONE notebook for a personal study library. The reader is Prathamesh Joshi, a CS PhD student working on quantum error correction (QEC), AI systems, and quantum-classical systems. He wants foundations burned into memory. He does not want a text dump. Everything must be visual, short and crisp.
+
+OUTPUT
+Return exactly one JavaScript file, notebooks/<id>.js, in one code block. It calls NB.register({...}) once. No HTML, no extra commentary inside the file. After the code block add one line: the filename to add to notebooks/index.js.
+
+----------------------------------------------------------------
+1. STRUCTURE
+Notebook  >  Sections  >  Tabs
+
+Notebook fields
+  id         kebab-case, letters digits hyphens only (example: qec-basics)
+  title      2 to 4 words
+  subtitle   one line, what the reader will be able to do afterwards
+  sections   array, 3 to 6 sections
+
+Section = one broad concept. Fields
+  title      short
+  intro      1 to 2 sentences
+  bridge     1 to 2 sentences saying how THIS section connects to the NEXT section.
+             For the last section, say what the reader needs next.
+  tabs       array, 3 to 7 tabs
+
+Tab = one small step. Tabs run from the smallest piece up to the whole concept. A tab may use only ideas from earlier tabs (or earlier notebooks in the library order).
+
+----------------------------------------------------------------
+2. TAB TEMPLATE (every field is required)
+  title      short noun phrase
+  buildsOn   1 sentence: which earlier tab or section this uses, and what it takes from it.
+  leadsTo    1 sentence: what the next tab does with this one, and why it is needed.
+  idea       2 to 4 short lines, each at most 140 characters. Bold a key term with *asterisks*.
+  sketch     array of drawing parts (see 4)
+  takeaway   one line, at most 80 characters. The thing to remember.
+  widget     one interactive visual (see 5), or null
+  check      one multiple choice question: { q, options (3 or 4), answer (index), why }
+
+CONNECTION RULE (most important)
+Every tab must say how it connects to its neighbours. buildsOn and leadsTo are mandatory, must be specific (name the idea, not "the previous tab"), and each must be at least 25 characters. The first tab of a section builds on the previous section's bridge. The last tab of a section leads into the section's bridge.
+
+----------------------------------------------------------------
+3. WRITING RULES
+- Plain Unicode math only: α β θ φ ψ |0⟩ ⟨0| ² ₀ ₁ ⊕ √ ⇔ →. No LaTeX, no code blocks, no markdown except *bold*.
+- NO em dashes and NO en dashes anywhere. Use a period or a comma.
+- Short, direct sentences. Define every symbol on first use in the notebook.
+- No filler: no "it is worth noting", no "let us", no "in this tab we will".
+- Facts about a specific paper must be checked against the paper. If unsure, leave it out.
+- Prefer one concrete example over a general statement.
+
+----------------------------------------------------------------
+4. SKETCH SPEC
+Each tab has a hand-drawn sketch that draws itself in order, on a canvas of 640 wide by 320 tall. Use the helpers (already defined, destructure them at the top of your file):
+
+  const { T, B, A, L, K, O, E, H, D } = NB.sk;
+
+  T(x, y, 'text', opts)        handwritten label. (x, y) is the text baseline start. Use \n for a second line.
+                               opts: size (default 26), c (color), anchor ('start' | 'middle' | 'end'), keep (true = never hidden)
+  B(x, y, w, h, opts)          rough box, top-left corner and size
+  A(x1, y1, x2, y2, opts)      arrow from (x1,y1) to (x2,y2)
+  L([[x,y],[x,y],...], opts)   rough polyline
+  K([[x,y],...], opts)         smooth curve through points
+  O(x, y, r, opts)             circle, centre and radius
+  E(x, y, rx, ry, opts)        ellipse
+  H(x, y, w, h, opts)          highlighter bar. Draw it BEFORE the text it sits behind.
+  D(x, y, opts)                filled dot
+
+  Shared opts: c = 'ink' | 'red' | 'blue' | 'green' | 'yellow' | 'pink' | 'mint' (default ink), dash = true for dashed.
+  Highlight colors: yellow, pink, mint.
+
+Rules
+  - 6 to 18 parts. Parts are drawn in the order listed, so list them in teaching order: smallest piece first.
+  - Keep every coordinate inside 0..640 and 0..320. Keep 20px margins. Leave space around text (about 12px per character at size 26).
+  - At least 3 text labels. Labels are hidden by the "Cover and recall" switch so the reader can test memory. Set keep:true only for things that are not the point (for example "0 or 1" in a bit box).
+  - Do not draw sentences. Draw the shape of the idea: boxes, arrows, a circuit, a sphere, a table. Text is labels.
+  - Use red and blue to separate two things being compared, green for "this is the result", yellow highlight for the one thing to remember.
+
+----------------------------------------------------------------
+5. WIDGETS (the interactive "Try it" block)
+  { type: 'qubit', ...options }       one qubit
+      sliders: ['theta','phi'] (default both; use [] for none), bloch: true|false, gates: ['X','Y','Z','H','S'],
+      readouts: true (Z/X/Y odds), shots: true (sample readouts), collapse: true (measure and collapse),
+      start: { theta: 60, phi: 0 }  (degrees)
+  { type: 'multi', n: 2 | 3, ...options }      several qubits as amplitudes of patterns
+      presets: ids from zero2 plus0 plusplus bell bellm skew zero3 plus00 ghz log enc; start: id
+      slider: 'log' (alpha|000> + beta|111>) or 'enc' ((alpha|0>+beta|1>)|00>)
+      ops: 'H1' 'X2' 'Z3' 'RX2' (tiny 20 degree tilt) 'CNOT12' (control 1, target 2)
+      measure: [1,2] (read single qubits), parity: [[1,2],[2,3]], syndrome: true,
+      independence: true (n=2 product test), codeSpace: true, reset: true
+  { type: 'steps', steps: [ { say: 'sentence', show: 'one line of math' }, ... ] }   reveal a derivation one line at a time
+  null   no widget
+
+If you need a widget that does not exist, use 'steps' and say so in a one-line comment at the top of the file so the library owner can add it.
+
+----------------------------------------------------------------
+6. CHECK QUESTION
+One question per tab. Three or four options, exactly one right, plausible wrong ones that match real misunderstandings. "why" is one sentence.
+
+----------------------------------------------------------------
+7. EXAMPLE TAB
+{
+  title: 'Squares add to 1',
+  buildsOn: 'The last tab gave you α and β as raw amplitudes. This tab fixes how large they may be.',
+  leadsTo: 'Next, measuring. The squares |α|² and |β|² become the odds of each readout.',
+  idea: [
+    '|α|² is the weight on 0 and |β|² the weight on 1.',
+    'All weight sums to one: *|α|² + |β|² = 1*.'
+  ],
+  sketch: [
+    L([[90,260],[250,260],[250,140],[90,260]]),
+    T(170,296,'α',{anchor:'middle',c:'red',size:32}),
+    T(278,208,'β',{anchor:'middle',c:'blue',size:32}),
+    H(330,66,260,52,{c:'yellow'}),
+    T(460,104,'|α|² + |β|² = 1',{anchor:'middle',size:36})
+  ],
+  takeaway: '|α|² + |β|² = 1. Always.',
+  widget: { type:'qubit', sliders:['theta'], start:{theta:74,phi:0} },
+  check: { q:'α = 0.6 (real). What is |β|?', options:['0.8','0.4','0.64','1'], answer:0, why:'0.6² = 0.36, so |β|² = 0.64.' }
+}
+
+----------------------------------------------------------------
+8. REGISTRATION
+Wrap the file as:
+  (function () {
+    const { T, B, A, L, K, O, E, H, D } = NB.sk;
+    NB.register({ id: '...', title: '...', subtitle: '...', sections: [ ... ] });
+  })();
+The library owner then adds 'notebooks/<id>.js' to the list in notebooks/index.js. The library runs a validator on load. A notebook that fails it shows its errors on its card.
+
+----------------------------------------------------------------
+9. CHECKLIST (verify each item before you return the file)
+[ ] One NB.register call, valid JavaScript, no trailing prose inside the file.
+[ ] 3 to 6 sections, each with intro and bridge; 3 to 7 tabs each.
+[ ] Every tab has buildsOn and leadsTo, specific, each 25+ characters, and they agree with the neighbouring tabs.
+[ ] Tabs go from smallest piece upward. No tab uses an idea that appears later.
+[ ] Every tab has 2 to 4 idea lines of at most 140 characters.
+[ ] Every sketch has 6 to 18 parts, inside 640 x 320, with 3 or more text labels, drawn in teaching order.
+[ ] Every tab has a takeaway of at most 80 characters, a widget (or null) and a check with a valid answer index.
+[ ] No em dashes, no en dashes, no LaTeX, no code blocks in any string.
+[ ] Math is readable plain Unicode.
+[ ] Every claim is true. Anything about a paper was checked against the paper.
+</script>
+
+<script src="notebooks/index.js"></script>
+<script>
+(function(){
+'use strict';
+/* ---------- tiny DOM helpers ---------- */
+const h=(tag,attrs,...kids)=>{const e=document.createElement(tag);
+  if(attrs)for(const k in attrs){const v=attrs[k];if(v==null||v===false)continue;
+    if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),v);else e.setAttribute(k,v===true?'':v);}
+  for(const c of kids.flat(Infinity)){if(c==null||c===false)continue;e.append(c.nodeType?c:document.createTextNode(c));}
+  return e;};
+const SVGNS='http://www.w3.org/2000/svg';
+const sv=(tag,attrs,...kids)=>{const e=document.createElementNS(SVGNS,tag);
+  if(attrs)for(const k in attrs){if(attrs[k]!=null)e.setAttribute(k,attrs[k]);}
+  for(const c of kids.flat()){if(c!=null)e.append(c.nodeType?c:document.createTextNode(c));}
+  return e;};
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const rich=t=>esc(t).replace(/\*([^*]+)\*/g,'<b>$1</b>');
+const reduce=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- storage (light per-viewer convenience) ---------- */
+const KEY='qecLibrary.v1';let store={done:{}};
+try{const r=localStorage.getItem(KEY);if(r){store=JSON.parse(r)||store;if(!store.done)store.done={};}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}};
+const dkey=(nb,s,t)=>nb.id+':'+s+':'+t;
+const isDone=(nb,s,t)=>!!store.done[dkey(nb,s,t)];
+
+/* ---------- registry + validator ---------- */
+const NB=window.NB={list:[],loadErrors:[],
+  register(nb){nb._errors=validate(nb);this.list.push(nb);},
+  sk:{
+    T:(x,y,s,o)=>Object.assign({t:'text',x,y,s},o),
+    B:(x,y,w,hh,o)=>Object.assign({t:'box',x,y,w,h:hh},o),
+    A:(x1,y1,x2,y2,o)=>Object.assign({t:'arrow',x1,y1,x2,y2},o),
+    L:(pts,o)=>Object.assign({t:'line',pts},o),
+    K:(pts,o)=>Object.assign({t:'curve',pts},o),
+    O:(x,y,r,o)=>Object.assign({t:'ellipse',x,y,rx:r,ry:r},o),
+    E:(x,y,rx,ry,o)=>Object.assign({t:'ellipse',x,y,rx,ry},o),
+    H:(x,y,w,hh,o)=>Object.assign({t:'hl',x,y,w,h:hh},o),
+    D:(x,y,o)=>Object.assign({t:'dot',x,y},o)
+  }};
+const PART_TYPES=['text','box','arrow','line','curve','ellipse','hl','dot'];
+const WIDGETS=['qubit','multi','steps'];
+function validate(nb){
+  const E=[];const bad=/[—–]/;
+  const need=(c,m)=>{if(!c)E.push(m);};
+  need(/^[a-z0-9]+(-[a-z0-9]+)*$/.test(nb.id||''),'id must be kebab-case');
+  need(nb.title,'missing title');need(nb.subtitle,'missing subtitle');
+  need(Array.isArray(nb.sections)&&nb.sections.length>=1,'no sections');
+  (nb.sections||[]).forEach((s,i)=>{const p='S'+(i+1);
+    need(s.title,p+' title');need(s.intro,p+' intro');need((s.bridge||'').length>=25,p+' bridge (25+ chars)');
+    need(Array.isArray(s.tabs)&&s.tabs.length>=1,p+' has no tabs');
+    (s.tabs||[]).forEach((t,j)=>{const q=p+'.T'+(j+1);
+      need(t.title,q+' title');
+      need((t.buildsOn||'').length>=25,q+' buildsOn (25+ chars)');
+      need((t.leadsTo||'').length>=25,q+' leadsTo (25+ chars)');
+      need(Array.isArray(t.idea)&&t.idea.length>=2&&t.idea.length<=4,q+' idea needs 2 to 4 lines');
+      (t.idea||[]).forEach(l=>need(l.length<=140,q+' idea line over 140 chars'));
+      const parts=Array.isArray(t.sketch)?t.sketch:(t.sketch&&t.sketch.parts)||[];
+      need(parts.length>=5&&parts.length<=24,q+' sketch needs 5 to 24 parts');
+      need(parts.filter(x=>x.t==='text').length>=3,q+' sketch needs 3+ text labels');
+      parts.forEach(x=>{need(PART_TYPES.includes(x.t),q+' unknown sketch part '+x.t);
+        const xs=[x.x,x.x1,x.x2,...(x.pts||[]).map(a=>a[0])].filter(v=>v!=null);
+        const ys=[x.y,x.y1,x.y2,...(x.pts||[]).map(a=>a[1])].filter(v=>v!=null);
+        if(xs.some(v=>v<0||v>640)||ys.some(v=>v<0||v>330))E.push(q+' sketch part outside canvas');});
+      need((t.takeaway||'').length>0&&t.takeaway.length<=80,q+' takeaway 1 to 80 chars');
+      need(t.widget===null||(t.widget&&WIDGETS.includes(t.widget.type)),q+' widget type');
+      const c=t.check;
+      need(c&&c.q&&Array.isArray(c.options)&&c.options.length>=3&&c.answer>=0&&c.answer<(c.options||[]).length&&c.why,q+' check incomplete');
+      if(bad.test(JSON.stringify(t)))E.push(q+' contains an em or en dash');
+    });
+  });
+  return E;
+}
+
+/* ================= SKETCH ENGINE ================= */
+const hash=s=>{let x=2166136261;for(const c of String(s)){x^=c.charCodeAt(0);x=Math.imul(x,16777619);}return x>>>0;};
+const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+const f1=n=>n.toFixed(1);
+const polyD=p=>p.map((q,i)=>(i?'L':'M')+f1(q[0])+' '+f1(q[1])).join('');
+function smoothD(p){if(p.length<3)return polyD(p);let d='M'+f1(p[0][0])+' '+f1(p[0][1]);
+  for(let i=1;i<p.length-1;i++){const m=[(p[i][0]+p[i+1][0])/2,(p[i][1]+p[i+1][1])/2];d+='Q'+f1(p[i][0])+' '+f1(p[i][1])+' '+f1(m[0])+' '+f1(m[1]);}
+  const l=p[p.length-1];return d+'L'+f1(l[0])+' '+f1(l[1]);}
+function seg(r,x1,y1,x2,y2,j,over){
+  const dx=x2-x1,dy=y2-y1,Ln=Math.hypot(dx,dy)||1,ux=dx/Ln,uy=dy/Ln,nx=-uy,ny=ux;
+  if(over){x1-=ux*(r()*3);y1-=uy*(r()*3);x2+=ux*(r()*3);y2+=uy*(r()*3);}
+  const n=Math.max(2,Math.round(Ln/38)),pts=[];
+  for(let i=0;i<=n;i++){const t=i/n,o=(i===0||i===n)?(r()-.5)*j:(r()-.5)*2*j;pts.push([x1+(x2-x1)*t+nx*o,y1+(y2-y1)*t+ny*o]);}
+  return pts;}
+function polyPts(r,pts,j,over){let out=[];for(let i=0;i<pts.length-1;i++){const s=seg(r,pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],j,over&&i===0);out=out.concat(i?s.slice(1):s);}return out;}
+function ellPts(r,x,y,rx,ry){const out=[],n=Math.max(18,Math.round((rx+ry)/5)),a0=r()*6.28,sweep=6.28+.35;
+  for(let i=0;i<=n;i++){const a=a0+sweep*i/n,k=1+(r()-.5)*.045;out.push([x+Math.cos(a)*rx*k,y+Math.sin(a)*ry*k]);}return out;}
+const COL={ink:'var(--sk-ink)',red:'var(--sk-red)',blue:'var(--sk-blue)',green:'var(--sk-green)',yellow:'var(--sk-yellow)',pink:'var(--sk-pink)',mint:'var(--sk-mint)'};
+const colr=c=>COL[c]||COL.ink;
+
+function sketchBlock(tab,tid){
+  const parts=Array.isArray(tab.sketch)?tab.sketch:tab.sketch.parts;
+  const svg=sv('svg',{viewBox:'0 0 640 330',role:'img','aria-label':'Hand-drawn sketch: '+tab.takeaway});
+  const g=sv('g',{});svg.append(g);
+  const take=h('div',{class:'take'},tab.takeaway);
+  let items=[],raf=0,covered=false,total=0;
+  const cover=h('input',{type:'checkbox',id:'cov-'+tid});
+  const swl=h('label',{class:'sw',for:'cov-'+tid},cover,h('span',{class:'tr'}),'Cover and recall');
+  const replay=h('button',{class:'btn sm',type:'button'},'Replay drawing');
+
+  function build(){
+    g.textContent='';items=[];
+    const r=rng(hash(tid));
+    let t0=0;
+    parts.forEach((p,i)=>{
+      const col=colr(p.c),grp=sv('g',{});g.append(grp);
+      const item={g:grp,p,start:t0,dur:400,kind:'path',paths:[]};
+      const addPath=(d,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:col,'stroke-width':w,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op});
+        if(dash)e.setAttribute('data-dash','1');grp.append(e);item.paths.push(e);return e;};
+      switch(p.t){
+        case'text':{
+          const size=p.size||26,lines=String(p.s).split('\n');
+          const el=sv('text',{x:p.x,y:p.y,'font-size':size,fill:col,'text-anchor':p.anchor||'start'});
+          lines.forEach((ln,k)=>{el.append(sv('tspan',{x:p.x,dy:k?size*1.05:0},ln));});
+          grp.append(el);item.kind='text';item.el=el;item.dur=Math.max(350,String(p.s).length*38);item.keep=!!p.keep;break;}
+        case'box':{const pts=[[p.x,p.y],[p.x+p.w,p.y],[p.x+p.w,p.y+p.h],[p.x,p.y+p.h],[p.x+1,p.y-1]];
+          addPath(polyD(polyPts(r,pts,1.3,true)),2.6,1,p.dash);addPath(polyD(polyPts(r,pts,1.6,true)),1.3,.5,p.dash);item.dur=650;break;}
+        case'line':{addPath(polyD(polyPts(r,p.pts,1.2,true)),2.6,1,p.dash);addPath(polyD(polyPts(r,p.pts,1.5,true)),1.2,.45,p.dash);item.dur=250+120*p.pts.length;break;}
+        case'curve':{const q=p.pts.map(a=>[a[0]+(r()-.5)*1.4,a[1]+(r()-.5)*1.4]);addPath(smoothD(q),2.6,1,p.dash);
+          addPath(smoothD(p.pts.map(a=>[a[0]+(r()-.5)*2,a[1]+(r()-.5)*2])),1.2,.45,p.dash);item.dur=500;break;}
+        case'ellipse':{addPath(smoothD(ellPts(r,p.x,p.y,p.rx,p.ry)),2.6,1,p.dash);addPath(smoothD(ellPts(r,p.x,p.y,p.rx,p.ry)),1.2,.45,p.dash);item.dur=650;break;}
+        case'arrow':{const dx=p.x2-p.x1,dy=p.y2-p.y1,Ln=Math.hypot(dx,dy)||1,ux=dx/Ln,uy=dy/Ln,hl=Math.min(16,Ln*.4);
+          const a=.5,c1=Math.cos(a),s1=Math.sin(a);
+          const hx1=p.x2-hl*(ux*c1-uy*s1),hy1=p.y2-hl*(uy*c1+ux*s1),hx2=p.x2-hl*(ux*c1+uy*s1),hy2=p.y2-hl*(uy*c1-ux*s1);
+          const main=polyD(seg(r,p.x1,p.y1,p.x2,p.y2,1.1,true));
+          addPath(main+'M'+f1(hx1)+' '+f1(hy1)+'L'+f1(p.x2)+' '+f1(p.y2)+'L'+f1(hx2)+' '+f1(hy2),2.6,1,p.dash);
+          addPath(polyD(seg(r,p.x1,p.y1,p.x2,p.y2,1.4,true)),1.2,.45,p.dash);item.dur=450;break;}
+        case'dot':{const e=sv('circle',{cx:p.x,cy:p.y,r:p.r||5,fill:col});grp.append(e);item.kind='dot';item.el=e;item.dur=150;break;}
+        case'hl':{const e=sv('rect',{x:p.x,y:p.y,width:p.w,height:p.h,rx:5,fill:colr(p.c||'yellow'),opacity:.5});
+          e.style.transformBox='fill-box';e.style.transformOrigin='left center';grp.append(e);item.kind='hl';item.el=e;item.dur=420;break;}
+      }
+      t0+=item.dur+(p.t==='hl'?40:110);items.push(item);
+    });
+    total=t0;
+  }
+  function render(t){
+    items.forEach(it=>{const k=Math.max(0,Math.min(1,(t-it.start)/it.dur));
+      if(it.kind==='path'){it.paths.forEach(pe=>{const len=pe.getTotalLength?pe.getTotalLength():0;
+        if(k>=1){pe.style.strokeDasharray=pe.dataset.dash?'7 6':'none';pe.style.strokeDashoffset=0;}
+        else{pe.style.strokeDasharray=len+' '+len;pe.style.strokeDashoffset=len*(1-k);}
+        pe.style.opacity=k>0?'':0;});}
+      else if(it.kind==='text'){it.el.style.clipPath=k>=1?'none':'inset(-4px '+(100*(1-k))+'% -8px -4px)';it.el.style.opacity=k>0?1:0;}
+      else if(it.kind==='dot'){it.el.style.opacity=k;}
+      else if(it.kind==='hl'){it.el.style.transform='scaleX('+k+')';}
+    });
+    take.classList.toggle('on',t>=total-50);
+  }
+  function play(){cancelAnimationFrame(raf);
+    if(reduce()||covered){render(1e9);return;}
+    const t0=performance.now();
+    const step=now=>{const t=now-t0;render(t);if(t<total+200)raf=requestAnimationFrame(step);};
+    render(0);raf=requestAnimationFrame(step);}
+  function applyCover(){
+    svg.querySelectorAll('.ph,.phq').forEach(n=>n.remove());
+    items.forEach(it=>{if(it.kind!=='text')return;it.el.style.visibility='visible';
+      if(covered&&!it.keep){it.el.style.visibility='hidden';
+        const b=it.el.getBBox();
+        const rect=sv('rect',{class:'ph',x:b.x-4,y:b.y-2,width:b.width+8,height:b.height+4,rx:7});
+        const q=sv('text',{class:'phq',x:b.x+b.width/2,y:b.y+b.height/2+7,'text-anchor':'middle'},'?');
+        rect.addEventListener('click',()=>{it.el.style.visibility='visible';rect.remove();q.remove();});
+        it.g.append(rect,q);}
+    });
+  }
+  cover.addEventListener('change',()=>{covered=cover.checked;cancelAnimationFrame(raf);render(1e9);applyCover();});
+  replay.addEventListener('click',()=>{cover.checked=false;covered=false;applyCover();play();});
+  svg.addEventListener('click',e=>{if(e.target.classList&&e.target.classList.contains('ph'))return;cancelAnimationFrame(raf);render(1e9);});
+  build();
+  const root=h('div',null,
+    h('div',{class:'blockhead'},h('h3',null,'Sketch'),h('div',{class:'tools'},swl,replay)),
+    h('div',{class:'sketch'},svg,take),
+    h('p',{class:'hint'},'Redraw it on paper from memory. Then switch on Cover and recall and tap each ? to check yourself.'));
+  root._start=()=>{(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>{build();play();});};
+  return root;
+}
+
+/* ================= WIDGETS ================= */
+const W={};
+const RAD=Math.PI/180,R2=Math.SQRT1_2;
+const Cx={add:(a,b)=>[a[0]+b[0],a[1]+b[1]],mul:(a,b)=>[a[0]*b[0]-a[1]*b[1],a[0]*b[1]+a[1]*b[0]],conj:a=>[a[0],-a[1]],abs2:a=>a[0]*a[0]+a[1]*a[1],sc:(a,s)=>[a[0]*s,a[1]*s]};
+const fN=x=>{const r=Math.round(x*100)/100;if(r===0)return'0';return(r<0?'−':'')+Math.abs(r);};
+function fAmp(z){const re=fN(z[0]),im=fN(z[1]);if(im==='0')return re;if(re==='0')return im==='1'?'i':im==='−1'?'−i':im+'i';return re+(z[1]<0?'':'+')+im+'i';}
+const pct=x=>Math.round(x*1000)/10+'%';
+const GATE={H:[[[R2,0],[R2,0]],[[R2,0],[-R2,0]]],X:[[[0,0],[1,0]],[[1,0],[0,0]]],Y:[[[0,0],[0,-1]],[[0,1],[0,0]]],Z:[[[1,0],[0,0]],[[0,0],[-1,0]]],S:[[[1,0],[0,0]],[[0,0],[0,1]]]};
+const AXIS={X:[[1,0,0],Math.PI],Y:[[0,1,0],Math.PI],Z:[[0,0,1],Math.PI],H:[[R2,0,R2],Math.PI],S:[[0,0,1],Math.PI/2]};
+function slider(label,min,max,step,val,unit,onIn){
+  const out=h('output',null,val+unit),inp=h('input',{type:'range',min,max,step,value:val,'aria-label':label});
+  inp.addEventListener('input',()=>{out.textContent=inp.value+unit;onIn(+inp.value);});
+  return{el:h('div',{class:'sl'},h('label',null,label),inp,out),set(v){inp.value=v;out.textContent=Math.round(v)+unit;}};}
+
+W.qubit=function(o){
+  o=Object.assign({bloch:false,sliders:['theta','phi'],gates:[],readouts:false,shots:false,collapse:false,start:{theta:60,phi:0}},o||{});
+  let a,b,busy=false,counts=[0,0],basis='Z',trail=[],vecAnim=null;
+  const setTP=(th,ph)=>{a=[Math.cos(th*RAD/2),0];b=[Math.sin(th*RAD/2)*Math.cos(ph*RAD),Math.sin(th*RAD/2)*Math.sin(ph*RAD)];};
+  setTP(o.start.theta,o.start.phi);
+  const bv=()=>{const ab=Cx.mul(Cx.conj(a),b);return[2*ab[0],2*ab[1],Cx.abs2(a)-Cx.abs2(b)];};
+  function tp(){let aa=a,bb=b;const m=Math.hypot(...aa);if(m>1e-9){const ph=[aa[0]/m,-aa[1]/m];aa=Cx.mul(aa,ph);bb=Cx.mul(bb,ph);}
+    const th=2*Math.atan2(Math.hypot(...bb),Math.hypot(...aa)),mb=Math.hypot(...bb);
+    let phi=mb>1e-9?Math.atan2(bb[1],bb[0])/RAD:0;if(phi<0)phi+=360;return{th:th/RAD,ph:phi};}
+  const root=h('div',{class:'w w-qubit'+(o.bloch?' hasbloch':'')});
+  const col=h('div',{class:'col'});
+  const canvas=o.bloch?h('canvas',{role:'img','aria-label':'Bloch sphere'}):null;
+  const slT=o.sliders.includes('theta')?slider('θ (lat)',0,180,1,Math.round(o.start.theta),'°',v=>{const c=tp();setTP(v,o.sliders.includes('phi')?c.ph:o.start.phi);trail=[];refresh(true);}):null;
+  const slP=o.sliders.includes('phi')?slider('φ (long)',0,360,1,Math.round(o.start.phi),'°',v=>{const c=tp();setTP(o.sliders.includes('theta')?c.th:o.start.theta,v);trail=[];refresh(true);}):null;
+  const ampT=h('div',{class:'mini'});
+  const bars=h('div',{class:'pbar'});
+  const rows=[0,1].map(i=>{const lab=h('span',{class:'lab'},i?'|1⟩':'|0⟩'),fill=h('i',{class:i?'b':''}),trk=h('div',{class:'trk'},fill),sub=h('div',{class:'sub'});
+    bars.append(lab,trk,sub);return{fill,sub};});
+  const roBox=o.readouts?h('div',{class:'ro'}):null;
+  const roRows=o.readouts?['Z','X','Y'].map(n=>{const p=h('span',{class:'p'}),m=h('span',{class:'m'});const sp=h('div',{class:'split'},p,m);roBox.append(h('span',{class:'nm'},n),sp);return{p,m};}):null;
+  const gateBtns=(o.gates||[]).map(g=>h('button',{class:'btn',type:'button',onclick:()=>gate(g)},g));
+  const restore=h('button',{class:'btn',type:'button',onclick:()=>{setTP(o.start.theta,o.start.phi);trail=[];msg.textContent='Restored.';refresh(true);}},'Restore start');
+  const msg=h('div',{class:'msg'},o.collapse?'Press Measure to read the qubit once. It collapses.':(o.gates&&o.gates.length?'Press a gate. Watch the numbers change.':'Move the slider.'));
+  if(slT||slP)col.append(h('div',{class:'col'},slT&&slT.el,slP&&slP.el));
+  col.append(bars,ampT);
+  if(roBox)col.append(h('div',null,h('div',{class:'mini',style:'margin-bottom:6px'},'Chance of each readout answer (blue = +1, amber = −1)'),roBox));
+  if(gateBtns.length)col.append(h('div',{class:'btns'},gateBtns,restore));
+  let histEl=null,sel=null;
+  if(o.shots){
+    sel=h('select',{'aria-label':'Readout basis'},h('option',{value:'Z'},'Z readout'),h('option',{value:'X'},'X readout'),h('option',{value:'Y'},'Y readout'));
+    const hb=[0,1].map(i=>({n:h('span',null,i?'−1':'+1'),t:h('div',{class:'trk'},h('i',{class:i?'b':''})),c:h('span',null,'0')}));
+    histEl=h('div',{class:'hist'});hb.forEach(x=>histEl.append(x.n,x.t,x.c));histEl._hb=hb;
+    const shoot=n=>{const v=bv(),p=(1+({Z:v[2],X:v[0],Y:v[1]}[sel.value]))/2;for(let i=0;i<n;i++)counts[Math.random()<p?0:1]++;drawHist();};
+    sel.addEventListener('change',()=>{counts=[0,0];drawHist();});
+    col.append(h('div',{class:'col'},h('div',{class:'row'},sel,h('button',{class:'btn sm',type:'button',onclick:()=>shoot(1)},'1 shot'),h('button',{class:'btn sm',type:'button',onclick:()=>shoot(100)},'100 shots'),h('button',{class:'btn sm',type:'button',onclick:()=>{counts=[0,0];drawHist();}},'Clear')),histEl,h('div',{class:'mini'},'Each shot uses a fresh copy of the state.')));
+  }
+  if(o.collapse){
+    col.append(h('div',{class:'btns'},h('button',{class:'btn pri',type:'button',onclick:()=>{const p0=Cx.abs2(a);const one=Math.random()>=p0;
+      msg.textContent='Z readout gave '+(one?'1':'0')+'. The qubit is now |'+(one?'1':'0')+'⟩. α and β are gone.';
+      if(one){a=[0,0];b=[1,0];}else{a=[1,0];b=[0,0];}trail=[];refresh(true);}},'Measure (collapse)'),restore));
+  }
+  col.append(msg);
+  root.append(canvas||'',col);
+  function drawHist(){if(!histEl)return;const tot=counts[0]+counts[1];histEl._hb.forEach((x,i)=>{x.t.firstChild.style.width=tot?(100*counts[i]/tot)+'%':'0%';x.c.textContent=counts[i];});}
+  function refresh(sync){
+    const c=tp();
+    if(sync){if(slT)slT.set(c.th);if(slP)slP.set(c.ph);}
+    const p0=Cx.abs2(a),p1=Cx.abs2(b);
+    rows[0].fill.style.width=pct(p0);rows[1].fill.style.width=pct(p1);
+    rows[0].sub.textContent='α = '+fAmp(a)+'   chance '+pct(p0);rows[1].sub.textContent='β = '+fAmp(b)+'   chance '+pct(p1);
+    const v=bv();ampT.textContent='|α|² + |β|² = '+(Math.round((p0+p1)*1000)/1000)+'   θ = '+Math.round(c.th)+'°   φ = '+Math.round(c.ph)+'°';
+    if(roRows){[v[2],v[0],v[1]].forEach((z,i)=>{const pp=(1+z)/2;const r=roRows[i];r.p.style.flexBasis=pct(pp);r.m.style.flexBasis=pct(1-pp);r.p.textContent=pp>.12?pct(pp):'';r.m.textContent=1-pp>.12?pct(1-pp):'';});}
+    drawBloch(vecAnim||v);
+  }
+  function drawBloch(v){
+    if(!canvas)return;const dpr=window.devicePixelRatio||1,S=canvas.clientWidth||280;
+    if(canvas.width!==Math.round(S*dpr)){canvas.width=canvas.height=Math.round(S*dpr);}
+    const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,S,S);
+    const ink=cssv('--ink'),mut=cssv('--muted'),acc=cssv('--accent'),amb=cssv('--amber'),line=cssv('--line');
+    const R=S*.34,cx=S/2,cy=S/2,az=-35*RAD,el=18*RAD;
+    const P=(x,y,z)=>{const x1=x*Math.cos(az)-y*Math.sin(az),y1=x*Math.sin(az)+y*Math.cos(az);return[cx+R*x1,cy-R*(z*Math.cos(el)+y1*Math.sin(el)),y1*Math.cos(el)-z*Math.sin(el)];};
+    ctx.lineWidth=1.4;ctx.strokeStyle=line;ctx.beginPath();ctx.arc(cx,cy,R,0,6.283);ctx.stroke();
+    const ring=(f,dashed)=>{ctx.beginPath();for(let i=0;i<=72;i++){const t=i/72*6.283,q=f(t),p=P(...q);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.setLineDash(dashed?[3,4]:[]);ctx.strokeStyle=mut;ctx.globalAlpha=.55;ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);};
+    ring(t=>[Math.cos(t),Math.sin(t),0]);ring(t=>[Math.sin(t),0,Math.cos(t)],true);
+    ctx.font='500 '+Math.round(S*.045)+'px '+getComputedStyle(document.body).fontFamily;ctx.fillStyle=ink;ctx.textAlign='center';ctx.textBaseline='middle';
+    const axis=(q,l,off)=>{const p0=P(0,0,0),p1=P(...q);ctx.strokeStyle=mut;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.globalAlpha=.6;ctx.stroke();ctx.globalAlpha=1;
+      const lp=P(q[0]*off,q[1]*off,q[2]*off);ctx.fillText(l,lp[0],lp[1]);};
+    axis([0,0,1],'|0⟩',1.22);axis([0,0,-1],'|1⟩',1.22);axis([1,0,0],'|+⟩',1.22);axis([-1,0,0],'|−⟩',1.22);axis([0,1,0],'|+i⟩',1.28);axis([0,-1,0],'|−i⟩',1.28);
+    if(trail.length>1){ctx.strokeStyle=amb;ctx.lineWidth=2;ctx.beginPath();trail.forEach((q,i)=>{const p=P(...q);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.stroke();}
+    const sh=P(v[0],v[1],0),tip=P(...v),o0=P(0,0,0);
+    ctx.setLineDash([3,3]);ctx.strokeStyle=mut;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(o0[0],o0[1]);ctx.lineTo(sh[0],sh[1]);ctx.lineTo(tip[0],tip[1]);ctx.stroke();ctx.setLineDash([]);
+    ctx.strokeStyle=acc;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(o0[0],o0[1]);ctx.lineTo(tip[0],tip[1]);ctx.stroke();
+    ctx.fillStyle=acc;ctx.beginPath();ctx.arc(tip[0],tip[1],S*.025,0,6.283);ctx.fill();
+  }
+  function gate(name){
+    if(busy)return;
+    const M=GATE[name];const apply=()=>{const na=Cx.add(Cx.mul(M[0][0],a),Cx.mul(M[0][1],b)),nb=Cx.add(Cx.mul(M[1][0],a),Cx.mul(M[1][1],b));a=na;b=nb;};
+    const m=name==='H'?'H mixes α and β. On the sphere it is a half turn about the x+z line.':name==='S'?'S turns β by 90°. A quarter turn about z.':'';
+    if(!canvas||reduce()){apply();msg.textContent=name+' applied.'+(m?' '+m:'');refresh(true);return;}
+    busy=true;gateBtns.forEach(x=>x.disabled=true);
+    const v0=bv(),[k,ang]=AXIS[name],t0=performance.now(),D=650;trail=[v0.slice()];
+    const step=now=>{const u=Math.min(1,(now-t0)/D),th=ang*u,c=Math.cos(th),s=Math.sin(th),kv=k[0]*v0[0]+k[1]*v0[1]+k[2]*v0[2];
+      const cr=[k[1]*v0[2]-k[2]*v0[1],k[2]*v0[0]-k[0]*v0[2],k[0]*v0[1]-k[1]*v0[0]];
+      vecAnim=[0,1,2].map(i=>v0[i]*c+cr[i]*s+k[i]*kv*(1-c));trail.push(vecAnim.slice());drawBloch(vecAnim);
+      if(u<1)requestAnimationFrame(step);else{vecAnim=null;apply();busy=false;gateBtns.forEach(x=>x.disabled=false);msg.textContent=name+' applied.'+(m?' '+m:'');refresh(true);setTimeout(()=>{trail=[];refresh(false);},900);}};
+    requestAnimationFrame(step);
+  }
+  refresh(false);
+  const ro=window.ResizeObserver?new ResizeObserver(()=>drawBloch(vecAnim||bv())):null;if(ro&&canvas)ro.observe(canvas);
+  if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener&&matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>refresh(false));
+  root._test={gate,get state(){return{a,b};},bv};
+  return root;
+};
+
+/* multi-qubit */
+const basisV=(N,i)=>{const v=Array.from({length:N},()=>[0,0]);v[i]=[1,0];return v;};
+const PRE={
+  zero2:{l:'|00⟩',f:()=>basisV(4,0)},
+  plus0:{l:'|+⟩|0⟩',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[2]=[R2,0];return v;}},
+  plusplus:{l:'|+⟩|+⟩',f:()=>[[.5,0],[.5,0],[.5,0],[.5,0]]},
+  bell:{l:'Bell (00+11)',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[3]=[R2,0];return v;}},
+  bellm:{l:'Bell (00−11)',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[3]=[-R2,0];return v;}},
+  skew:{l:'0.6|00⟩+0.8|11⟩',f:()=>{const v=basisV(4,0);v[0]=[.6,0];v[3]=[.8,0];return v;}},
+  zero3:{l:'|000⟩',f:()=>basisV(8,0)},
+  plus00:{l:'|+⟩|00⟩',f:()=>{const v=basisV(8,0);v[0]=[R2,0];v[4]=[R2,0];return v;}},
+  ghz:{l:'(000+111)/√2',f:()=>{const v=basisV(8,0);v[0]=[R2,0];v[7]=[R2,0];return v;}},
+  log:{l:'α|000⟩+β|111⟩',f:th=>{const v=basisV(8,0);v[0]=[Math.cos(th*RAD/2),0];v[7]=[Math.sin(th*RAD/2),0];return v;}},
+  enc:{l:'(α|0⟩+β|1⟩)|00⟩',f:th=>{const v=basisV(8,0);v[0]=[Math.cos(th*RAD/2),0];v[4]=[Math.sin(th*RAD/2),0];return v;}}
+};
+W.multi=function(o){
+  o=Object.assign({n:2,presets:[],start:null,ops:[],measure:[],parity:[],syndrome:false,independence:false,slider:null,codeSpace:false,reset:false},o||{});
+  const n=o.n,N=1<<n;let theta=60,psi,st=o.start||(o.presets[0]);
+  const load=id=>{st=id;psi=PRE[id].f(theta);};load(st);
+  const lab=i=>i.toString(2).padStart(n,'0');
+  const root=h('div',{class:'w'});
+  const amps=h('div',{class:'amps'});
+  const rows=Array.from({length:N},(_,i)=>{const fill=h('i'),v=h('span',{class:'v'}),r=h('div',{class:'amp'},h('span',null,'|'+lab(i)+'⟩'),h('div',{class:'trk'},fill),v);amps.append(r);return{r,fill,v};});
+  const info=h('div',{class:'mini'});
+  const test=o.independence&&n===2?h('div',{class:'test'}):null;
+  const msg=h('div',{class:'msg'},'Pick a preset or press a gate. The bars show the chance of each pattern. The number shows the amplitude.');
+  const say=t=>{msg.textContent=t;};
+  const parts=[];
+  const rowBtns=(title,btns)=>btns.length?h('div',{class:'col',style:'gap:6px'},h('div',{class:'mini'},title),h('div',{class:'btns'},btns)):null;
+  const B=(t,fn,cls)=>h('button',{class:'btn sm'+(cls?' '+cls:''),type:'button',onclick:fn},t);
+  if(o.presets.length)parts.push(rowBtns('Start from',o.presets.map(id=>B(PRE[id].l,()=>{load(id);say('Loaded '+PRE[id].l+'.');draw();}))));
+  if(o.slider)parts.push(h('div',{class:'col'},slider(o.slider==='log'?'α, β of the logical qubit (θ)':'α, β of qubit 1 (θ)',0,180,1,theta,'°',v=>{theta=v;load(o.slider);say('State set to '+PRE[o.slider].l+' with θ = '+v+'°.');draw();}).el));
+  const opName=op=>{let m;if(m=op.match(/^(H|X|Z)(\d)$/))return op[0]+' on q'+m[2];if(m=op.match(/^RX(\d)$/))return'tilt q'+m[1]+' by 20°';if(m=op.match(/^CNOT(\d)(\d)$/))return'CNOT q'+m[1]+'→q'+m[2];return op;};
+  parts.push(rowBtns('Gates and errors',o.ops.map(op=>B(opName(op),()=>{doOp(op);say(opName(op)+' applied.');draw();}))));
+  parts.push(rowBtns('Read one qubit (collapses the state)',(o.measure||[]).map(k=>B('Read q'+k,()=>{const r=measure(k);say('q'+k+' read as '+r+'. The state collapsed to match.');draw();}))));
+  parts.push(rowBtns('Parity checks (read a relation)',(o.parity||[]).map(([i,j])=>B('Check q'+i+', q'+j,()=>{const r=parity(i,j);say('Parity of q'+i+', q'+j+' = '+r+' ('+(r?'odd, they differ':'even, they match')+'). The state was projected, then renormalised.');draw();}))));
+  let fixBtn=null;
+  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp('X'+fix);say('Flipped q'+fix+' back.');fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
+    parts.push(rowBtns('Syndrome',[B('Read syndrome',()=>{const s1=parity(1,2),s2=parity(2,3),k=s1+''+s2;fix={'00':0,'10':1,'11':2,'01':3}[k];
+      say('Syndrome ('+s1+','+s2+'): '+(fix?'flip q'+fix+' back.':'no error found.'));fixBtn.disabled=!fix;draw();}),fixBtn]));}
+  if(o.reset)parts.push(rowBtns('',[B('Reset',()=>{load(st);say('Reset.');fix=0;if(fixBtn)fixBtn.disabled=true;draw();})]));
+  let fix=0;
+  root.append(amps,info);if(test)root.append(test);root.append(...parts.filter(Boolean),msg);
+  function doOp(op){let m;
+    if(m=op.match(/^(H|X|Z)(\d)$/))return g1(GATE[m[1]],+m[2]);
+    if(m=op.match(/^RX(\d)$/)){const c=Math.cos(10*RAD),s=Math.sin(10*RAD);return g1([[[c,0],[0,-s]],[[0,-s],[c,0]]],+m[1]);}
+    if(m=op.match(/^CNOT(\d)(\d)$/)){const mc=1<<(n-m[1]),mt=1<<(n-m[2]);psi=psi.map((z,i)=>(i&mc)?psi[i^mt]:z);}}
+  function g1(M,k){const m=1<<(n-k),out=psi.map(z=>z.slice());
+    for(let i=0;i<N;i++){if(i&m)continue;const j=i|m,a0=psi[i],a1=psi[j];
+      out[i]=Cx.add(Cx.mul(M[0][0],a0),Cx.mul(M[0][1],a1));out[j]=Cx.add(Cx.mul(M[1][0],a0),Cx.mul(M[1][1],a1));}psi=out;}
+  function project(keep,p){const s=Math.sqrt(p)||1;psi=psi.map((z,i)=>keep(i)?Cx.sc(z,1/s):[0,0]);}
+  function measure(k){const m=1<<(n-k);let p1=0;psi.forEach((z,i)=>{if(i&m)p1+=Cx.abs2(z);});const one=Math.random()<p1;project(i=>!!(i&m)===one,one?p1:1-p1);return one?1:0;}
+  function parity(i,j){const mi=1<<(n-i),mj=1<<(n-j),odd=x=>((x&mi)?1:0)^((x&mj)?1:0);let po=0;psi.forEach((z,x)=>{if(odd(x))po+=Cx.abs2(z);});
+    const r=Math.random()<po?1:0;project(x=>odd(x)===r,r?po:1-po);return r;}
+  function draw(){
+    let tot=0;psi.forEach(z=>tot+=Cx.abs2(z));
+    psi.forEach((z,i)=>{const p=Cx.abs2(z),r=rows[i];r.fill.style.width=pct(p);r.v.textContent=fAmp(z)+'  '+(p<1e-9?'':Math.round(p*100)+'%');r.r.classList.toggle('zero',p<1e-9);});
+    let t='Total weight '+(Math.round(tot*1000)/1000);
+    if(o.codeSpace&&n===3){const c=Cx.abs2(psi[0])+Cx.abs2(psi[7]);t+='   inside the code (000, 111): '+pct(c);}
+    info.textContent=t;
+    if(test){const d1=Cx.mul(psi[0],psi[3]),d2=Cx.mul(psi[1],psi[2]),eq=Math.hypot(d1[0]-d2[0],d1[1]-d2[1])<1e-6;
+      test.textContent='';test.append(h('div',null,'a₀₀·a₁₁ = '+fAmp(d1)),h('div',null,'a₀₁·a₁₀ = '+fAmp(d2)),h('div',{class:'verdict '+(eq?'yes':'no')},eq?'Equal: independent. Each qubit has its own (α, β).':'Different: entangled. No (α, β) per qubit exists.'));}
+  }
+  draw();
+  root._test={doOp,draw,get psi(){return psi;},measure,parity};
+  return root;
+};
+
+W.steps=function(o){
+  let k=0;const list=h('div',{class:'col'}),root=h('div',{class:'w'});
+  const nx=h('button',{class:'btn pri',type:'button',onclick:()=>{k=Math.min(o.steps.length,k+1);draw();}},'Next line'),
+        rs=h('button',{class:'btn',type:'button',onclick:()=>{k=0;draw();}},'Restart');
+  function draw(){list.textContent='';o.steps.slice(0,k||1).forEach(s=>list.append(h('div',null,h('div',{html:rich(s.say)}),s.show?h('div',{class:'mono',style:'font-size:17px;margin-top:2px'},s.show):null)));nx.disabled=k>=o.steps.length;}
+  k=1;draw();root.append(list,h('div',{class:'btns'},nx,rs));return root;
+};
+
+function widgetFor(w){if(!w)return null;const f=W[w.type];return f?f(w):null;}
+
+/* ================= VIEWS ================= */
+const app=document.getElementById('app');
+const go=hsh=>{location.hash=hsh;};
+const nbById=id=>NB.list.find(n=>n.id===id);
+const tabCount=nb=>nb.sections.reduce((a,s)=>a+s.tabs.length,0);
+const doneCount=nb=>nb.sections.reduce((a,s,i)=>a+s.tabs.filter((_,j)=>isDone(nb,i,j)).length,0);
+const crumbs=(...it)=>h('nav',{class:'crumbs','aria-label':'Breadcrumb'},it.flatMap((x,i)=>[i?h('span',{class:'sep'},'/'):null,x.href?h('a',{href:x.href},x.t):h('span',null,x.t)]));
+
+function viewLibrary(){
+  app.textContent='';
+  const cards=NB.list.map((nb,i)=>{
+    const tot=tabCount(nb),dn=doneCount(nb),ok=!nb._errors.length;
+    return h('a',{class:'card',href:'#'+nb.id},
+      h('span',{class:'no'},'Notebook '+(i+1)),h('h3',null,nb.title),h('p',null,nb.subtitle),
+      h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),
+      h('div',{class:'meta'},h('span',null,nb.sections.length+' sections · '+tot+' tabs'),h('span',null,dn+'/'+tot+' done')),
+      ok?null:h('div',{class:'err'},'Needs fixes ('+nb._errors.length+'): '+nb._errors.slice(0,2).join('; ')));
+  });
+  NB.loadErrors.forEach(e=>cards.push(h('div',{class:'card'},h('h3',null,'Could not load'),h('p',null,e))));
+  cards.push(h('div',{class:'card empty'},h('h3',null,'Next notebook'),h('p',null,'Write it with the instructions, then add its file to notebooks/index.js.')));
+  app.append(h('div',{class:'lib-head'},h('div',null,h('h1',null,'Notebook library'),h('p',null,'Short steps, each one connected to the next, each with a sketch to redraw. Built for quantum error correction and the systems around it.')),
+    h('a',{class:'btn',href:'#how-to-write'},'How to write a notebook')),h('div',{class:'grid'},cards));
+}
+function viewHowTo(){
+  app.textContent='';
+  const txt=document.getElementById('howto-src').textContent.trim();
+  const pre=h('pre',{id:'howto-pre'},txt),st=h('span',{class:'mini'});
+  const copy=h('button',{class:'btn pri',type:'button',onclick:async()=>{
+    try{await navigator.clipboard.writeText(txt);st.textContent='Copied.';}
+    catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);st.textContent='Selected. Press copy on your keyboard.';}}},'Copy instructions');
+  app.append(crumbs({t:'Library',href:'#'},{t:'How to write a notebook'}),
+    h('div',{class:'howto'},h('h1',{style:'font-size:clamp(26px,5vw,38px)'},'How to write a notebook'),
+      h('p',null,'Paste these instructions into any LLM, then tell it the topic. It returns one file. Add the file name to the list in notebooks/index.js and the notebook appears in the library.'),
+      h('div',{class:'row'},copy,st),pre));
+}
+function viewNotebook(nb){
+  app.textContent='';const tot=tabCount(nb),dn=doneCount(nb);
+  const secs=[];
+  nb.sections.forEach((s,i)=>{
+    secs.push(h('a',{class:'sec',href:'#'+nb.id+'-s'+(i+1)},h('span',{class:'lab'},'Section '+(i+1)+' of '+nb.sections.length),h('h3',null,s.title),h('p',null,s.intro),
+      h('div',{class:'dots'},s.tabs.map((_,j)=>h('i',{class:isDone(nb,i,j)?'on':'',title:s.tabs[j].title})))));
+    if(i<nb.sections.length-1)secs.push(h('div',{class:'link-between'},h('b',null,'Leads to section '+(i+2)+'. '),s.bridge));
+  });
+  app.append(crumbs({t:'Library',href:'#'},{t:nb.title}),
+    h('div',{class:'nb-head'},h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin-top:6px'},dn+' of '+tot+' tabs done')),
+    nb._errors.length?h('div',{class:'msg',style:'margin-top:16px;color:var(--bad)'},'Validator: '+nb._errors.join(' | ')):'',
+    h('div',{class:'secs'},secs));
+}
+function neighbours(nb,si,ti){
+  const s=nb.sections[si];let prev=null,next=null;
+  if(ti>0)prev={t:s.tabs[ti-1].title,go:'#'+nb.id+'-s'+(si+1)+'-t'+ti};
+  else if(si>0){const ps=nb.sections[si-1];prev={t:ps.tabs[ps.tabs.length-1].title,go:'#'+nb.id+'-s'+si+'-t'+ps.tabs.length,sec:true};}
+  if(ti<s.tabs.length-1)next={t:s.tabs[ti+1].title,go:'#'+nb.id+'-s'+(si+1)+'-t'+(ti+2)};
+  else if(si<nb.sections.length-1){next={t:nb.sections[si+1].tabs[0].title,go:'#'+nb.id+'-s'+(si+2)+'-t1',sec:true};}
+  return{prev,next};
+}
+function viewSection(nb,si,ti){
+  app.textContent='';const s=nb.sections[si];
+  const chain=h('div',{class:'chain',role:'tablist','aria-label':'Tabs in this section'});
+  s.tabs.forEach((t,j)=>{if(j)chain.append(h('span',{class:'join'}));
+    chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
+  const body=h('div');
+  app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
+    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),chain,body);
+  const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
+  const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
+  const tid=nb.id+'-'+si+'-'+ti;
+  const sk=sketchBlock(tab,tid);
+  const w=widgetFor(tab.widget);
+  const chk=checkBlock(tab.check);
+  const doneBtn=h('button',{class:'btn pri',type:'button',onclick:()=>{store.done[dkey(nb,si,ti)]=1;save();if(nbr.next)go(nbr.next.go.slice(1));else viewSection(nb,si,ti);}},nbr.next?'Got it. Next':'Got it');
+  const isLast=ti===s.tabs.length-1;
+  body.append(h('article',{class:'tab'},
+    h('h2',null,'Tab '+(ti+1)+'. '+tab.title),
+    h('div',{class:'conn'},
+      h('div',null,h('span',{class:'k'},'← Builds on'),refBtn(nbr.prev,'Start of the notebook'),h('p',null,tab.buildsOn)),
+      h('div',null,h('span',{class:'k'},'Leads to →'),refBtn(nbr.next,'End of the notebook'),h('p',null,tab.leadsTo))),
+    h('ul',{class:'idea'},tab.idea.map(l=>h('li',{html:rich(l)}))),
+    sk,
+    w?h('div',null,h('div',{class:'blockhead'},h('h3',null,'Try it')),w):null,
+    chk,
+    isLast?h('div',{class:'bridge'},h('span',{class:'k'},'How this section connects to the next'),h('p',null,s.bridge)):null,
+    h('div',{class:'nav'},
+      nbr.prev?h('button',{class:'btn',type:'button',onclick:()=>go(nbr.prev.go.slice(1))},'← '+nbr.prev.t):h('span'),
+      h('div',{class:'row'},isDone(nb,si,ti)?h('span',{class:'mini'},'Marked done'):null,doneBtn)))
+  );
+  sk._start();
+}
+function checkBlock(c){
+  let locked=false;const why=h('div',{class:'why',hidden:true},c.why);
+  const opts=c.options.map((t,i)=>h('button',{class:'opt',type:'button',onclick:()=>{
+    if(locked)return;if(i===c.answer){locked=true;opts[i].classList.add('right');why.hidden=false;}else{opts[i].classList.add('wrong');}}},t));
+  return h('div',{class:'check'},h('div',{class:'blockhead',style:'margin:0'},h('h3',null,'Check yourself')),h('div',{class:'q'},c.q),h('div',{class:'opts'},opts),why);
+}
+function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#'},'Back to the library'));}
+
+function route(){
+  const hs=decodeURIComponent(location.hash.slice(1));let m;
+  window.scrollTo(0,0);
+  if(!hs)return viewLibrary();
+  if(hs==='how-to-write')return viewHowTo();
+  if(m=hs.match(/^(.+)-s(\d+)-t(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1]&&nb.sections[m[2]-1].tabs[m[3]-1])return viewSection(nb,+m[2]-1,+m[3]-1);}
+  if(m=hs.match(/^(.+)-s(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1])return viewSection(nb,+m[2]-1,0);}
+  const nb=nbById(hs);if(nb)return viewNotebook(nb);
+  viewNotFound();
+}
+window.addEventListener('hashchange',route);
+
+/* ---------- load notebook files in order, then start ---------- */
+const files=(window.NB_FILES||[]).slice();
+(function next(i){
+  if(i>=files.length){route();window.__libReady=true;return;}
+  const sc=document.createElement('script');sc.src=files[i];
+  sc.onload=()=>next(i+1);
+  sc.onerror=()=>{NB.loadErrors.push('File not found: '+files[i]);next(i+1);};
+  document.body.append(sc);
+})(0);
+window.__NBdbg={NB,W,validate};
+})();
+</script>
