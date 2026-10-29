@@ -308,6 +308,37 @@ body.home #app{max-width:none}
 .nb-hero p{color:var(--muted);font-size:18px;margin:0 0 14px;max-width:52ch}
 .nb-hero .bar{max-width:360px}
 @media (max-width:600px){.nb-hero{grid-template-columns:1fr}.nb-hero .art{width:160px}}
+
+/* Home layout v2 */
+.home-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin:34px 0 20px}
+.home-top .big{margin:0}
+.cpills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.cpill{flex:none;border:1px solid var(--g-bd);background:var(--g-bg);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:inset 0 1px 0 var(--g-hi);
+  color:var(--ink);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;transition:background .15s}
+.cpill small{color:var(--muted);font-weight:500;margin-left:6px}
+.cpill:hover{background:rgba(127,127,127,.18)}
+.cpill.on{background:var(--ink);color:var(--bg);border-color:transparent}
+.cpill.on small{color:inherit;opacity:.6}
+.feat{grid-template-columns:minmax(0,170px) minmax(0,1.15fr) minmax(0,1fr)!important;gap:36px!important;align-items:stretch!important;padding:28px!important}
+.feat-bg{background:radial-gradient(circle at 20% 30%,#5E5CE6,transparent 45%),radial-gradient(circle at 60% 70%,#BF5AF2,transparent 45%),radial-gradient(circle at 95% 20%,#FF375F,transparent 40%)!important;opacity:.38!important}
+.feat-mid{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.feat-art{align-self:center}
+.feat-ch{display:flex;flex-direction:column;gap:6px;min-width:0;border-left:1px solid var(--line);padding-left:30px;justify-content:center}
+.feat-ch h3{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.chrow{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border-radius:12px;text-decoration:none;color:var(--ink);font-size:14.5px;transition:background .15s}
+.chrow:hover{background:rgba(127,127,127,.14)}
+.chrow .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:rgba(127,127,127,.18)}
+.chrow.done .n{background:var(--accent);color:#fff}
+.chrow .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.chrow .c{font-size:12.5px;color:var(--muted)}
+.sect{margin-top:38px}
+.sect-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.sect-h h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.sect-h span{color:var(--muted);font-size:14px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 22px}
+.bgrid .tile{min-width:0}
+@media (max-width:1000px){.feat{grid-template-columns:minmax(0,150px) minmax(0,1fr)!important}.feat-ch{grid-column:1/-1;border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:16px}}
+@media (max-width:700px){.feat{grid-template-columns:1fr!important}.bgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:20px 14px}}
 </style>
 
 <div id="app"></div>
@@ -830,7 +861,7 @@ const doneCount=nb=>nb.sections.reduce((a,s,i)=>a+s.tabs.filter((_,j)=>isDone(nb
 const crumbs=(...it)=>h('nav',{class:'crumbs','aria-label':'Breadcrumb'},it.flatMap((x,i)=>[i?h('span',{class:'sep'},'/'):null,x.href?h('a',{href:x.href},x.t):h('span',null,x.t)]));
 
 const hashStr=t=>{let x=2166136261;for(const c of t){x^=c.charCodeAt(0);x=Math.imul(x,16777619);}return x>>>0;};
-const VIV=[['#FF2D55','#FF9500','#FFCC00'],['#5E5CE6','#64D2FF','#BF5AF2'],['#30D158','#64D2FF','#0A84FF'],['#BF5AF2','#FF375F','#FF9F0A'],['#FF9F0A','#FF375F','#FFD60A'],['#0A84FF','#5E5CE6','#64D2FF'],['#FF375F','#BF5AF2','#5E5CE6'],['#32ADE6','#30D158','#FFD60A']];
+const VIV=[['#FF2D55','#FF9500','#FFCC00'],['#5E5CE6','#64D2FF','#BF5AF2'],['#0A84FF','#5E5CE6','#BF5AF2'],['#BF5AF2','#FF375F','#FF9F0A'],['#FF9F0A','#FF375F','#FFD60A'],['#0A84FF','#5E5CE6','#64D2FF'],['#FF375F','#BF5AF2','#5E5CE6'],['#FF6482','#FF9F0A','#FFD60A']];
 const artPal=nb=>{const c=nb.cover||{};return VIV[(c.palette!=null?c.palette:hashStr(nb.id))%VIV.length];};
 const catOf=nb=>nb.category||'The collection';
 function bookCover(nb){
@@ -845,48 +876,56 @@ function nextTab(nb){
   return '#'+nb.id+'-s1-t1';
 }
 const lastNb=()=>{try{return nbById(localStorage.getItem('jpLibrary.last'));}catch(e){return null;}};
-let libQ='';
+let libQ='',libCat='All';
 function viewLibrary(){
   app.textContent='';
   const list=NB.list,cats=[...new Set(list.map(catOf))],feat=lastNb()||list[0];
   const pct=nb=>{const t=tabCount(nb);return t?Math.round(100*doneCount(nb)/t):0;};
+  if(libCat!=='All'&&!cats.includes(libCat))libCat='All';
   const tile=nb=>h('a',{class:'tile',href:'#'+nb.id},
     h('div',{class:'tile-art'},bookCover(nb)),
-    h('div',{class:'tt'},nb.title),h('div',{class:'ts'},pct(nb)?pct(nb)+'% read':catOf(nb)));
-  const lanes=h('div');
-  function drawLanes(){
-    lanes.textContent='';
+    h('div',{class:'tt'},nb.title),h('div',{class:'ts'},pct(nb)?pct(nb)+'% read':nb.sections.length+' chapters'));
+  const addTile=()=>h('a',{class:'tile',href:'#how-to-write'},h('div',{class:'art add'},'+'),h('div',{class:'tt'},'Add a book'),h('div',{class:'ts'},'How to write one'));
+  const body=h('div');
+  const pills=h('div',{class:'cpills',role:'tablist','aria-label':'Collections'});
+  function drawPills(){
+    pills.textContent='';
+    if(cats.length<2&&!list.length)return;
+    [['All',list.length],...cats.map(c=>[c,list.filter(n=>catOf(n)===c).length])].forEach(([c,n])=>
+      pills.append(h('button',{class:'cpill'+(libCat===c?' on':''),type:'button',role:'tab','aria-selected':String(libCat===c),onclick:()=>{libCat=c;drawPills();draw();}},c,h('small',null,String(n)))));
+  }
+  function draw(){
+    body.textContent='';
     const q=libQ.trim().toLowerCase(),match=n=>!q||(n.title+' '+n.subtitle+' '+catOf(n)).toLowerCase().includes(q);
-    const reading=list.filter(n=>match(n)&&pct(n)>0&&pct(n)<100);
-    if(reading.length)lanes.append(h('h2',{class:'rt'},'Continue reading'),h('div',{class:'lane'},reading.map(tile)));
-    let any=false;
-    cats.forEach((c,i)=>{
+    if(feat&&!q&&libCat==='All')body.append(featured(feat));
+    const reading=list.filter(n=>n!==feat&&match(n)&&pct(n)>0&&pct(n)<100&&(libCat==='All'||catOf(n)===libCat));
+    if(reading.length)body.append(h('section',{class:'sect'},h('div',{class:'sect-h'},h('h2',null,'Also reading'),h('span',null,String(reading.length))),h('div',{class:'bgrid'},reading.map(tile))));
+    const shown=libCat==='All'?cats:[libCat];let any=false;
+    shown.forEach((c,i)=>{
       const items=list.filter(n=>catOf(n)===c&&match(n));if(!items.length)return;any=true;
-      const t=items.map(tile);
-      if(i===cats.length-1&&!q)t.push(h('a',{class:'tile',href:'#how-to-write'},h('div',{class:'art add'},'+'),h('div',{class:'tt'},'Add a book'),h('div',{class:'ts'},'How to write one')));
-      lanes.append(h('h2',{class:'rt'},c,h('span',null,'›')),h('div',{class:'lane'},t));
+      const t=items.map(tile);if(i===shown.length-1&&!q)t.push(addTile());
+      body.append(h('section',{class:'sect'},h('div',{class:'sect-h'},h('h2',null,c),h('span',null,items.length+(items.length===1?' book':' books'))),h('div',{class:'bgrid'},t)));
     });
-    if(!any&&q)lanes.append(h('div',{class:'empty-note'},'No books match “'+libQ+'”.'));
-    if(!list.length)lanes.append(h('h2',{class:'rt'},'Your library'),h('div',{class:'lane'},h('a',{class:'tile',href:'#how-to-write'},h('div',{class:'art add'},'+'),h('div',{class:'tt'},'Add your first book'))));
+    if(!any&&q)body.append(h('div',{class:'empty-note'},'No books match “'+libQ+'”.'));
+    if(!list.length)body.append(h('section',{class:'sect'},h('div',{class:'bgrid'},addTile())));
   }
-  drawLanes();
-  let featEl=null,mp=null;
-  if(feat){
-    const p=artPal(feat),tot=tabCount(feat),dn=doneCount(feat),started=dn>0&&dn<tot,st=`--p0:${p[0]};--p1:${p[1]}`;
-    featEl=h('section',{class:'feat glass',style:st},h('div',{class:'feat-bg'}),
-      h('a',{class:'feat-art',href:'#'+feat.id,'aria-label':'Open '+feat.title},bookCover(feat)),
-      h('div',null,h('div',{class:'eyebrow'},started?'Continue reading':'Featured'),h('h2',null,feat.title),h('p',null,feat.subtitle),
-        h('div',{class:'fmeta'},catOf(feat)+' · '+feat.sections.length+' chapters · '+tot+' lessons'),
-        h('div',{class:'acts'},h('a',{class:'pill pri',href:nextTab(feat)},started?'Resume':'Start reading'),h('a',{class:'pill glass',href:'#'+feat.id},'Open book'))));
-    mp=h('a',{class:'mplayer glass',href:nextTab(feat)},bookCover(feat),
-      h('div',{class:'mp-t'},h('b',null,feat.title),h('span',null,started?dn+' of '+tot+' lessons':'Not started · '+tot+' lessons'),h('div',{class:'mp-bar'},h('i',{style:'width:'+pct(feat)+'%'}))));
+  function featured(nb){
+    const tot=tabCount(nb),dn=doneCount(nb),started=dn>0&&dn<tot;
+    const ch=nb.sections.slice(0,5).map((s,i)=>{const sd=s.tabs.filter((_,j)=>isDone(nb,i,j)).length;
+      return h('a',{class:'chrow'+(sd===s.tabs.length?' done':''),href:'#'+nb.id+'-s'+(i+1)},h('span',{class:'n'},String(i+1)),h('span',{class:'t'},s.title),h('span',{class:'c'},sd+'/'+s.tabs.length));});
+    return h('section',{class:'feat glass'},h('div',{class:'feat-bg'}),
+      h('a',{class:'feat-art',href:'#'+nb.id,'aria-label':'Open '+nb.title},bookCover(nb)),
+      h('div',{class:'feat-mid'},h('div',{class:'eyebrow'},started?'Currently reading':dn===tot&&tot?'Finished':'Up next'),h('h2',null,nb.title),h('p',null,nb.subtitle),
+        h('div',{class:'fmeta'},catOf(nb)+' · '+nb.sections.length+' chapters · '+tot+' lessons'+(dn?' · '+pct(nb)+'% read':'')),
+        h('div',{class:'acts'},h('a',{class:'pill pri',href:nextTab(nb)},started?'Resume':'Start reading'),h('a',{class:'pill glass',href:'#'+nb.id},'Open book'))),
+      h('div',{class:'feat-ch'},h('h3',null,'Chapters'),ch));
   }
-  const search=h('input',{class:'gsearch',type:'search',placeholder:'Search your library','aria-label':'Search your library',value:libQ,oninput:e=>{libQ=e.target.value;drawLanes();}});
+  drawPills();draw();
+  const search=h('input',{class:'gsearch',type:'search',placeholder:'Search your library','aria-label':'Search your library',value:libQ,oninput:e=>{libQ=e.target.value;draw();}});
   app.append(
     h('nav',{class:'gnav glass'},h('a',{class:'logo',href:'#'},h('i',null,'JP'),'JP Library'),h('span',{class:'sp'}),search,h('a',{class:'glink',href:'#how-to-write'},'How to write')),
-    h('div',{class:'home-w'},h('h1',{class:'big'},'Library'),featEl,lanes,
-      NB.loadErrors.length?h('div',{class:'empty-note',style:'color:var(--bad)'},NB.loadErrors.join(' · ')):null),
-    mp);
+    h('div',{class:'home-w'},h('div',{class:'home-top'},h('h1',{class:'big'},'Library'),pills),body,
+      NB.loadErrors.length?h('div',{class:'empty-note',style:'color:var(--bad)'},NB.loadErrors.join(' · ')):null));
 }
 function viewHowTo(){
   app.textContent='';
