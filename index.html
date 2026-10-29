@@ -37,7 +37,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 .crumbs a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
 .crumbs a:hover{color:var(--ink)}
 .crumbs .sep{opacity:.5}
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-size:14px;font-weight:500}
+.btn{text-decoration:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-size:14px;font-weight:500}
 .btn:hover{border-color:var(--accent)}
 .btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn[disabled]{opacity:.45;cursor:default}
@@ -191,6 +191,48 @@ select{font:inherit;font-size:13.5px;padding:5px 8px;border-radius:7px;border:1p
   .amp{grid-template-columns:46px minmax(0,1fr) 78px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---- Amped-up look ---- */
+body{background:radial-gradient(1100px 600px at 85% -10%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 60%),radial-gradient(900px 500px at -10% 10%,color-mix(in srgb,var(--amber) 12%,transparent),transparent 60%),var(--bg);background-attachment:fixed}
+.card,.sec,.w,.check,.conn>div,.bridge{box-shadow:0 1px 2px rgba(16,26,38,.05),0 8px 24px -14px rgba(16,26,38,.25)}
+.btn{transition:transform .15s,border-color .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.pri{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#8B5CF6));border:0}
+.bar>i{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 50%,#22D3EE))}
+.lib-head h1{background:linear-gradient(120deg,var(--ink),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.card{position:relative;overflow:hidden;padding:20px 20px 18px 28px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--c,var(--accent))}
+.card::after{content:"";position:absolute;left:10px;top:0;bottom:0;width:2px;background:rgba(255,255,255,.35)}
+a.card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 18px 36px -16px rgba(16,26,38,.4)}
+.grid .card:nth-child(4n+1){--c:#1D4ED8}.grid .card:nth-child(4n+2){--c:#B45309}.grid .card:nth-child(4n+3){--c:#0F766E}.grid .card:nth-child(4n+4){--c:#7C3AED}
+.card.empty{padding-left:20px}.card.empty::before,.card.empty::after{display:none}
+.sec{transition:transform .15s,border-color .15s}a.sec:hover{transform:translateX(4px)}
+
+/* Cover */
+.cover{min-height:calc(100vh - 80px);display:grid;place-items:center;text-align:center;position:relative;overflow:hidden;border-radius:22px;padding:48px 20px;color:#F4F7FB;
+  background:radial-gradient(700px 420px at 50% 0%,#2B3F8F 0%,transparent 70%),radial-gradient(600px 400px at 100% 100%,#6D28D9 0%,transparent 65%),linear-gradient(160deg,#0B1226,#101A38 55%,#0A1020);
+  box-shadow:0 30px 60px -30px rgba(10,16,32,.8);border:1px solid rgba(255,255,255,.12)}
+.cover::before{content:"";position:absolute;inset:14px;border:1px solid rgba(240,200,120,.45);border-radius:14px;pointer-events:none}
+.cover::after{content:"";position:absolute;inset:20px;border:1px solid rgba(240,200,120,.18);border-radius:10px;pointer-events:none}
+.cover-in{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:640px}
+.cover .art{width:min(300px,64vw);aspect-ratio:1/1;margin-bottom:6px}
+.cover .art svg{width:100%;height:100%;display:block}
+.cover .orb{transform-origin:150px 150px;animation:spin 26s linear infinite}
+.cover .orb.b{animation-duration:38s;animation-direction:reverse}
+.cover .orb.c{animation-duration:54s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cover .eyebrow{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.32em;text-transform:uppercase;color:#F0C878}
+.cover h1{font-size:clamp(56px,13vw,112px);font-weight:700;letter-spacing:-.02em;line-height:.95;background:linear-gradient(180deg,#FFFFFF,#AFC2FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cover .full{font-family:var(--f-display);font-size:clamp(17px,3.2vw,22px);color:#C9D4EE}
+.cover .rule{width:90px;height:2px;background:linear-gradient(90deg,transparent,#F0C878,transparent);margin:4px 0}
+.cover .tag{font-family:var(--f-hand);font-size:clamp(24px,4.6vw,32px);color:#F0C878;margin:0}
+.cover .stats{display:flex;gap:26px;font-family:var(--f-mono);font-size:12.5px;color:#9FB0D6;margin-top:4px}
+.cover .stats b{display:block;font-size:24px;color:#fff;font-weight:500}
+.cover .open{margin-top:10px;padding:13px 30px;font-size:16px;font-weight:600;border-radius:999px;border:0;color:#0B1226;text-decoration:none;
+  background:linear-gradient(135deg,#F7DDA0,#F0B35A);box-shadow:0 10px 30px -8px rgba(240,179,90,.7);transition:transform .15s,box-shadow .15s}
+.cover .open:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 16px 36px -8px rgba(240,179,90,.85)}
+.cover .foot{font-family:var(--f-mono);font-size:11.5px;color:#7F90B8;margin-top:6px}
+@media (prefers-reduced-motion:reduce){.cover .orb{animation:none}}
 </style>
 
 <div id="app"></div>
@@ -712,6 +754,28 @@ const tabCount=nb=>nb.sections.reduce((a,s)=>a+s.tabs.length,0);
 const doneCount=nb=>nb.sections.reduce((a,s,i)=>a+s.tabs.filter((_,j)=>isDone(nb,i,j)).length,0);
 const crumbs=(...it)=>h('nav',{class:'crumbs','aria-label':'Breadcrumb'},it.flatMap((x,i)=>[i?h('span',{class:'sep'},'/'):null,x.href?h('a',{href:x.href},x.t):h('span',null,x.t)]));
 
+function viewCover(){
+  app.textContent='';
+  const nbs=NB.list.length,tabs=NB.list.reduce((a,n)=>a+tabCount(n),0),dn=NB.list.reduce((a,n)=>a+doneCount(n),0);
+  const art=`<svg viewBox="0 0 300 300" aria-hidden="true">
+    <defs><radialGradient id="cg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F7DDA0"/><stop offset="1" stop-color="#F0B35A"/></radialGradient></defs>
+    <circle cx="150" cy="150" r="140" fill="none" stroke="#F0C878" stroke-opacity=".25"/>
+    <g class="orb"><ellipse cx="150" cy="150" rx="128" ry="46" fill="none" stroke="#7EA2FF" stroke-width="1.5"/><circle cx="278" cy="150" r="7" fill="#7EA2FF"/></g>
+    <g class="orb b"><g transform="rotate(60 150 150)"><ellipse cx="150" cy="150" rx="128" ry="46" fill="none" stroke="#C4A8FF" stroke-width="1.5"/><circle cx="278" cy="150" r="6" fill="#C4A8FF"/></g></g>
+    <g class="orb c"><g transform="rotate(120 150 150)"><ellipse cx="150" cy="150" rx="128" ry="46" fill="none" stroke="#5EEAD4" stroke-width="1.5"/><circle cx="278" cy="150" r="6" fill="#5EEAD4"/></g></g>
+    <circle cx="150" cy="150" r="26" fill="url(#cg)"/>
+    <text x="150" y="160" text-anchor="middle" font-family="Bricolage Grotesque,sans-serif" font-weight="700" font-size="28" fill="#0B1226">JP</text></svg>`;
+  app.append(h('section',{class:'cover'},h('div',{class:'cover-in'},
+    h('div',{class:'art',html:art}),
+    h('div',{class:'eyebrow'},'Personal collection'),
+    h('h1',null,'JP Library'),
+    h('div',{class:'full'},'Joshi Prathamesh Library'),
+    h('div',{class:'rule'}),
+    h('p',{class:'tag'},'Read it. Sketch it. Own it.'),
+    h('div',{class:'stats'},h('span',null,h('b',null,String(nbs)),nbs===1?'notebook':'notebooks'),h('span',null,h('b',null,String(tabs)),'lessons'),h('span',null,h('b',null,String(dn)),'finished')),
+    h('a',{class:'open',href:'#shelf'},'Open the library →'),
+    h('div',{class:'foot'},'Vol. I · Science, systems & ideas worth keeping'))));
+}
 function viewLibrary(){
   app.textContent='';
   const cards=NB.list.map((nb,i)=>{
@@ -724,7 +788,7 @@ function viewLibrary(){
   });
   NB.loadErrors.forEach(e=>cards.push(h('div',{class:'card'},h('h3',null,'Could not load'),h('p',null,e))));
   cards.push(h('div',{class:'card empty'},h('h3',null,'Next notebook'),h('p',null,'Write it with the instructions, then add its file to notebooks/index.js.')));
-  app.append(h('div',{class:'lib-head'},h('div',null,h('h1',null,'Notebook library'),h('p',null,'Short steps, each one connected to the next, each with a sketch to redraw. Built for quantum error correction and the systems around it.')),
+  app.append(crumbs({t:'Cover',href:'#'},{t:'Shelf'}),h('div',{class:'lib-head'},h('div',null,h('h1',null,'The shelf'),h('p',null,'Short steps, each one connected to the next, each with a sketch to redraw. Pick a book.')),
     h('a',{class:'btn',href:'#how-to-write'},'How to write a notebook')),h('div',{class:'grid'},cards));
 }
 function viewHowTo(){
@@ -734,7 +798,7 @@ function viewHowTo(){
   const copy=h('button',{class:'btn pri',type:'button',onclick:async()=>{
     try{await navigator.clipboard.writeText(txt);st.textContent='Copied.';}
     catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);st.textContent='Selected. Press copy on your keyboard.';}}},'Copy instructions');
-  app.append(crumbs({t:'Library',href:'#'},{t:'How to write a notebook'}),
+  app.append(crumbs({t:'Library',href:'#shelf'},{t:'How to write a notebook'}),
     h('div',{class:'howto'},h('h1',{style:'font-size:clamp(26px,5vw,38px)'},'How to write a notebook'),
       h('p',null,'Paste these instructions into any LLM, then tell it the topic. It returns one file. Add the file name to the list in notebooks/index.js and the notebook appears in the library.'),
       h('div',{class:'row'},copy,st),pre));
@@ -747,7 +811,7 @@ function viewNotebook(nb){
       h('div',{class:'dots'},s.tabs.map((_,j)=>h('i',{class:isDone(nb,i,j)?'on':'',title:s.tabs[j].title})))));
     if(i<nb.sections.length-1)secs.push(h('div',{class:'link-between'},h('b',null,'Leads to section '+(i+2)+'. '),s.bridge));
   });
-  app.append(crumbs({t:'Library',href:'#'},{t:nb.title}),
+  app.append(crumbs({t:'Library',href:'#shelf'},{t:nb.title}),
     h('div',{class:'nb-head'},h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin-top:6px'},dn+' of '+tot+' tabs done')),
     nb._errors.length?h('div',{class:'msg',style:'margin-top:16px;color:var(--bad)'},'Validator: '+nb._errors.join(' | ')):'',
     h('div',{class:'secs'},secs));
@@ -766,7 +830,7 @@ function viewSection(nb,si,ti){
   s.tabs.forEach((t,j)=>{if(j)chain.append(h('span',{class:'join'}));
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
   const body=h('div');
-  app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
+  app.append(crumbs({t:'Library',href:'#shelf'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
     h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),chain,body);
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
@@ -798,12 +862,13 @@ function checkBlock(c){
     if(locked)return;if(i===c.answer){locked=true;opts[i].classList.add('right');why.hidden=false;}else{opts[i].classList.add('wrong');}}},t));
   return h('div',{class:'check'},h('div',{class:'blockhead',style:'margin:0'},h('h3',null,'Check yourself')),h('div',{class:'q'},c.q),h('div',{class:'opts'},opts),why);
 }
-function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#'},'Back to the library'));}
+function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#shelf'},'Back to the library'));}
 
 function route(){
   const hs=decodeURIComponent(location.hash.slice(1));let m;
   window.scrollTo(0,0);
-  if(!hs)return viewLibrary();
+  if(!hs)return viewCover();
+  if(hs==='shelf')return viewLibrary();
   if(hs==='how-to-write')return viewHowTo();
   if(m=hs.match(/^(.+)-s(\d+)-t(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1]&&nb.sections[m[2]-1].tabs[m[3]-1])return viewSection(nb,+m[2]-1,+m[3]-1);}
   if(m=hs.match(/^(.+)-s(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1])return viewSection(nb,+m[2]-1,0);}
