@@ -1,4 +1,4 @@
-# QEC notebook library
+# JP Library
 
 Static site. Open index.html, or enable GitHub Pages (Settings, Pages, deploy from branch main, root).
 
