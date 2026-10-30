@@ -723,7 +723,9 @@ W.qubit=function(o){
       if(one){a=[0,0];b=[1,0];}else{a=[1,0];b=[0,0];}trail=[];refresh(true);}},'Measure (collapse)'),restore));
   }
   col.append(msg);
-  root.append(canvas||'',col);
+  let showAng=false;
+  const angSw=canvas?h('label',{class:'sw'},h('input',{type:'checkbox',onchange:e=>{showAng=e.target.checked;drawBloch(vecAnim||bv());}}),h('span',{class:'tr'}),'Show θ and φ'):null;
+  root.append(canvas?h('div',{class:'col',style:'gap:10px'},canvas,angSw):'',col);
   function drawHist(){if(!histEl)return;const tot=counts[0]+counts[1];histEl._hb.forEach((x,i)=>{x.t.firstChild.style.width=tot?(100*counts[i]/tot)+'%':'0%';x.c.textContent=counts[i];});}
   function refresh(sync){
     const c=tp();
@@ -754,6 +756,17 @@ W.qubit=function(o){
     ctx.setLineDash([3,3]);ctx.strokeStyle=mut;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(o0[0],o0[1]);ctx.lineTo(sh[0],sh[1]);ctx.lineTo(tip[0],tip[1]);ctx.stroke();ctx.setLineDash([]);
     ctx.strokeStyle=acc;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(o0[0],o0[1]);ctx.lineTo(tip[0],tip[1]);ctx.stroke();
     ctx.fillStyle=acc;ctx.beginPath();ctx.arc(tip[0],tip[1],S*.025,0,6.283);ctx.fill();
+    if(showAng){
+      const th=Math.acos(Math.max(-1,Math.min(1,v[2])));let ph=Math.atan2(v[1],v[0]);if(ph<0)ph+=2*Math.PI;
+      const arc=(f,n)=>{ctx.beginPath();for(let i=0;i<=n;i++){const p=P(...f(i/n));i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.stroke();};
+      const lab=(q,t,c)=>{const p=P(...q);ctx.fillStyle=c;ctx.fillText(t,p[0],p[1]);};
+      const cT=amb,cP=cssv('--sk-blue');
+      ctx.font='700 '+Math.round(S*.05)+'px '+getComputedStyle(document.body).fontFamily;ctx.lineWidth=2.2;ctx.setLineDash([]);
+      if(th>.04){const r=.38;ctx.strokeStyle=cT;arc(u=>{const t=th*u;return[r*Math.sin(t)*Math.cos(ph),r*Math.sin(t)*Math.sin(ph),r*Math.cos(t)];},48);
+        const t=th/2,r2=r+.17;lab([r2*Math.sin(t)*Math.cos(ph),r2*Math.sin(t)*Math.sin(ph),r2*Math.cos(t)],'θ '+Math.round(th/RAD)+'°',cT);}
+      if(Math.sin(th)>.05&&ph>.04){const r=.55;ctx.strokeStyle=cP;arc(u=>[r*Math.cos(ph*u),r*Math.sin(ph*u),0],64);
+        const r2=r+.2;lab([r2*Math.cos(ph/2),r2*Math.sin(ph/2),0],'φ '+Math.round(ph/RAD)+'°',cP);}
+    }
   }
   function gate(name){
     if(busy)return;
