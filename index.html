@@ -725,7 +725,10 @@ W.qubit=function(o){
   col.append(msg);
   let showAng=false;
   const angSw=canvas?h('label',{class:'sw'},h('input',{type:'checkbox',onchange:e=>{showAng=e.target.checked;drawBloch(vecAnim||bv());}}),h('span',{class:'tr'}),'Show θ and φ'):null;
-  root.append(canvas?h('div',{class:'col',style:'gap:10px'},canvas,angSw):'',col);
+  let showLen=false;
+  const lenCap=h('div',{class:'mini len-cap',hidden:true});
+  const lenSw=canvas?h('label',{class:'sw'},h('input',{type:'checkbox',onchange:e=>{showLen=e.target.checked;lenCap.hidden=!showLen;drawBloch(vecAnim||bv());}}),h('span',{class:'tr'}),'Show |α| and |β|'):null;
+  root.append(canvas?h('div',{class:'col',style:'gap:10px'},canvas,angSw,lenSw,lenCap):'',col);
   function drawHist(){if(!histEl)return;const tot=counts[0]+counts[1];histEl._hb.forEach((x,i)=>{x.t.firstChild.style.width=tot?(100*counts[i]/tot)+'%':'0%';x.c.textContent=counts[i];});}
   function refresh(sync){
     const c=tp();
@@ -760,12 +763,34 @@ W.qubit=function(o){
       const th=Math.acos(Math.max(-1,Math.min(1,v[2])));let ph=Math.atan2(v[1],v[0]);if(ph<0)ph+=2*Math.PI;
       const arc=(f,n)=>{ctx.beginPath();for(let i=0;i<=n;i++){const p=P(...f(i/n));i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.stroke();};
       const lab=(q,t,c)=>{const p=P(...q);ctx.fillStyle=c;ctx.fillText(t,p[0],p[1]);};
-      const cT=amb,cP=cssv('--sk-blue');
+      const cT=cssv('--sk-green'),cP=cssv('--sk-blue');
       ctx.font='700 '+Math.round(S*.05)+'px '+getComputedStyle(document.body).fontFamily;ctx.lineWidth=2.2;ctx.setLineDash([]);
       if(th>.04){const r=.38;ctx.strokeStyle=cT;arc(u=>{const t=th*u;return[r*Math.sin(t)*Math.cos(ph),r*Math.sin(t)*Math.sin(ph),r*Math.cos(t)];},48);
         const t=th/2,r2=r+.17;lab([r2*Math.sin(t)*Math.cos(ph),r2*Math.sin(t)*Math.sin(ph),r2*Math.cos(t)],'θ '+Math.round(th/RAD)+'°',cT);}
       if(Math.sin(th)>.05&&ph>.04){const r=.55;ctx.strokeStyle=cP;arc(u=>[r*Math.cos(ph*u),r*Math.sin(ph*u),0],64);
         const r2=r+.2;lab([r2*Math.cos(ph/2),r2*Math.sin(ph/2),0],'φ '+Math.round(ph/RAD)+'°',cP);}
+    }
+    if(showLen){
+      // Thales triangle |1⟩ – state – |0⟩: right angle at the state, sides 2|α| and 2|β|, angle θ/2 at |1⟩.
+      const z=Math.max(-1,Math.min(1,v[2])),th=Math.acos(z),ma=Math.sqrt((1+z)/2),mb=Math.sqrt((1-z)/2);
+      const sub=(p,q)=>[p[0]-q[0],p[1]-q[1],p[2]-q[2]],nrm=p=>{const l=Math.hypot(...p)||1;return p.map(x=>x/l);},add=(p,q,k)=>[p[0]+k*q[0],p[1]+k*q[1],p[2]+k*q[2]];
+      const Sv=[0,0,-1],Nv=[0,0,1],ps=P(...Sv),pn=P(...Nv);
+      const seg=(p,c)=>{ctx.strokeStyle=c;ctx.lineWidth=3.2;ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(tip[0],tip[1]);ctx.stroke();ctx.globalAlpha=1;};
+      if(ma>.02)seg(ps,acc);if(mb>.02)seg(pn,amb);
+      ctx.font='700 '+Math.round(S*.046)+'px '+getComputedStyle(document.body).fontFamily;
+      const out=(m,k)=>{const d=nrm(m.some(x=>Math.abs(x)>1e-6)?m:[1,0,0]);return P(...add(m,d,k));};
+      if(ma>.08){const p=out([(v[0]+Sv[0])/2,(v[1]+Sv[1])/2,(v[2]+Sv[2])/2],.24);ctx.fillStyle=acc;ctx.fillText('|α| '+ma.toFixed(2),p[0],p[1]);}
+      if(mb>.08){const p=out([(v[0]+Nv[0])/2,(v[1]+Nv[1])/2,(v[2]+Nv[2])/2],.24);ctx.fillStyle=amb;ctx.fillText('|β| '+mb.toFixed(2),p[0],p[1]);}
+      if(ma>.08&&mb>.08){
+        const u1=nrm(sub(Sv,v)),u2=nrm(sub(Nv,v)),m=.1,c1=P(...add(v,u1,m)),c2=P(...add(add(v,u1,m),u2,m)),c3=P(...add(v,u2,m));
+        ctx.strokeStyle=ink;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(c1[0],c1[1]);ctx.lineTo(c2[0],c2[1]);ctx.lineTo(c3[0],c3[1]);ctx.stroke();
+        const d=nrm(sub(v,Sv)),r=.3;ctx.strokeStyle=ink;ctx.beginPath();
+        for(let i=0;i<=24;i++){const w=nrm(add([0,0,1].map(x=>x*(1-i/24)),d,i/24)),p=P(...add(Sv,w,r));i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.stroke();
+        const wl=nrm(add([0,0,.5],d,.5)),pl=P(...add(Sv,wl,r+.16));ctx.fillStyle=ink;ctx.font='600 '+Math.round(S*.04)+'px '+getComputedStyle(document.body).fontFamily;ctx.fillText('θ/2',pl[0]+S*.03,pl[1]);
+      }
+      lenCap.textContent='Triangle |1⟩ → state → |0⟩ always has a right angle at the state (the axis is a diameter, length 2). '
+        +'Side to |1⟩ = 2|α| = 2cos(θ/2) = '+(2*ma).toFixed(2)+'. Side to |0⟩ = 2|β| = 2sin(θ/2) = '+(2*mb).toFixed(2)+'. '
+        +'Angle at |1⟩ = θ/2 = '+Math.round(th/RAD/2)+'°. Pythagoras: (2|α|)² + (2|β|)² = 2², so |α|² + |β|² = 1.';
     }
   }
   function gate(name){
