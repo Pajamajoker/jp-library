@@ -625,6 +625,14 @@ The library owner then adds 'notebooks/<id>.js' to the list in notebooks/index.j
 
 <script>document.write('<script src="notebooks/index.js?v='+Date.now()+'"><\/script>')</script>
 <script>
+/* auto-update: if GitHub has a newer page than the one the browser kept, refresh the saved copy and reload once */
+(function(){if(!/^https?:/.test(location.protocol)||!window.fetch)return;
+  const u=location.pathname,k='jpLibrary.reloaded';
+  Promise.all([fetch(u,{cache:'force-cache'}).then(r=>r.text()),fetch(u,{cache:'reload'}).then(r=>r.text())]).then(([a,b])=>{
+    if(a!==b&&b.length>1000){if(sessionStorage.getItem(k)===b.length+'')return;sessionStorage.setItem(k,b.length+'');location.reload();}
+  }).catch(()=>{});})();
+</script>
+<script>
 (function(){
 'use strict';
 /* ---------- tiny DOM helpers ---------- */
