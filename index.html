@@ -340,6 +340,14 @@ body.home #app{max-width:none}
 .bgrid .tile{min-width:0}
 @media (max-width:1000px){.feat{grid-template-columns:minmax(0,150px) minmax(0,1fr)!important}.feat-ch{grid-column:1/-1;border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:16px}}
 @media (max-width:700px){.feat{grid-template-columns:1fr!important}.bgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:20px 14px}}
+
+/* Dot grid + cover line art */
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(color-mix(in srgb,var(--ink) 14%,transparent) 1px,transparent 1.4px);background-size:22px 22px}
+.art-fig{position:absolute;width:74cqw;right:-12cqw;top:30cqw;color:#fff;opacity:.88;overflow:visible;pointer-events:none}
+.art-fig *{vector-effect:non-scaling-stroke}
+.art.has-img .art-fig{display:none}
+.art-in{z-index:1}
 </style>
 
 <div id="app"></div>
@@ -433,6 +441,9 @@ Rules
       ops: 'H1' 'X2' 'Z3' 'RX2' (tiny 20 degree tilt) 'CNOT12' (control 1, target 2)
       measure: [1,2] (read single qubits), parity: [[1,2],[2,3]], syndrome: true,
       independence: true (n=2 product test), codeSpace: true, reset: true
+  { type: 'surface' }   distance-3 surface code patch, click data qubits to place errors and see which checks light
+  { type: 'scaling' }   logical error rate versus code distance, with a physical error slider
+  { type: 'stack', unit: 'ns', segments: [ { label: 'text', v: 100 }, ... ], note: 'text' }   one stacked time bar
   { type: 'steps', steps: [ { say: 'sentence', show: 'one line of math' }, ... ] }   reveal a derivation one line at a time
   null   no widget
 
@@ -465,6 +476,31 @@ One question per tab. Three or four options, exactly one right, plausible wrong 
 }
 
 ----------------------------------------------------------------
+7b. COVER (optional, recommended)
+Every book cover shows a simple white line drawing of the book's central object, like the Bloch sphere on Quantum basics. Add it with a cover field next to title and subtitle:
+
+  category: 'Quantum computing',          // groups books into collections on the home page
+  cover: {
+    palette: 2,                           // optional: 0 to 7 picks the cover colours
+    art: [                                // line drawing in a 100 x 100 box, (0,0) top-left
+      O(50, 50, 46),                                  // sphere outline
+      E(50, 50, 46, 15, { rot: -32 }),                // tilted orbit
+      E(50, 50, 46, 15, { rot: 58, dash: true }),     // second orbit, dashed
+      L([[50, 0], [50, 100]], { dash: true }),        // axis
+      L([[50, 50], [30, 17]], { w: 2.6 }),            // state arrow
+      D(30, 17, { r: 4.5 })                           // tip
+    ]
+  },
+
+Rules for cover.art:
+  - Use the same helpers as sketches, except T (no text) and H (no highlights): O, E, L, K, A, B, D.
+  - Coordinates are in a 100 x 100 box. Fill most of it; the drawing sits on the right of the cover and may run off the edge.
+  - Extra opts here: rot (degrees, rotates an ellipse about its centre), w (stroke width, default 1.8), r (dot radius). dash: true works. Colours are ignored: the art is always white.
+  - 4 to 8 parts. One recognisable object for the whole book (a sphere, a lattice of qubits, a circuit, a molecule, a graph), not a scene.
+  - If cover.art is missing, the Bloch sphere above is used.
+  - cover.image: 'https://...' replaces the generated cover with a picture instead.
+
+----------------------------------------------------------------
 8. REGISTRATION
 Wrap the file as:
   (function () {
@@ -476,6 +512,7 @@ The library owner then adds 'notebooks/<id>.js' to the list in notebooks/index.j
 ----------------------------------------------------------------
 9. CHECKLIST (verify each item before you return the file)
 [ ] One NB.register call, valid JavaScript, no trailing prose inside the file.
+[ ] cover.art is a 4 to 8 part line drawing of the book's central object, in the 100 x 100 box.
 [ ] 3 to 6 sections, each with intro and bridge; 3 to 7 tabs each.
 [ ] Every tab has buildsOn and leadsTo, specific, each 25+ characters, and they agree with the neighbouring tabs.
 [ ] Tabs go from smallest piece upward. No tab uses an idea that appears later.
@@ -529,7 +566,7 @@ const NB=window.NB={list:[],loadErrors:[],
     D:(x,y,o)=>Object.assign({t:'dot',x,y},o)
   }};
 const PART_TYPES=['text','box','arrow','line','curve','ellipse','hl','dot'];
-const WIDGETS=['qubit','multi','steps'];
+const WIDGETS=['qubit','multi','steps','surface','scaling','stack'];
 function validate(nb){
   const E=[];const bad=/[—–]/;
   const need=(c,m)=>{if(!c)E.push(m);};
@@ -889,6 +926,79 @@ W.steps=function(o){
   k=1;draw();root.append(list,h('div',{class:'btns'},nx,rs));return root;
 };
 
+/* surface code patch, distance 3 (rotated layout): 9 data qubits, 8 checks */
+W.surface=function(o){
+  const SX=[[0,1],[1,2,4,5],[3,4,6,7],[7,8]],SZ=[[0,1,3,4],[4,5,7,8],[3,6],[2,5]];
+  const NRM={'0,1':[0,-1],'7,8':[0,1],'3,6':[-1,0],'2,5':[1,0]};
+  const err=Array(9).fill(0),pos=i=>[110+(i%3)*80,110+Math.floor(i/3)*80];
+  const svg=sv('svg',{viewBox:'0 0 380 340',role:'img','aria-label':'Distance 3 surface code patch','style':'width:100%;max-width:440px;height:auto;display:block;margin:0 auto'});
+  const stabs=[];
+  const mk=(type,q)=>{const P=q.map(pos);let shape,cx,cy;
+    if(q.length===4){const xs=P.map(a=>a[0]),ys=P.map(a=>a[1]),x0=Math.min(...xs)+7,y0=Math.min(...ys)+7,w=Math.max(...xs)-Math.min(...xs)-14,hh=Math.max(...ys)-Math.min(...ys)-14;
+      shape=sv('rect',{x:x0,y:y0,width:w,height:hh,rx:8});cx=x0+w/2;cy=y0+hh/2;}
+    else{const nv=NRM[q.join(',')],a=P[0],b=P[1],ext=44,x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);
+      let rx,ry,rw,rh;if(nv[0]===0){rx=x0-14;rw=x1-x0+28;ry=nv[1]<0?y0-ext:y0-14;rh=ext+14;}else{ry=y0-14;rh=y1-y0+28;rx=nv[0]<0?x0-ext:x0-14;rw=ext+14;}
+      shape=sv('rect',{x:rx,y:ry,width:rw,height:rh,rx:22});cx=nv[0]===0?(a[0]+b[0])/2:(nv[0]<0?x0-ext/2-2:x0+ext/2+2);cy=nv[0]===0?(nv[1]<0?y0-ext/2-2:y0+ext/2+2):(a[1]+b[1])/2;}
+    const col=type==='Z'?'var(--accent)':'var(--amber)';
+    shape.setAttribute('fill',col);shape.setAttribute('fill-opacity','.16');shape.setAttribute('stroke',col);shape.setAttribute('stroke-width','1.5');shape.setAttribute('stroke-dasharray','4 3');
+    const anc=sv('circle',{cx,cy,r:12,fill:'var(--surface)',stroke:col,'stroke-width':2});
+    const lt=sv('text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':12,'font-family':'var(--f-mono)',fill:col,'font-weight':'600','pointer-events':'none'},type);
+    svg.append(shape,anc,lt);stabs.push({type,q,anc,lt,col});};
+  SZ.forEach(q=>mk('Z',q));SX.forEach(q=>mk('X',q));
+  const dq=[];
+  for(let i=0;i<9;i++){const [x,y]=pos(i);const c=sv('circle',{cx:x,cy:y,r:16,fill:'var(--surface)',stroke:'var(--ink)','stroke-width':2});
+    const t=sv('text',{x,y:y+5,'text-anchor':'middle','font-size':15,'font-family':'var(--f-mono)',fill:'var(--ink)','font-weight':'600','pointer-events':'none'},'');
+    const g=sv('g',{tabindex:0,role:'button','aria-label':'Data qubit '+i,style:'cursor:pointer'},c,t);
+    const flip=()=>{err[i]=(err[i]+1)%4;draw();};
+    g.addEventListener('click',flip);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}});
+    svg.append(g);dq.push({c,t});}
+  const msg=h('div',{class:'msg'},'Click a data qubit to cycle: none, X error, Z error, Y error (both).');
+  const setE=(arr,t)=>{err.fill(0);arr.forEach(i=>err[i]=t);draw();};
+  const B=(t,fn)=>h('button',{class:'btn sm',type:'button',onclick:fn},t);
+  const root=h('div',{class:'w'},svg,h('div',{class:'btns'},B('Clear',()=>setE([],0)),B('One X in the middle',()=>setE([4],1)),B('One Z in a corner',()=>setE([0],2)),B('X on left column',()=>setE([0,3,6],1)),B('Z on top row',()=>setE([0,1,2],2))),msg,
+    h('div',{class:'mini'},h('i',{class:'sw-key',style:'background:var(--accent)'}),' Z-checks detect X errors. ',h('i',{class:'sw-key',style:'background:var(--amber)'}),' X-checks detect Z errors. A lit check is filled.'));
+  function draw(){
+    const xe=new Set(),ze=new Set();err.forEach((e,i)=>{if(e===1||e===3)xe.add(i);if(e===2||e===3)ze.add(i);});
+    let fired=0;
+    stabs.forEach(s=>{const set=s.type==='Z'?xe:ze;let k=0;s.q.forEach(i=>{if(set.has(i))k++;});const on=k%2===1;if(on)fired++;
+      s.anc.setAttribute('fill',on?s.col:'var(--surface)');s.lt.setAttribute('fill',on?'var(--surface)':s.col);s.anc.setAttribute('r',on?15:12);});
+    dq.forEach((d,i)=>{const e=err[i];d.t.textContent=e?['','X','Z','Y'][e]:'';d.c.setAttribute('fill',e?'var(--bad)':'var(--surface)');d.t.setAttribute('fill',e?'var(--surface)':'var(--ink)');});
+    const n=err.filter(Boolean).length,onlyX=[...xe].sort().join()==='0,3,6'&&ze.size===0,onlyZ=[...ze].sort().join()==='0,1,2'&&xe.size===0;
+    let m;
+    if(!n)m='No errors. All checks quiet.';
+    else if(onlyX||onlyZ)m='Every check is quiet, yet three qubits are wrong. This chain crosses the whole patch, so it flips the stored qubit and nothing notices. Its length, 3, is the distance.';
+    else if(!fired)m='Every check is quiet. This pattern is either harmless (a product of checks) or a logical error.';
+    else m=fired+' check'+(fired>1?'s':'')+' lit. The decoder sees only this pattern, not the errors.';
+    msg.textContent=m;
+  }
+  draw();root._test={err,draw};return root;
+};
+
+/* logical error rate versus distance (rule of thumb) */
+W.scaling=function(o){
+  const ds=[3,5,7,9],PTH=1;let p=0.4;
+  const out=h('output',null,p+'%'),inp=h('input',{type:'range',min:.1,max:1.5,step:.05,value:p,'aria-label':'Physical error rate'});
+  const rows=ds.map(d=>{const f=h('i'),v=h('span');return{d,f,v,el:[h('span',null,'d = '+d),h('div',{class:'trk'},f),v]};});
+  const hist=h('div',{class:'hist',style:'grid-template-columns:64px 1fr 76px'});rows.forEach(r=>hist.append(...r.el));
+  const msg=h('div',{class:'msg'});
+  function draw(){const out_=[];rows.forEach(r=>{const pl=Math.min(1,0.1*Math.pow(p/PTH,(r.d+1)/2));const fr=Math.max(0,Math.min(1,(Math.log10(pl)+9)/9));
+    r.f.style.width=(fr*100)+'%';r.f.className=p>PTH?'b':'';r.v.textContent=pl.toExponential(0);});
+    out.textContent=(Math.round(p*100)/100)+'%';
+    msg.textContent=p<PTH?'Below the threshold: every step up in d lowers the logical error rate.':(p>PTH?'Above the threshold: more qubits make things worse.':'At the threshold: d does not matter.');}
+  inp.addEventListener('input',()=>{p=+inp.value;draw();});
+  draw();
+  return h('div',{class:'w'},h('div',{class:'sl'},h('label',null,'physical error'),inp,out),hist,
+    h('div',{class:'mini'},'Rough model: logical rate ≈ 0.1 · (p / 1%)^((d+1)/2). Bar length is on a log scale. Qubits needed: 17, 49, 97, 161.'),msg);
+};
+
+/* stacked time bar */
+W.stack=function(o){
+  const tot=o.segments.reduce((a,s)=>a+s.v,0),cols=['var(--accent)','var(--amber)','var(--ok)','var(--muted)'];
+  const bar=h('div',{style:'display:flex;height:34px;border-radius:8px;overflow:hidden;background:var(--soft)'},o.segments.map((s,i)=>h('div',{style:'flex:'+s.v+' 1 0;background:'+cols[i%4]+';min-width:3px',title:s.label+': '+s.v})));
+  const leg=h('div',{class:'col',style:'gap:6px'},o.segments.map((s,i)=>h('div',{class:'row',style:'gap:10px;font-size:14px'},h('i',{style:'width:14px;height:14px;border-radius:3px;background:'+cols[i%4]+';display:block;flex:none'}),h('span',null,s.label),h('span',{class:'mono',style:'margin-left:auto'},s.v.toLocaleString('en-US')+' '+o.unit+'  ('+Math.round(100*s.v/tot)+'%)'))));
+  return h('div',{class:'w'},bar,leg,h('div',{class:'mono',style:'font-size:14px'},'Total: '+tot.toLocaleString('en-US')+' '+o.unit),o.note?h('div',{class:'mini'},o.note):null);
+};
+
 function widgetFor(w){if(!w)return null;const f=W[w.type];return f?f(w):null;}
 
 /* ================= VIEWS ================= */
@@ -903,10 +1013,28 @@ const hashStr=t=>{let x=2166136261;for(const c of t){x^=c.charCodeAt(0);x=Math.i
 const VIV=[['#FF2D55','#FF9500','#FFCC00'],['#5E5CE6','#64D2FF','#BF5AF2'],['#0A84FF','#5E5CE6','#BF5AF2'],['#BF5AF2','#FF375F','#FF9F0A'],['#FF9F0A','#FF375F','#FFD60A'],['#0A84FF','#5E5CE6','#64D2FF'],['#FF375F','#BF5AF2','#5E5CE6'],['#FF6482','#FF9F0A','#FFD60A']];
 const artPal=nb=>{const c=nb.cover||{};return VIV[(c.palette!=null?c.palette:hashStr(nb.id))%VIV.length];};
 const catOf=nb=>nb.category||'The collection';
+const {O:_O,E:_E,L:_L,D:_D}=NB.sk;
+const BLOCH_ART=[_O(50,50,46),_E(50,50,46,15,{rot:-32}),_E(50,50,46,15,{rot:58,dash:true}),_L([[50,0],[50,100]],{dash:true}),_L([[50,50],[30,17]],{w:2.6}),_D(30,17,{r:4.5})];
+function coverFig(art){
+  const g=sv('svg',{class:'art-fig',viewBox:'0 0 100 100','aria-hidden':'true',fill:'none',stroke:'currentColor','stroke-linecap':'round','stroke-linejoin':'round'});
+  const pts=a=>a.map(q=>q[0]+','+q[1]).join(' ');
+  (Array.isArray(art)?art:[]).forEach(p=>{
+    const st={'stroke-width':p.w||1.8,'stroke-dasharray':p.dash?'4 4':null};let e=null;
+    if(p.t==='ellipse')e=sv('ellipse',Object.assign({cx:p.x,cy:p.y,rx:p.rx,ry:p.ry,transform:p.rot?`rotate(${p.rot} ${p.x} ${p.y})`:null},st));
+    else if(p.t==='line'&&p.pts)e=sv('polyline',Object.assign({points:pts(p.pts)},st));
+    else if(p.t==='curve'&&p.pts){const a=p.pts;let d='M'+a[0];for(let i=1;i<a.length;i++){const m=[(a[i-1][0]+a[i][0])/2,(a[i-1][1]+a[i][1])/2];d+=i===1?' L'+m:' Q'+a[i-1]+' '+m;}d+=' L'+a[a.length-1];e=sv('path',Object.assign({d},st));}
+    else if(p.t==='arrow'){const an=Math.atan2(p.y2-p.y1,p.x2-p.x1),k=6,b=[[p.x2-k*Math.cos(an-.45),p.y2-k*Math.sin(an-.45)],[p.x2,p.y2],[p.x2-k*Math.cos(an+.45),p.y2-k*Math.sin(an+.45)]];
+      e=sv('g',st,sv('line',{x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2}),sv('polyline',{points:pts(b)}));}
+    else if(p.t==='box')e=sv('rect',Object.assign({x:p.x,y:p.y,width:p.w2||p.w,height:p.h,rx:3},st,{'stroke-width':1.8}));
+    else if(p.t==='dot')e=sv('circle',{cx:p.x,cy:p.y,r:p.r||3,fill:'currentColor',stroke:'none'});
+    if(e)g.append(e);});
+  return g;
+}
 function bookCover(nb){
   const c=nb.cover||{},p=artPal(nb),k=hashStr(nb.id);
   const st=`--p0:${p[0]};--p1:${p[1]};--p2:${p[2]};--x1:${15+k%45}%;--y1:${10+(k>>>3)%35}%;--x2:${55+(k>>>6)%35}%;--y2:${55+(k>>>9)%40}%`;
   return h('div',{class:'art'+(c.image?' has-img':''),style:st},
+    c.image?null:coverFig(c.art||BLOCH_ART),
     c.image?h('img',{src:c.image,alt:'',loading:'lazy',referrerpolicy:'no-referrer',onerror:e=>{e.target.parentNode.classList.remove('has-img');e.target.remove();}}):null,
     h('div',{class:'art-in'},h('span',{class:'art-brand'},'JP Library'),h('span',{class:'art-t'},nb.title)));
 }
