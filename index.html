@@ -422,6 +422,12 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   .rail .chip .t{overflow:visible;text-overflow:clip;padding-top:2px}
   .rail .join{flex:0 0 12px;width:2px;height:12px;align-self:auto;margin-left:22px;border-radius:2px}
 }
+.rs{margin:0 12px 12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.rs h1{font-size:19px;line-height:1.25;letter-spacing:-.015em;margin:0 0 6px}
+.rs p{font-size:13px;line-height:1.5;color:var(--muted);margin:0}
+.sec-top .crumbs{margin-bottom:18px}
+@media (max-width:1099px){.rail-h{display:flex;justify-content:space-between;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 6px}
+  .rs{margin:0 0 10px;padding:0;border:0}.rs h1{font-size:18px}.rs p{display:none}}
 @media (max-width:1099px){.rail{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0}}
 
 /* section-end card */
@@ -1350,10 +1356,10 @@ function viewSection(nb,si,ti){
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
   const body=h('div',{class:'sec-body'});
   const dn=s.tabs.filter((_,j)=>isDone(nb,si,j)).length;
-  const rail=h('aside',{class:'rail glass','aria-label':'Tabs'},h('div',{class:'rail-h'},h('span',null,'Section '+(si+1)),h('span',null,dn+' / '+s.tabs.length+' done')),chain);
+  const rail=h('aside',{class:'rail glass','aria-label':'Tabs'},h('div',{class:'rail-h'},h('span',null,'Section '+(si+1)),h('span',null,dn+' / '+s.tabs.length+' done')),
+    h('div',{class:'rs'},h('h1',null,s.title),h('p',null,s.intro)),chain);
   document.body.classList.add('secv');
-  app.append(h('div',{class:'sec-grid'},h('div',{class:'sec-top'},crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
-    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro))),rail,body));
+  app.append(h('div',{class:'sec-grid'},h('div',{class:'sec-top'},crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title})),rail,body));
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
   const tid=nb.id+'-'+si+'-'+ti;
