@@ -422,6 +422,17 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   .rail .join{flex:0 0 12px;width:2px;height:12px;align-self:auto;margin-left:22px;border-radius:2px}
 }
 @media (max-width:1099px){.rail{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0}}
+
+/* section-end card */
+.bridge2{position:relative;overflow:hidden;display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px 28px;padding:24px 26px 24px 30px!important}
+.bridge2::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--accent),#BF5AF2)}
+.bridge2::after{content:"";position:absolute;right:-80px;top:-80px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 22%,transparent),transparent 70%);pointer-events:none}
+.bridge2 .bx{display:flex;flex-direction:column;gap:6px;min-width:0}
+.bridge2 .k{color:var(--accent)!important;font-weight:600}
+.bridge2 h3{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.bridge2 p{max-width:none!important;color:var(--muted);font-size:15.5px!important;line-height:1.55}
+.bridge2 .bgo{position:relative;z-index:1;white-space:nowrap;padding:12px 22px;font-size:15px}
+@media (max-width:700px){.bridge2{grid-template-columns:1fr}.bridge2 .bgo{justify-self:start}}
 </style>
 
 <div id="app"></div>
@@ -1341,7 +1352,10 @@ function viewSection(nb,si,ti){
     sk,
     w?h('div',null,h('div',{class:'blockhead'},h('h3',null,'Try it')),w):null,
     chk,
-    isLast?h('div',{class:'bridge'},h('span',{class:'k'},'How this section connects to the next'),h('p',null,s.bridge)):null,
+    isLast?(()=>{const nx=nb.sections[si+1];
+      return h('div',{class:'bridge bridge2'},
+        h('div',{class:'bx'},h('span',{class:'k'},nx?'Up next · Section '+(si+2):'End of the book'),h('h3',null,nx?nx.title:'You finished '+nb.title),h('p',null,s.bridge)),
+        h('a',{class:'btn pri bgo',href:nx?'#'+nb.id+'-s'+(si+2):'#'+nb.id},nx?'Start Section '+(si+2)+' →':'Back to the book'));})():null,
     h('div',{class:'nav'},
       nbr.prev?h('button',{class:'btn',type:'button',onclick:()=>go(nbr.prev.go.slice(1))},'← '+nbr.prev.t):h('span'),
       h('div',{class:'row'},isDone(nb,si,ti)?h('span',{class:'mini'},'Marked done'):null,doneBtn)))
