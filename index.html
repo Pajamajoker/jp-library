@@ -560,6 +560,7 @@ If you need a widget that does not exist, use 'steps' and say so in a one-line c
 ----------------------------------------------------------------
 6. CHECK QUESTION
 One question per tab. Three or four options, exactly one right, plausible wrong ones that match real misunderstandings. "why" is one sentence.
+The page shuffles the options on display (the same order on every visit), so "answer" may point at any position. Never write an option that depends on its place in the list, such as "Both of the above".
 
 ----------------------------------------------------------------
 7. EXAMPLE TAB
@@ -1405,7 +1406,9 @@ function checkBlock(c){
   let locked=false;const why=h('div',{class:'why',hidden:true},c.why);
   const opts=c.options.map((t,i)=>h('button',{class:'opt',type:'button',onclick:()=>{
     if(locked)return;if(i===c.answer){locked=true;opts[i].classList.add('right');why.hidden=false;}else{opts[i].classList.add('wrong');}}},t));
-  return h('div',{class:'check'},h('div',{class:'blockhead',style:'margin:0'},h('h3',null,'Check yourself')),h('div',{class:'q'},c.q),h('div',{class:'opts'},opts),why);
+  /* show options in a stable shuffled order (seeded by the question), so the right answer is not always first */
+  const r=rng(hash(c.q)),ord=opts.map((_,i)=>i);for(let i=ord.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]];}
+  return h('div',{class:'check'},h('div',{class:'blockhead',style:'margin:0'},h('h3',null,'Check yourself')),h('div',{class:'q'},c.q),h('div',{class:'opts'},ord.map(i=>opts[i])),why);
 }
 function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#'},'Back to the library'));}
 
