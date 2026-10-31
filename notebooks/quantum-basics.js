@@ -362,7 +362,7 @@
           {
             title: 'Two qubits, four amplitudes',
             buildsOn: 'Section 2 described one qubit by (α, β), one number per readout result. Two qubits need one number per readout pattern.',
-            leadsTo: 'Next, the special case where the four numbers still split into one (α, β) per qubit.',
+            leadsTo: 'Next, two ordinary coins show what it means for four numbers to split into one pair per coin, before any amplitudes.',
             idea: [
               'Readout patterns are 00, 01, 10, 11. Each one gets an amplitude.',
               'State = a₀₀|00⟩ + a₀₁|01⟩ + a₁₀|10⟩ + a₁₁|11⟩.',
@@ -391,13 +391,54 @@
             }
           },
           {
+            title: 'Separate coins or glued coins',
+            buildsOn: 'The four-amplitudes tab gave two qubits a table of four numbers. Ordinary coins show the key question with plain chances first.',
+            leadsTo: 'Next, the same diagonal check on qubit amplitudes instead of coin chances.',
+            idea: [
+              'Two *separate* coins: the chance of each pair is coin A times coin B. The table is a multiplication table.',
+              'Two *glued* coins always land the same way: HH 0.5, TT 0.5, never HT or TH.',
+              'Each glued coin alone is 50/50, but 50/50 times 50/50 gives 0.25 in every box. No pair of separate coins fits.',
+              'Quick check: top-left × bottom-right equals top-right × bottom-left exactly when the coins are separate.'
+            ],
+            sketch: [
+              T(150, 34, 'separate', { anchor: 'middle', size: 28, c: 'blue' }),
+              B(60, 50, 90, 60), B(150, 50, 90, 60), B(60, 110, 90, 60), B(150, 110, 90, 60),
+              T(105, 90, '0.4', { anchor: 'middle', size: 28 }), T(195, 90, '0.1', { anchor: 'middle', size: 28 }),
+              T(105, 150, '0.4', { anchor: 'middle', size: 28 }), T(195, 150, '0.1', { anchor: 'middle', size: 28 }),
+              T(150, 210, '0.4·0.1 = 0.1·0.4', { anchor: 'middle', size: 26, c: 'green' }),
+              T(450, 34, 'glued', { anchor: 'middle', size: 28, c: 'red' }),
+              B(360, 50, 90, 60), B(450, 50, 90, 60), B(360, 110, 90, 60), B(450, 110, 90, 60),
+              T(405, 90, '0.5', { anchor: 'middle', size: 28 }), T(495, 90, '0', { anchor: 'middle', size: 28 }),
+              T(405, 150, '0', { anchor: 'middle', size: 28 }), T(495, 150, '0.5', { anchor: 'middle', size: 28 }),
+              T(450, 210, '0.5·0.5 ≠ 0·0', { anchor: 'middle', size: 26, c: 'red' }),
+              H(60, 248, 480, 42, { c: 'yellow' }),
+              T(300, 278, 'diagonals match  ⇔  separate', { anchor: 'middle', size: 30 })
+            ],
+            takeaway: 'Separate coins make a multiplication table. Glued coins do not.',
+            widget: { type: 'steps', steps: [
+              { say: 'Coin A is fair. Coin B is weighted towards heads.', show: 'A: heads 0.5, tails 0.5     B: heads 0.8, tails 0.2' },
+              { say: '*Separate* coins: the chance of a pair is A times B.', show: 'HH 0.4   HT 0.1   TH 0.4   TT 0.1' },
+              { say: 'Multiply diagonally: HH·TT and HT·TH.', show: '0.4 × 0.1 = 0.04     0.1 × 0.4 = 0.04     same' },
+              { say: 'They match because each product uses all four coin numbers once: (A heads)(B heads)(A tails)(B tails).', show: '0.5 · 0.8 · 0.5 · 0.2 = 0.04' },
+              { say: 'Now *glued* coins: they always land the same way, half HH, half TT.', show: 'HH 0.5   HT 0   TH 0   TT 0.5' },
+              { say: 'Each coin alone is 50/50. Separate 50/50 coins would give 0.25 in every box. That is not this table.', show: '0.25, 0.25, 0.25, 0.25  ≠  0.5, 0, 0, 0.5' },
+              { say: 'The diagonal check catches it at once.', show: '0.5 × 0.5 = 0.25     0 × 0 = 0     different, so glued' }
+            ] },
+            check: {
+              q: 'Two coins give HH 0.3, HT 0.3, TH 0.2, TT 0.2. Separate or glued?',
+              options: ['Separate: 0.3·0.2 = 0.3·0.2', 'Glued: HH is not 0.25', 'Glued: the four numbers differ', 'Cannot tell'],
+              answer: 0,
+              why: 'HH·TT = 0.06 and HT·TH = 0.06. Same, so separate: coin A is heads 0.6, coin B is heads 0.5, and 0.6 × 0.5 = 0.3.'
+            }
+          },
+          {
             title: 'Independent states and the test',
-            buildsOn: 'The four-amplitudes tab had four free amplitudes. Here: when can they still be split into one (α, β) per qubit?',
+            buildsOn: 'The coins tab showed that separate coins make a multiplication table and pass the diagonal check. Qubits work the same way with amplitudes.',
             leadsTo: 'Next, what it means when the split is impossible. That is entanglement.',
             idea: [
-              'Independent means each qubit has its own (α, β). Then a₀₀ = α₁α₂, a₀₁ = α₁β₂, and so on.',
-              'Test: *a₀₀·a₁₁ = a₀₁·a₁₀* holds exactly when the state is independent.',
-              'Try the presets. Watch the two products.'
+              'Same as the coins, with amplitudes. Independent: each qubit has its own (α, β), and a₀₀ = α₁α₂, a₀₁ = α₁β₂, a₁₀ = β₁α₂, a₁₁ = β₁β₂.',
+              'Test: *a₀₀·a₁₁ = a₀₁·a₁₀*. If independent, both sides are α₁β₁α₂β₂. Different products mean no split exists.',
+              'Example: |+⟩|0⟩ has a₀₀ = a₁₀ = 0.707, a₀₁ = a₁₁ = 0. Products 0 and 0, equal: independent. Try the presets below.'
             ],
             sketch: [
               B(20, 40, 150, 60), T(95, 78, '(α₁, β₁)', { anchor: 'middle', size: 28, c: 'red' }),
@@ -426,7 +467,8 @@
             leadsTo: 'Next, the gate that builds entanglement from independent qubits: CNOT.',
             idea: [
               'If the test fails, there is *no* (α, β) for qubit 1 alone. The pair owns the state.',
-              'Bell state (|00⟩ + |11⟩)/√2: the two readouts always agree, yet each alone is a fair coin.',
+              'The Bell state (|00⟩ + |11⟩)/√2 is the glued coins: 0.707 on 00 and 11, 0 on 01 and 10. Squared: 00 or 11, 50/50.',
+              'Unlike glued coins, they also agree when both are read with the X readout (+ or −). No note fixed in advance explains that.',
               'Asking "what is qubit 1\'s α?" has no answer. This is the root of most early confusion.'
             ],
             sketch: [
