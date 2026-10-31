@@ -37,6 +37,11 @@
             "means": "Phase flip. Flips the sign of β, so |+⟩ ↔ |−⟩. Invisible to the 0/1 readout."
           },
           {
+            "term": "Blend",
+            "hover": false,
+            "means": "A small error written as mostly I plus a little X, Y or Z. A tilt by δ: cos(δ/2)·I − i·sin(δ/2)·X."
+          },
+          {
             "term": "Y error",
             "means": "X and Z together (up to an overall phase)."
           },
@@ -113,6 +118,21 @@
             "means": "Do they agree in the +/− view? Catches Z errors. Same as H on each, then a parity check."
           },
           {
+            "term": "Z1Z2",
+            "aka": ["Z2Z3"],
+            "means": "Z on q1 and Z on q2: a Z-type check. +1 when q1 and q2 match (parity 0), −1 when they differ (parity 1)."
+          },
+          {
+            "term": "X1X2",
+            "aka": ["X2X3"],
+            "means": "X on q1 and X on q2: an X-type check. +1 when their signs (+ or −) match, −1 when they differ."
+          },
+          {
+            "term": "±1",
+            "hover": false,
+            "means": "How QEC writes check answers. +1 = match = parity 0. −1 = differ = parity 1."
+          },
+          {
             "term": "Stabilizer",
             "means": "A check the code state always passes. A code is defined by its list of stabilizers."
           },
@@ -161,12 +181,12 @@
       /* ============================ SECTION 1 ============================ */
       {
         title: 'Why qubits need protecting',
-        intro: 'Qubits are fragile, cannot be copied, and cannot be peeked at. Errors come in two basic kinds, and every other error is a mix of them.',
-        bridge: 'You now know the two basic errors, X and Z, and that a check forces any error to become one of them. Section 2 builds the first code, which catches X errors.',
+        intro: 'Quantum basics showed one X error ruining a qubit, and the three-qubit code that catches it. Real noise is messier. This section names its kinds.',
+        bridge: 'You know the two basic errors, X and Z, that small errors are blends of them, and that a code may neither copy nor read. Section 2 revisits the bit-flip code with new names for its checks.',
         tabs: [
           {
             title: 'Noise changes (α, β)',
-            buildsOn: 'Quantum basics described a qubit as a pair (α, β). Noise is anything that changes that pair without being asked.',
+            buildsOn: 'Quantum basics Section 4 showed one X error swapping α and β. Real noise is broader: any unwanted change to (α, β).',
             leadsTo: 'Next, the two simplest ways the pair can change: swap the amplitudes, or flip the sign of β.',
             idea: [
               'Real qubits drift. Heat, stray fields and imperfect gates all nudge (α, β).',
@@ -232,48 +252,48 @@
             }
           },
           {
-            title: 'Any error is a blend of four',
-            buildsOn: 'The last tab named X, Y and Z. This tab says why QEC only has to handle those and not every possible nudge.',
-            leadsTo: 'Next, a different obstacle: you cannot copy a qubit or look at it, so how do you check anything?',
+            title: 'Small errors are blends',
+            buildsOn: 'The last tab named X, Y and Z as full flips. Real noise is usually a small nudge. This tab writes a nudge in terms of them.',
+            leadsTo: 'Next, the two rules that make fixing any of this hard: no copying, no peeking.',
             idea: [
-              'A small drift is a blend: mostly "no error", a little bit of X, Y or Z.',
-              'Example: a small tilt of angle δ about x is cos(δ/2) · (no error) − i·sin(δ/2) · X.',
-              'A check forces the blend to pick one: clean, or fully flipped. So fixing X, Y and Z fixes every error.'
+              'Noise rarely does a full X. It tilts the qubit a little, by a small angle δ.',
+              'A tilt about x is a blend: *cos(δ/2) × (no error) − i·sin(δ/2) × (X error)*. Most of it is "no error".',
+              'For δ = 20°: cos 10° = 0.98 and sin 10° = 0.17. Squared, that is about 97% clean and 3% X.',
+              'Any small error splits like this into I, X, Y and Z parts. Section 2 shows a check picks one part.'
             ],
             sketch: [
-              T(40, 60, 'small drift', { size: 30, c: 'red' }),
-              A(180, 52, 250, 52, { c: 'ink' }),
+              T(40, 60, 'small tilt', { size: 30, c: 'red' }),
+              A(180, 52, 250, 52),
               T(264, 60, 'cos(δ/2)·none  −  i·sin(δ/2)·X', { size: 28 }),
-              H(262, 70, 340, 4, { c: 'yellow' }),
-              A(330, 84, 150, 166, { c: 'blue' }), A(400, 84, 340, 166, { c: 'blue' }),
-              T(440, 150, 'check finds:', { size: 26, c: 'blue' }),
-              B(40, 170, 170, 60), T(125, 210, 'no error', { anchor: 'middle', size: 30 }),
-              B(250, 170, 170, 60), T(335, 210, 'full X flip', { anchor: 'middle', size: 30, c: 'red' }),
-              T(125, 262, 'big chance', { anchor: 'middle', size: 24, c: 'green' }),
-              T(335, 262, 'small chance', { anchor: 'middle', size: 24, c: 'green' }),
-              H(36, 280, 500, 36, { c: 'mint' }),
-              T(40, 308, 'either way, we can fix it', { size: 30 })
+              B(60, 120, 220, 70, { c: 'green' }), T(170, 164, '0.98 · none', { anchor: 'middle', size: 30, c: 'green' }),
+              B(360, 120, 220, 70, { c: 'red' }), T(470, 164, '0.17 · X', { anchor: 'middle', size: 30, c: 'red' }),
+              T(170, 226, '97% weight', { anchor: 'middle', size: 24 }),
+              T(470, 226, '3% weight', { anchor: 'middle', size: 24 }),
+              H(60, 256, 520, 44, { c: 'yellow' }),
+              T(320, 288, 'a nudge = mostly nothing + a little X', { anchor: 'middle', size: 26 })
             ],
-            takeaway: 'A check turns a messy error into a clean one we can fix.',
-            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2'], syndrome: true, codeSpace: true, reset: true },
+            takeaway: 'A small error is mostly "no error" plus a little X, Y or Z.',
+            widget: { type: 'steps', steps: [
+              { say: 'Noise tilts the qubit by δ = 20° about the x axis.', show: 'tilt(20°)' },
+              { say: 'Write the tilt as a blend of "no error" and X.', show: 'cos(10°) · none  −  i · sin(10°) · X' },
+              { say: 'Put in the numbers.', show: '0.98 · none  −  0.17i · X' },
+              { say: 'Square the sizes to get the weights.', show: '0.98² ≈ 0.97 · 0.17² ≈ 0.03' },
+              { say: 'So the nudge is about 97% "nothing happened" and 3% "X happened".', show: '97% none · 3% X' },
+              { say: 'Tilts about other axes blend in Y or Z the same way.', show: 'any small error = a·I + b·X + c·Y + d·Z' }
+            ] },
             check: {
-              q: 'A small partial error hits one qubit. The syndrome is read. What is the qubit now?',
-              options: [
-                'Still partly flipped',
-                'Either not flipped, or fully flipped',
-                'Always fully flipped',
-                'Unchanged and unreadable'
-              ],
-              answer: 1,
-              why: 'The check projects onto "no error" or "full flip". Both can be repaired.'
+              q: 'A tilt of δ = 20° about x. Roughly how much of it is an X error?',
+              options: ['About 3%', 'About 50%', 'About 20%', 'All of it'],
+              answer: 0,
+              why: 'sin(10°) ≈ 0.17, and 0.17² ≈ 0.03. The other 97% is "no error".'
             }
           },
           {
             title: 'No copying, no peeking',
-            buildsOn: 'The last tab said checks force errors into clean cases. But checking means reading, and Quantum basics showed that reading collapses a qubit.',
+            buildsOn: 'The blends tab showed what errors look like. Quantum basics Section 4 gave the two rules any fix must obey. A quick recap.',
             leadsTo: 'Section 2 shows the way out: spread the state over several qubits and read only relations between them.',
             idea: [
-              '*No-cloning*: an unknown state cannot be copied. "Keep three copies" is not an option.',
+              '*No-cloning*: an unknown state cannot be copied. CNOT on |+⟩|0⟩ gives a Bell pair, not |+⟩|+⟩.',
               'Reading the qubit collapses it, so "look and fix" destroys α and β.',
               'Way out: spread the state over several qubits and read only relations between them.'
             ],
@@ -314,12 +334,13 @@
         tabs: [
           {
             title: 'Classical repetition',
-            buildsOn: 'Section 1 ended with "spread the state". The oldest way to spread a bit is the classical repetition code.',
-            leadsTo: 'The quantum version cannot vote by reading bits, so the next tab replaces voting with parity checks.',
+            buildsOn: 'Section 1 ended with "spread the state". Quantum basics did exactly that, starting from the classical repetition code. A recap.',
+            leadsTo: 'Next, the standard names for the parity checks that replace the vote: Z1Z2 and Z2Z3, with answers +1 and −1.',
             idea: [
               'Send each bit three times: 0 → 000, 1 → 111.',
               'If one copy flips, a majority vote recovers the bit.',
-              'Two flips fool the vote. One flip is the limit.'
+              'Two flips fool the vote. One flip is the limit.',
+              'Qubit version, from Quantum basics: *α|000⟩ + β|111⟩*, built with two CNOTs. Flips are found by parity, not a vote.'
             ],
             sketch: [
               T(40, 60, '1', { size: 40 }), A(80, 52, 150, 52),
@@ -351,9 +372,43 @@
             }
           },
           {
+            title: 'Naming checks: Z1Z2 and ±1',
+            buildsOn: 'The recap tab used parity checks from Quantum basics, with answers 0 and 1. QEC writes the same checks as Z1Z2 with answers +1 and −1.',
+            leadsTo: 'Next, the two checks Z1Z2 and Z2Z3 together, finding the flipped qubit.',
+            idea: [
+              'Z leaves |0⟩ alone and turns |1⟩ into −|1⟩. So Z marks 0 with a + sign and 1 with a − sign.',
+              '*Z1Z2* means Z on q1 and Z on q2. On a pattern the two signs multiply: 00 gives +, 11 gives (−)(−) = +, 01 and 10 give −.',
+              'So Z1Z2 = +1 means q1 and q2 match (parity 0). Z1Z2 = −1 means they differ (parity 1). Same check, new name.'
+            ],
+            sketch: [
+              T(70, 50, 'q1 q2', { anchor: 'middle', size: 26 }), T(250, 50, 'signs', { anchor: 'middle', size: 26 }), T(430, 50, 'Z1Z2', { anchor: 'middle', size: 26 }),
+              L([[20, 64], [500, 64]]),
+              T(70, 104, '0 0', { anchor: 'middle', size: 28 }), T(250, 104, '(+)(+)', { anchor: 'middle', size: 26 }), T(430, 104, '+1  match', { anchor: 'middle', size: 26, c: 'green' }),
+              T(70, 148, '1 1', { anchor: 'middle', size: 28 }), T(250, 148, '(−)(−)', { anchor: 'middle', size: 26 }), T(430, 148, '+1  match', { anchor: 'middle', size: 26, c: 'green' }),
+              T(70, 192, '0 1', { anchor: 'middle', size: 28 }), T(250, 192, '(+)(−)', { anchor: 'middle', size: 26 }), T(430, 192, '−1  differ', { anchor: 'middle', size: 26, c: 'red' }),
+              T(70, 236, '1 0', { anchor: 'middle', size: 28 }), T(250, 236, '(−)(+)', { anchor: 'middle', size: 26 }), T(430, 236, '−1  differ', { anchor: 'middle', size: 26, c: 'red' }),
+              H(40, 260, 560, 44, { c: 'yellow' }),
+              T(320, 292, 'parity 0 = +1,  parity 1 = −1', { anchor: 'middle', size: 28 })
+            ],
+            takeaway: 'Z1Z2 = +1: q1, q2 match. Z1Z2 = −1: they differ.',
+            widget: { type: 'steps', steps: [
+              { say: 'Z on one qubit: 0 keeps its sign, 1 picks up a minus.', show: 'Z|0⟩ = +|0⟩ · Z|1⟩ = −|1⟩' },
+              { say: 'Z1Z2 applies Z to q1 and to q2. Try the pattern 10.', show: 'Z1Z2 |10⟩ = (−)(+) |10⟩ = −|10⟩' },
+              { say: 'Try 11. Two minus signs cancel.', show: 'Z1Z2 |11⟩ = (−)(−) |11⟩ = +|11⟩' },
+              { say: 'The sign is the answer of the check.', show: '+1 = match = parity 0 · −1 = differ = parity 1' },
+              { say: 'On the code state both patterns give +1, so the whole state gives +1.', show: 'Z1Z2 (α|000⟩ + β|111⟩) = +1 · (α|000⟩ + β|111⟩)' }
+            ] },
+            check: {
+              q: 'What does the check Z2Z3 give on the pattern |010⟩?',
+              options: ['−1, q2 and q3 differ', '+1, they match', '0', '−1, q1 and q2 differ'],
+              answer: 0,
+              why: 'q2 = 1 gives −, q3 = 0 gives +. The product is −1: q2 and q3 differ.'
+            }
+          },
+          {
             title: 'Parity checks find the flipped qubit',
-            buildsOn: 'Classical voting needs to read every bit. A qubit cannot be read, so we ask parity questions, as in Quantum basics.',
-            leadsTo: 'Next, how many flips this code can survive. That limit is called the distance.',
+            buildsOn: 'The naming tab turned a parity check into Z1Z2 = ±1. The bit-flip code uses two of them, as in Quantum basics.',
+            leadsTo: 'Next, what the checks do to a small tilt instead of a full flip.',
             idea: [
               'Check Z1Z2: do q1 and q2 match? Check Z2Z3: do q2 and q3 match?',
               'Each check answers +1 (match) or −1 (differ). The pair of answers is the *syndrome*.',
@@ -381,8 +436,46 @@
             }
           },
           {
+            title: 'A check makes small errors whole',
+            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. Now the bit-flip checks measure such a tilt.',
+            leadsTo: 'Next, how many full flips this code can survive. That limit is called the distance.',
+            idea: [
+              'Tilt q2 of α|000⟩ + β|111⟩ a little. The state becomes mostly the code state, plus a small part α|010⟩ + β|101⟩.',
+              'The code part gives syndrome (+1, +1). The flipped part gives (−1, −1). A readout must pick one answer.',
+              'Mostly it says (+1, +1) and the tilt is simply gone. Rarely it says (−1, −1): a full flip on q2, which we fix.',
+              'So fixing full X, Y and Z flips is enough to fix every small error. Try the tilt below a few times.'
+            ],
+            sketch: [
+              T(40, 60, 'small drift', { size: 30, c: 'red' }),
+              A(180, 52, 250, 52, { c: 'ink' }),
+              T(264, 60, 'cos(δ/2)·none  −  i·sin(δ/2)·X', { size: 28 }),
+              H(262, 70, 340, 4, { c: 'yellow' }),
+              A(330, 84, 150, 166, { c: 'blue' }), A(400, 84, 340, 166, { c: 'blue' }),
+              T(440, 150, 'check finds:', { size: 26, c: 'blue' }),
+              B(40, 170, 170, 60), T(125, 210, 'no error', { anchor: 'middle', size: 30 }),
+              B(250, 170, 170, 60), T(335, 210, 'full X flip', { anchor: 'middle', size: 30, c: 'red' }),
+              T(125, 262, 'big chance', { anchor: 'middle', size: 24, c: 'green' }),
+              T(335, 262, 'small chance', { anchor: 'middle', size: 24, c: 'green' }),
+              H(36, 280, 500, 36, { c: 'mint' }),
+              T(40, 308, 'either way, we can fix it', { size: 30 })
+            ],
+            takeaway: 'A check turns a messy error into a clean one we can fix.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2'], syndrome: true, codeSpace: true, reset: true },
+            check: {
+              q: 'A small partial error hits one qubit. The syndrome is read. What is the qubit now?',
+              options: [
+                'Still partly flipped',
+                'Either not flipped, or fully flipped',
+                'Always fully flipped',
+                'Unchanged and unreadable'
+              ],
+              answer: 1,
+              why: 'The check projects onto "no error" or "full flip". Both can be repaired.'
+            }
+          },
+          {
             title: 'Distance: how many flips it fixes',
-            buildsOn: 'The last tab fixed one flip. Here we ask what happens with two.',
+            buildsOn: 'The parity tab fixed one full flip, and the last tab reduced small errors to full flips. Here we ask what happens with two.',
             leadsTo: 'Next, a different failure: errors of a different type that these checks cannot see at all.',
             idea: [
               '*Distance d* is the smallest number of flips that turns one code state into another.',
@@ -442,17 +535,18 @@
       /* ============================ SECTION 3 ============================ */
       {
         title: 'Phase flips and the Shor code',
-        intro: 'The mirror image of the bit-flip code catches Z errors. Stacking the two catches every single-qubit error.',
+        intro: 'The bit-flip code is blind to Z. Its mirror image, built in the + and − view, catches Z but is blind to X. Nesting the two catches every single-qubit error.',
         bridge: 'You can protect against both X and Z with 9 qubits. Section 4 gives the general language that scales this up: stabilizers, syndromes and decoders.',
         tabs: [
           {
             title: 'The phase-flip code',
-            buildsOn: 'The last tab showed Z errors escape. Quantum basics showed H swaps the Z and X views, so we repeat the bit-flip code in the H basis.',
+            buildsOn: 'Section 2 ended with Z errors escaping. Quantum basics showed that H swaps the 0/1 view and the +/− view, and that Z swaps + and −.',
             leadsTo: 'Next, the checks for this code. They are parity checks done after H.',
             idea: [
-              'Encode in the H basis: *α|+++⟩ + β|−−−⟩*.',
-              'A Z error turns |+⟩ into |−⟩. That is a flip, in the basis we now look in.',
-              'It is the bit-flip code seen through H. Apply H to all three qubits and you are back to α|000⟩ + β|111⟩.'
+              'Z swaps + and −, the way X swaps 0 and 1. So repeat the qubit in the + and − view: *α|+++⟩ + β|−−−⟩*.',
+              'Build it: make α|000⟩ + β|111⟩ with two CNOTs, then apply H to every qubit. H turns each 0 into + and each 1 into −.',
+              'A Z error turns one |+⟩ into |−⟩. In this view it is a plain flip, which repetition can catch.',
+              'It is the bit-flip code seen through H. Apply H to all three and you are back to α|000⟩ + β|111⟩.'
             ],
             sketch: [
               B(30, 40, 200, 60), T(130, 82, 'α|000⟩+β|111⟩', { anchor: 'middle', size: 28 }),
@@ -463,7 +557,7 @@
               H(30, 226, 420, 38, { c: 'yellow' }),
               T(36, 254, 'same code, other basis', { size: 30 })
             ],
-            takeaway: 'The phase-flip code is the bit-flip code in the H basis.',
+            takeaway: 'The phase-flip code is the bit-flip code seen through H.',
             widget: { type: 'multi', n: 3, presets: ['plog', 'log'], start: 'plog', slider: 'plog', ops: ['Z1', 'Z2', 'H1', 'H2', 'H3'], codeSpace: 'x', reset: true },
             check: {
               q: 'In the phase-flip code, a Z error on one qubit does what?',
@@ -479,10 +573,10 @@
           },
           {
             title: 'X-type checks',
-            buildsOn: 'The phase-flip code tab put the code in the H basis. The checks must move there too: Z-type parity becomes X-type parity.',
-            leadsTo: 'Next, one code that uses both families of checks to cover every single-qubit error.',
+            buildsOn: 'The phase-flip code lives in the + and − view. Its checks must move there too: Z-type parity becomes X-type parity.',
+            leadsTo: 'Next, the catch: the phase-flip code is blind to X errors, just as the bit-flip code is blind to Z.',
             idea: [
-              'An X-type check asks: do q1 and q2 have matching signs? It is written X1X2.',
+              'An X-type check asks: do q1 and q2 have matching signs (+ or −)? It is written X1X2. +1 means match, −1 means differ.',
               'To measure it: apply H to every qubit, take the parity, then apply H again.',
               'Z errors fire X-type checks. X errors fire Z-type checks. Two families, one for each error.'
             ],
@@ -506,12 +600,76 @@
             }
           },
           {
-            title: "Shor's 9-qubit code",
-            buildsOn: 'The last six tabs gave one code for X errors and one for Z errors. This tab stacks them.',
+            title: 'Each code is blind to the other error',
+            buildsOn: 'The X-type checks tab caught Z errors on the phase-flip code. Section 2 showed the bit-flip code misses Z. The mirror problem is next.',
+            leadsTo: 'Next, the fix: nest one code inside the other, so both kinds of check run at once.',
+            idea: [
+              'X leaves |+⟩ alone and turns |−⟩ into −|−⟩. So X on one qubit turns α|+++⟩ + β|−−−⟩ into α|+++⟩ − β|−−−⟩.',
+              'Every sign comparison still matches, so every X-type check says +1. Yet the sign of β flipped.',
+              'Bit-flip code: catches X, misses Z. Phase-flip code: catches Z, misses X. Hardware makes both.'
+            ],
+            sketch: [
+              T(160, 44, 'bit-flip code', { anchor: 'middle', size: 26, c: 'blue' }),
+              T(480, 44, 'phase-flip code', { anchor: 'middle', size: 26, c: 'blue' }),
+              L([[320, 26], [320, 220]], { dash: true }),
+              B(70, 70, 180, 56, { c: 'green' }), T(160, 106, 'X: caught', { anchor: 'middle', size: 26, c: 'green' }),
+              B(70, 146, 180, 56, { c: 'red' }), T(160, 182, 'Z: missed', { anchor: 'middle', size: 26, c: 'red' }),
+              B(390, 70, 180, 56, { c: 'green' }), T(480, 106, 'Z: caught', { anchor: 'middle', size: 26, c: 'green' }),
+              B(390, 146, 180, 56, { c: 'red' }), T(480, 182, 'X: missed', { anchor: 'middle', size: 26, c: 'red' }),
+              H(60, 246, 520, 44, { c: 'yellow' }),
+              T(320, 278, 'we need both kinds of check at once', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'One code each is not enough. We need both checks at once.',
+            widget: { type: 'multi', n: 3, presets: ['plog'], start: 'plog', slider: 'plog', ops: ['X1', 'Z1'], xparity: [[1, 2], [2, 3]], syndrome: 'x', codeSpace: 'x', reset: true },
+            check: {
+              q: 'An X error hits one qubit of α|+++⟩ + β|−−−⟩. What do the X-type checks show?',
+              options: ['+1, +1: nothing seen', '−1 on one check', '−1 on both checks', 'The state collapses'],
+              answer: 0,
+              why: 'X only changes the sign in front of |−−−⟩. Every pair of signs still matches, so both checks say +1.'
+            }
+          },
+          {
+            title: 'Building the Shor code',
+            buildsOn: 'The blind-spots tab showed each three-qubit code misses one error. The fix is to put one code inside the other.',
+            leadsTo: 'Next, the checks of this 9-qubit code, and which errors each family catches.',
+            idea: [
+              'Start from the phase-flip code, α|+++⟩ + β|−−−⟩. It guards against Z, but each of its three qubits can still suffer X.',
+              'So protect each of those three qubits with its own bit-flip triple: |+⟩ becomes (|000⟩ + |111⟩)/√2, |−⟩ becomes (|000⟩ − |111⟩)/√2.',
+              'Three triples of three: *9 physical qubits* for one logical qubit.'
+            ],
+            sketch: [
+              T(320, 44, 'α|+++⟩ + β|−−−⟩', { anchor: 'middle', size: 30 }),
+              A(220, 64, 115, 110), A(320, 64, 320, 110), A(420, 64, 525, 110),
+              B(30, 116, 170, 70), B(235, 116, 170, 70), B(440, 116, 170, 70),
+              T(115, 160, '000 ± 111', { anchor: 'middle', size: 26 }),
+              T(320, 160, '000 ± 111', { anchor: 'middle', size: 26 }),
+              T(525, 160, '000 ± 111', { anchor: 'middle', size: 26 }),
+              T(320, 218, 'each + or − becomes a bit-flip triple', { anchor: 'middle', size: 24, c: 'blue' }),
+              H(180, 248, 280, 44, { c: 'yellow' }),
+              T(320, 280, '3 × 3 = 9 qubits', { anchor: 'middle', size: 30 })
+            ],
+            takeaway: 'Shor code: a phase-flip code whose qubits are bit-flip triples.',
+            widget: { type: 'steps', steps: [
+              { say: 'Outer layer: the phase-flip code on three qubits.', show: 'α|+++⟩ + β|−−−⟩' },
+              { say: 'Each |+⟩ is (|0⟩ + |1⟩)/√2. Protect its 0 and 1 by repetition.', show: '|+⟩  →  (|000⟩ + |111⟩)/√2' },
+              { say: 'Same for |−⟩, keeping its minus sign.', show: '|−⟩  →  (|000⟩ − |111⟩)/√2' },
+              { say: 'Put three of these side by side.', show: 'α (000+111)(000+111)(000+111) + β (000−111)(000−111)(000−111)' },
+              { say: 'Count the qubits.', show: '3 blocks × 3 qubits = 9 physical qubits, 1 logical qubit' }
+            ] },
+            check: {
+              q: 'In the Shor code, what replaces each |+⟩ of the phase-flip code?',
+              options: ['(|000⟩ + |111⟩)/√2', '|+++⟩', '|000⟩', '(|000⟩ − |111⟩)/√2'],
+              answer: 0,
+              why: '|+⟩ is an equal mix of 0 and 1. Repeating each gives (|000⟩ + |111⟩)/√2. The minus version replaces |−⟩.'
+            }
+          },
+          {
+            title: 'The Shor code catches every single error',
+            buildsOn: 'The building tab nested the bit-flip code inside the phase-flip code. Now we list its checks and what each one catches.',
             leadsTo: 'Section 4 steps back from this one code and names the pieces every code shares.',
             idea: [
-              'Take the phase-flip code on three qubits, then encode each of those qubits in its own bit-flip triple: 3 × 3 = 9 qubits.',
-              'Bit-flip checks inside each triple catch X errors. Phase-flip checks across triples catch Z errors.',
+              'Inside each triple: the Z-type checks of Section 2, two per triple. Six in all. They catch X errors.',
+              'Across triples: compare the sign of triple 1 with triple 2, and 2 with 3. Each such X-type check touches 6 qubits. They catch Z errors.',
               'Any single-qubit error is corrected. Y is X and Z together, so it is covered too.'
             ],
             sketch: [
@@ -551,7 +709,7 @@
         tabs: [
           {
             title: 'Stabilizers',
-            buildsOn: 'Z1Z2 and Z2Z3 from the bit-flip code, and X1X2 and X2X3 from the phase-flip code, are all checks of one kind.',
+            buildsOn: 'Section 2 wrote checks as Z1Z2 = ±1. Those, the X-type checks of Section 3, and the Shor checks are all checks of one kind.',
             leadsTo: 'Next, the pattern of answers that a set of stabilizers gives: the syndrome.',
             idea: [
               'A *stabilizer* is a check whose answer is +1 on every valid code state.',
@@ -596,7 +754,7 @@
             leadsTo: 'Next, the rule that maps a syndrome to a correction: the decoder.',
             idea: [
               'The list of answers from all stabilizers is the *syndrome*.',
-              'It says which checks fired. It does not say which qubit broke.',
+              'It says which checks fired. Which qubit broke has to be worked out from it.',
               'Different errors can give the same syndrome. Codes are built so likely errors give different ones.'
             ],
             sketch: [
@@ -678,12 +836,49 @@
         bridge: 'You know the loop and the code. The next notebook reads the TandemQEC paper, which asks what hardware (links, buffers, decoders) keeps that loop on time.',
         tabs: [
           {
+            title: 'Why a grid',
+            buildsOn: 'Section 4 gave the loop for any code. The Shor code needs checks across 6 qubits at once, spread over the chip.',
+            leadsTo: 'Next, the surface code itself: data qubits on a grid with a check on every square between them.',
+            idea: [
+              'On a chip, a qubit can only do gates with the qubits right next to it.',
+              'A check on far-apart qubits needs long chains of gates, and every gate can add errors.',
+              'The surface code uses only checks on 2 or 4 neighbours. A bigger code is just a bigger grid with the same small checks.'
+            ],
+            sketch: [
+              T(150, 40, 'far-apart check', { anchor: 'middle', size: 24, c: 'red' }),
+              O(60, 110, 12), O(150, 110, 12), O(240, 110, 12),
+              K([[60, 124], [150, 170], [240, 124]], { c: 'red', dash: true }),
+              T(150, 210, 'long gate chains', { anchor: 'middle', size: 22, c: 'red' }),
+              L([[320, 26], [320, 230]], { dash: true }),
+              T(480, 40, 'grid check', { anchor: 'middle', size: 24, c: 'green' }),
+              B(430, 80, 100, 100, { c: 'green' }),
+              D(430, 80), D(530, 80), D(430, 180), D(530, 180),
+              T(480, 210, '4 neighbours', { anchor: 'middle', size: 22, c: 'green' }),
+              H(60, 252, 520, 44, { c: 'yellow' }),
+              T(320, 284, 'only neighbours, however big the code', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'The surface code uses only checks between neighbours.',
+            widget: { type: 'steps', steps: [
+              { say: 'Bit-flip code: each check touches 2 qubits.', show: 'Z1Z2 · Z2Z3' },
+              { say: 'Shor code: the checks across triples touch 6 qubits.', show: 'X1X2X3X4X5X6' },
+              { say: 'A bigger Shor-style code needs even bigger checks.', show: 'more qubits → longer checks → more gates → more errors' },
+              { say: 'Surface code: every check touches at most 4 neighbours.', show: 'distance 3, 5, 7, … · checks still ≤ 4 qubits' }
+            ] },
+            check: {
+              q: 'Why does the surface code use only checks between neighbours?',
+              options: ['On a chip, gates only reach nearby qubits', 'Neighbours never get errors', 'It needs fewer qubits than Shor', 'Checks on 4 qubits are always exact'],
+              answer: 0,
+              why: 'Far-apart checks need long chains of gates, and each gate can add errors. Neighbour checks keep the circuits short.'
+            }
+          },
+          {
             title: 'Data qubits and checks on a grid',
-            buildsOn: 'Section 4 gave stabilizers. The surface code arranges them on a grid so each one involves only neighbouring qubits.',
+            buildsOn: 'The grid tab said why: checks between neighbours only. Here are the qubits and checks of the smallest surface code.',
             leadsTo: 'Next, what happens on this grid when errors strike: which checks light up.',
             idea: [
               '*Data qubits* hold the information. *Ancilla qubits* measure the checks.',
-              'Each ancilla checks the 2 or 4 data qubits next to it. Z-type checks catch X errors, X-type checks catch Z errors.',
+              'Each ancilla checks the 2 or 4 data qubits next to it. Z-type catch X errors, X-type catch Z errors.',
+              'A four-qubit Z-check is +1 when an even number of its four qubits are 1. X-checks do the same for signs.',
               'Distance 3 uses 9 data and 8 ancilla qubits. Distance d uses d² data and d²−1 ancillas.'
             ],
             sketch: [
