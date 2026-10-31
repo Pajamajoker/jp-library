@@ -1243,8 +1243,8 @@ const gtip=h('div',{class:'gtip',role:'tooltip',hidden:true});document.body.appe
 let gtT=0,gtOn=null;
 function gtipShow(el){
   clearTimeout(gtT);const it=el._g;if(gtOn)gtOn.classList.remove('on');gtOn=el;el.classList.add('on');
-  gtip.textContent='';gtip.append(h('div',{class:'tm'},it.term),h('div',{class:'mn',html:rich(it.means)}),it.more?h('small',{html:rich(it.more)}):null,
-    h('button',{type:'button',onclick:()=>{gtipHide(true);csOpen(it);}},'Open in cheat sheet ›'));
+  gtip.textContent='';gtip.append(...[h('div',{class:'tm'},it.term),h('div',{class:'mn',html:rich(it.means)}),it.more?h('small',{html:rich(it.more)}):null,
+    h('button',{type:'button',onclick:()=>{gtipHide(true);csOpen(it);}},'Open in cheat sheet ›')].filter(Boolean));
   gtip.hidden=false;const r=el.getBoundingClientRect(),w=gtip.offsetWidth,hh=gtip.offsetHeight;
   const x=Math.max(10,Math.min(innerWidth-w-10,r.left+r.width/2-w/2));let y=r.bottom+8;if(y+hh>innerHeight-10)y=r.top-hh-8;
   gtip.style.left=x+'px';gtip.style.top=Math.max(10,y)+'px';
