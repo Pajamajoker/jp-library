@@ -419,7 +419,7 @@
               { say: 'Coin A is fair. Coin B is weighted towards heads.', show: 'A: heads 0.5, tails 0.5 · B: heads 0.8, tails 0.2' },
               { say: '*Separate* coins: the chance of a pair is A times B.', show: 'HH 0.4 · HT 0.1 · TH 0.4 · TT 0.1' },
               { say: 'Multiply diagonally: HH·TT and HT·TH.', show: '0.4 × 0.1 = 0.04 · 0.1 × 0.4 = 0.04 · same' },
-              { say: 'They match because each product uses all four coin numbers once: (A heads)(B heads)(A tails)(B tails).', show: '0.5 · 0.8 · 0.5 · 0.2 = 0.04' },
+              { say: 'They match because each product uses all four coin numbers once: (A heads)(B heads)(A tails)(B tails).', show: '0.5 × 0.8 × 0.5 × 0.2 = 0.04' },
               { say: 'Now *glued* coins: they always land the same way, half HH, half TT.', show: 'HH 0.5 · HT 0 · TH 0 · TT 0.5' },
               { say: 'Each coin alone is 50/50. Separate 50/50 coins would give 0.25 in every box. That is not this table.', show: '0.25, 0.25, 0.25, 0.25  ≠  0.5, 0, 0, 0.5' },
               { say: 'The diagonal check catches it at once.', show: '0.5 × 0.5 = 0.25 · 0 × 0 = 0 · different, so glued' }
