@@ -20,6 +20,137 @@
         D(2, 86, { r: 4.5 }), D(38, 86, { r: 4.5 }), D(74, 86, { r: 4.5 })
       ]
     },
+    glossary: [
+      {
+        "group": "Errors",
+        "items": [
+          {
+            "term": "Noise",
+            "means": "Anything that changes (α, β) without being asked: heat, stray fields, imperfect gates."
+          },
+          {
+            "term": "X error",
+            "means": "Bit flip. Swaps α and β, so |0⟩ ↔ |1⟩."
+          },
+          {
+            "term": "Z error",
+            "means": "Phase flip. Flips the sign of β, so |+⟩ ↔ |−⟩. Invisible to the 0/1 readout."
+          },
+          {
+            "term": "Y error",
+            "means": "X and Z together (up to an overall phase)."
+          },
+          {
+            "term": "I",
+            "means": "No error."
+          },
+          {
+            "term": "I, X, Y, Z",
+            "means": "Any small error is a blend of these four. A check forces the blend to become one of them."
+          },
+          {
+            "term": "No copying",
+            "means": "An unknown qubit cannot be copied, so QEC spreads it out instead of backing it up."
+          },
+          {
+            "term": "No peeking",
+            "means": "Reading a qubit collapses it, so checks ask about relations between qubits, never the data itself."
+          }
+        ]
+      },
+      {
+        "group": "Codes",
+        "items": [
+          {
+            "term": "Repetition",
+            "means": "Classical: 0 → 000, 1 → 111. A majority vote fixes one flip."
+          },
+          {
+            "term": "Bit-flip code",
+            "means": "α|000⟩ + β|111⟩. Fixes one X error. Blind to Z errors."
+          },
+          {
+            "term": "Phase-flip code",
+            "means": "α|+++⟩ + β|−−−⟩. Fixes one Z error. Blind to X errors. The bit-flip code seen through H."
+          },
+          {
+            "term": "Shor code",
+            "means": "9 qubits: a phase-flip code built from three bit-flip blocks. Fixes any single-qubit error."
+          },
+          {
+            "term": "Physical qubit",
+            "means": "One real hardware qubit."
+          },
+          {
+            "term": "Logical qubit",
+            "means": "The one protected qubit stored across many physical qubits."
+          },
+          {
+            "term": "Distance d",
+            "means": "The fewest single-qubit errors that change the stored qubit with every check quiet.",
+            "more": "A distance-d code fixes up to (d − 1)/2 errors. Distance 3 fixes 1."
+          },
+          {
+            "term": "Logical error",
+            "means": "An error chain the checks cannot see that changes the stored qubit."
+          }
+        ]
+      },
+      {
+        "group": "Checks",
+        "items": [
+          {
+            "term": "Z-type check",
+            "means": "Do these qubits agree in the 0/1 view? Catches X errors."
+          },
+          {
+            "term": "X-type check",
+            "means": "Do they agree in the +/− view? Catches Z errors. Same as H on each, then a parity check."
+          },
+          {
+            "term": "Stabilizer",
+            "means": "A check the code state always passes. A code is defined by its list of stabilizers."
+          },
+          {
+            "term": "Syndrome",
+            "means": "The list of check results. Points at the error without revealing α or β."
+          },
+          {
+            "term": "Decoder",
+            "means": "Turns a syndrome into a fix. It sees only the syndrome, never the errors themselves."
+          }
+        ]
+      },
+      {
+        "group": "Surface code",
+        "items": [
+          {
+            "term": "Surface code",
+            "means": "Qubits on a grid; every check touches only neighbours. Distance d uses d² data and d² − 1 ancilla qubits."
+          },
+          {
+            "term": "Data qubit",
+            "means": "Holds the stored information."
+          },
+          {
+            "term": "Ancilla",
+            "means": "A helper qubit that measures one check and reports it, then is reset for the next round."
+          },
+          {
+            "term": "Round",
+            "means": "One pass of measuring every check. Rounds repeat on a fixed clock."
+          },
+          {
+            "term": "Detection event",
+            "means": "A check result that changed since the last round. Decoders work from these."
+          },
+          {
+            "term": "Threshold",
+            "means": "The physical error rate below which bigger codes help. Above it, more qubits make things worse."
+          }
+        ]
+      }
+    ],
     sections: [
       /* ============================ SECTION 1 ============================ */
       {

@@ -5,6 +5,217 @@
     id: 'quantum-basics',
     title: 'Quantum basics',
     subtitle: 'From one qubit to the three-qubit repetition code. Only what QEC needs.',
+    glossary: [
+      {
+        "group": "Notation",
+        "note": "How to read the symbols.",
+        "items": [
+          {
+            "term": "|…⟩",
+            "means": "A label for a state. |0⟩ means \"the qubit that reads 0\". Say it as \"ket\"."
+          },
+          {
+            "term": "α, β",
+            "means": "The two numbers of one qubit, called amplitudes. α goes with readout 0, β with readout 1.",
+            "more": "Chance of 0 is |α|², chance of 1 is |β|². They always add to 1."
+          },
+          {
+            "term": "|α|²",
+            "means": "Amplitude squared = the chance of that readout. 0.707² = 0.5, so 0.707 means 50%."
+          },
+          {
+            "term": "1/√2",
+            "means": "About 0.707. Shows up whenever two patterns share a state equally, because 0.707² = 0.5."
+          },
+          {
+            "term": "a₀₀ … a₁₁",
+            "means": "Two qubits: one amplitude per readout pattern 00, 01, 10, 11. Squared, the chance of that pattern."
+          },
+          {
+            "term": "|+⟩|0⟩",
+            "means": "Two states side by side = two *separate* qubits: qubit 1 is |+⟩, qubit 2 is |0⟩.",
+            "more": "Multiply out to get the four amplitudes, like the coin table."
+          },
+          {
+            "term": "θ, φ",
+            "means": "Bloch sphere angles. θ: how far from |0⟩ down towards |1⟩. φ: how far round the equator.",
+            "more": "α = cos(θ/2) and |β| = sin(θ/2)."
+          },
+          {
+            "term": "i",
+            "means": "The square root of −1. Used in |+i⟩, |−i⟩ and the Y readout."
+          }
+        ]
+      },
+      {
+        "group": "One-qubit states",
+        "items": [
+          {
+            "term": "|0⟩",
+            "means": "α = 1, β = 0. Always reads 0. Top of the Bloch sphere."
+          },
+          {
+            "term": "|1⟩",
+            "means": "α = 0, β = 1. Always reads 1. Bottom of the Bloch sphere."
+          },
+          {
+            "term": "|+⟩",
+            "means": "(|0⟩ + |1⟩)/√2. A fair coin in the 0/1 readout. Always + in the X readout.",
+            "more": "On the equator. H turns |0⟩ into |+⟩."
+          },
+          {
+            "term": "|−⟩",
+            "means": "(|0⟩ − |1⟩)/√2. Also a fair coin in 0/1, but always − in the X readout.",
+            "more": "Opposite |+⟩ on the equator. Only the sign of β differs. H turns |1⟩ into |−⟩."
+          },
+          {
+            "term": "|+i⟩, |−i⟩",
+            "means": "(|0⟩ ± i|1⟩)/√2. Fair coins in 0/1 and in X. Always +i or −i in the Y readout.",
+            "more": "On the equator, a quarter turn from |+⟩ and |−⟩."
+          },
+          {
+            "term": "α|0⟩ + β|1⟩",
+            "means": "Any one-qubit state, with |α|² + |β|² = 1."
+          }
+        ]
+      },
+      {
+        "group": "Readouts",
+        "items": [
+          {
+            "term": "Z readout",
+            "means": "The normal readout: 0 or 1, with chances |α|² and |β|²."
+          },
+          {
+            "term": "X readout",
+            "means": "+ or −. Asks whether the state leans to |+⟩ or |−⟩. Same as H, then the Z readout."
+          },
+          {
+            "term": "Y readout",
+            "means": "+i or −i. Asks whether the state leans to |+i⟩ or |−i⟩."
+          },
+          {
+            "term": "Collapse",
+            "means": "After a readout the qubit becomes the state it reported. Reading again gives the same answer."
+          },
+          {
+            "term": "Phase",
+            "means": "A sign on the whole state changes nothing. A sign on β alone (relative phase) changes the X and Y readouts."
+          }
+        ]
+      },
+      {
+        "group": "Gates",
+        "items": [
+          {
+            "term": "X",
+            "means": "Swaps α and β. |0⟩ ↔ |1⟩. A bit flip.",
+            "more": "Half turn about the x axis of the Bloch sphere."
+          },
+          {
+            "term": "Z",
+            "means": "Flips the sign of β. |+⟩ ↔ |−⟩. A phase flip: the 0/1 readout cannot see it.",
+            "more": "Half turn about the z axis."
+          },
+          {
+            "term": "H",
+            "means": "|0⟩ ↔ |+⟩ and |1⟩ ↔ |−⟩. Swaps the Z view and the X view."
+          },
+          {
+            "term": "CNOT12",
+            "means": "Flips qubit 2 (target) if qubit 1 (control) is 1. Does nothing if it is 0.",
+            "more": "H on qubit 1, then CNOT12, turns |00⟩ into a Bell pair."
+          },
+          {
+            "term": "H1, X2, Z3",
+            "means": "A gate and the qubit it acts on: H1 = H on qubit 1, X2 = X on qubit 2."
+          }
+        ]
+      },
+      {
+        "group": "Two-qubit states",
+        "note": "The presets in the Try it boxes.",
+        "items": [
+          {
+            "term": "|00⟩",
+            "means": "Both qubits read 0, every time. Independent."
+          },
+          {
+            "term": "|+⟩|0⟩",
+            "means": "Qubit 1 a fair coin, qubit 2 is 0. Reads 00 or 10, 50/50. Independent."
+          },
+          {
+            "term": "|+⟩|+⟩",
+            "means": "Two separate fair coins: ½(|00⟩ + |01⟩ + |10⟩ + |11⟩). Each pattern 25%. Independent."
+          },
+          {
+            "term": "Bell (00+11)",
+            "means": "(|00⟩ + |11⟩)/√2. Glued pair: 00 or 11, 50/50, never 01 or 10. Entangled.",
+            "more": "Each qubit alone is a fair coin. They also agree in the X readout."
+          },
+          {
+            "term": "Bell (00−11)",
+            "means": "(|00⟩ − |11⟩)/√2. Same 0/1 chances as the other Bell state; only the sign of 11 differs. Entangled.",
+            "more": "Z on either qubit switches between the two. In the X readout these two always disagree."
+          },
+          {
+            "term": "0.6|00⟩+0.8|11⟩",
+            "means": "Lopsided glue: 00 36%, 11 64%, never 01 or 10. Entangled, because 0.6·0.8 ≠ 0·0."
+          }
+        ]
+      },
+      {
+        "group": "Independent or entangled",
+        "items": [
+          {
+            "term": "Independent",
+            "means": "Each qubit has its own (α, β). The four amplitudes form a multiplication table, like separate coins."
+          },
+          {
+            "term": "Entangled",
+            "means": "Not independent. Only the pair has a state; no (α, β) exists for one qubit alone. Like glued coins."
+          },
+          {
+            "term": "The test",
+            "means": "*a₀₀·a₁₁ = a₀₁·a₁₀* exactly when the two qubits are independent."
+          }
+        ]
+      },
+      {
+        "group": "Three qubits and parity",
+        "items": [
+          {
+            "term": "|000⟩, |111⟩",
+            "means": "All three read 0, or all three read 1."
+          },
+          {
+            "term": "|+⟩|00⟩",
+            "means": "Qubit 1 a fair coin, qubits 2 and 3 at 0. CNOT12 then CNOT13 turns it into GHZ."
+          },
+          {
+            "term": "GHZ",
+            "means": "(|000⟩ + |111⟩)/√2. Three glued qubits: 000 or 111, 50/50."
+          },
+          {
+            "term": "α|000⟩ + β|111⟩",
+            "means": "The repetition code: one qubit (α, β) spread over three. Not three copies.",
+            "more": "Reading any one qubit would collapse it. Parity checks ask only whether neighbours agree."
+          },
+          {
+            "term": "(α|0⟩+β|1⟩)|00⟩",
+            "means": "The qubit to protect plus two helpers at 0. CNOT12 and CNOT13 turn it into α|000⟩ + β|111⟩."
+          },
+          {
+            "term": "Parity",
+            "means": "Whether two qubits agree (even, 0) or disagree (odd, 1). Can be read without learning α or β."
+          },
+          {
+            "term": "Syndrome",
+            "means": "The two parity results, (q1,q2) and (q2,q3). Points at the flipped qubit: 10 → q1, 11 → q2, 01 → q3."
+          }
+        ]
+      }
+    ],
     sections: [
       /* ============================ SECTION 1 ============================ */
       {

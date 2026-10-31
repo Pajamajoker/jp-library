@@ -348,6 +348,22 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .art-fig *{vector-effect:non-scaling-stroke}
 .art.has-img .art-fig{display:none}
 .art-in{z-index:1}
+
+/* Cheat sheet */
+.ref-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:6px 0 4px}
+.ref-q{flex:1;min-width:200px;max-width:340px;font:inherit;font-size:14px;padding:10px 16px;border-radius:999px;border:1px solid var(--g-bd);background:var(--g-bg);color:var(--ink);outline:none}
+.gl-grp{margin-top:28px}
+.gl-grp h2{font-size:21px;font-weight:700;letter-spacing:-.01em;margin:0 0 4px}
+.gl-grp>p{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+.gl{display:grid;grid-template-columns:minmax(110px,max-content) minmax(0,1fr);border-radius:18px;overflow:hidden;padding:0!important}
+.gl>div{padding:13px 18px;border-top:1px solid var(--line)}
+.gl>div:nth-child(-n+2){border-top:0}
+.gl .tm{font-family:var(--f-mono);font-size:16px;font-weight:600;white-space:nowrap;color:var(--accent)}
+.gl .mn{font-size:15px;line-height:1.5}
+.gl .mn small{display:block;color:var(--muted);font-size:13.5px;margin-top:3px}
+.ref-link{margin-left:10px}
+.sec-head .ref-link{margin:0 0 14px;display:inline-flex}
+@media (max-width:600px){.gl{grid-template-columns:1fr}.gl .tm{border-top:1px solid var(--line);padding-bottom:0}.gl .mn{border-top:0;padding-top:4px}.gl>div:first-child{border-top:0}}
 </style>
 
 <div id="app"></div>
@@ -436,11 +452,11 @@ Rules
       readouts: true (Z/X/Y odds), shots: true (sample readouts), collapse: true (measure and collapse),
       start: { theta: 60, phi: 0 }  (degrees)
   { type: 'multi', n: 2 | 3, ...options }      several qubits as amplitudes of patterns
-      presets: ids from zero2 plus0 plusplus bell bellm skew zero3 plus00 ghz log enc; start: id
-      slider: 'log' (alpha|000> + beta|111>) or 'enc' ((alpha|0>+beta|1>)|00>)
+      presets: ids from zero2 plus0 plusplus bell bellm skew zero3 plus00 ghz log plog plus3 enc; start: id
+      slider: 'log' (alpha|000> + beta|111>), 'plog' (alpha|+++> + beta|---->) or 'enc' ((alpha|0>+beta|1>)|00>)
       ops: 'H1' 'X2' 'Z3' 'RX2' (tiny 20 degree tilt) 'CNOT12' (control 1, target 2)
-      measure: [1,2] (read single qubits), parity: [[1,2],[2,3]], syndrome: true,
-      independence: true (n=2 product test), codeSpace: true, reset: true
+      measure: [1,2] (read single qubits), parity: [[1,2],[2,3]], xparity: [[1,2],[2,3]] (X-type checks), syndrome: true (Z-type) or 'x' (X-type),
+      independence: true (n=2 product test), codeSpace: true (or 'x' for the |+++>,|---> code), reset: true
   { type: 'surface' }   distance-3 surface code patch, click data qubits to place errors and see which checks light
   { type: 'scaling' }   logical error rate versus code distance, with a physical error slider
   { type: 'stack', unit: 'ns', segments: [ { label: 'text', v: 100 }, ... ], note: 'text' }   one stacked time bar
@@ -499,6 +515,19 @@ Rules for cover.art:
   - 4 to 8 parts. One recognisable object for the whole book (a sphere, a lattice of qubits, a circuit, a molecule, a graph), not a scene.
   - If cover.art is missing, the Bloch sphere above is used.
   - cover.image: 'https://...' replaces the generated cover with a picture instead.
+
+7c. CHEAT SHEET (recommended)
+Add a glossary field next to title. It becomes the book's Cheat sheet page, linked from the book page and every section.
+List every symbol, state, gate and term the book uses, grouped, in plain words.
+
+  glossary: [
+    { group: 'One qubit states', note: 'optional one line under the heading',
+      items: [
+        { term: '|+⟩', means: '(|0⟩ + |1⟩)/√2. A fair coin: reads 0 or 1, 50/50.', more: 'optional second line: where it sits, how to make it' }
+      ] }
+  ],
+
+Rules: term is short (a symbol or a word). means is one sentence, under 140 characters. *bold* works. Every preset, state or symbol a reader meets in a widget or sketch appears here.
 
 ----------------------------------------------------------------
 8. REGISTRATION
@@ -853,17 +882,19 @@ W.qubit=function(o){
 /* multi-qubit */
 const basisV=(N,i)=>{const v=Array.from({length:N},()=>[0,0]);v[i]=[1,0];return v;};
 const PRE={
-  zero2:{l:'|00⟩',f:()=>basisV(4,0)},
-  plus0:{l:'|+⟩|0⟩',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[2]=[R2,0];return v;}},
-  plusplus:{l:'|+⟩|+⟩',f:()=>[[.5,0],[.5,0],[.5,0],[.5,0]]},
-  bell:{l:'Bell (00+11)',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[3]=[R2,0];return v;}},
-  bellm:{l:'Bell (00−11)',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[3]=[-R2,0];return v;}},
-  skew:{l:'0.6|00⟩+0.8|11⟩',f:()=>{const v=basisV(4,0);v[0]=[.6,0];v[3]=[.8,0];return v;}},
-  zero3:{l:'|000⟩',f:()=>basisV(8,0)},
-  plus00:{l:'|+⟩|00⟩',f:()=>{const v=basisV(8,0);v[0]=[R2,0];v[4]=[R2,0];return v;}},
-  ghz:{l:'(000+111)/√2',f:()=>{const v=basisV(8,0);v[0]=[R2,0];v[7]=[R2,0];return v;}},
-  log:{l:'α|000⟩+β|111⟩',f:th=>{const v=basisV(8,0);v[0]=[Math.cos(th*RAD/2),0];v[7]=[Math.sin(th*RAD/2),0];return v;}},
-  enc:{l:'(α|0⟩+β|1⟩)|00⟩',f:th=>{const v=basisV(8,0);v[0]=[Math.cos(th*RAD/2),0];v[4]=[Math.sin(th*RAD/2),0];return v;}}
+  zero2:{d:'both qubits read 0, every time.',l:'|00⟩',f:()=>basisV(4,0)},
+  plus0:{d:'qubit 1 is a fair coin, qubit 2 is 0. Independent.',l:'|+⟩|0⟩',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[2]=[R2,0];return v;}},
+  plusplus:{d:'two separate fair coins. All four patterns 25%. Independent.',l:'|+⟩|+⟩',f:()=>[[.5,0],[.5,0],[.5,0],[.5,0]]},
+  bell:{d:'glued pair. 00 or 11, 50/50, never 01 or 10. Entangled.',l:'Bell (00+11)',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[3]=[R2,0];return v;}},
+  bellm:{d:'same readout chances as Bell (00+11), opposite sign on 11. Entangled.',l:'Bell (00−11)',f:()=>{const v=basisV(4,0);v[0]=[R2,0];v[3]=[-R2,0];return v;}},
+  skew:{d:'lopsided glue. 00 36%, 11 64%, never 01 or 10. Entangled.',l:'0.6|00⟩+0.8|11⟩',f:()=>{const v=basisV(4,0);v[0]=[.6,0];v[3]=[.8,0];return v;}},
+  zero3:{d:'all three qubits read 0.',l:'|000⟩',f:()=>basisV(8,0)},
+  plus00:{d:'qubit 1 is a fair coin, qubits 2 and 3 are 0. Independent.',l:'|+⟩|00⟩',f:()=>{const v=basisV(8,0);v[0]=[R2,0];v[4]=[R2,0];return v;}},
+  ghz:{d:'three glued qubits. 000 or 111, 50/50.',l:'(000+111)/√2',f:()=>{const v=basisV(8,0);v[0]=[R2,0];v[7]=[R2,0];return v;}},
+  log:{d:'one qubit (α, β) spread over three: the bit-flip code.',l:'α|000⟩+β|111⟩',f:th=>{const v=basisV(8,0);v[0]=[Math.cos(th*RAD/2),0];v[7]=[Math.sin(th*RAD/2),0];return v;}},
+  plog:{d:'one qubit (α, β) spread over three in the X view: the phase-flip code.',l:'α|+++⟩+β|−−−⟩',f:th=>{const a=Math.cos(th*RAD/2),b=Math.sin(th*RAD/2),k=Math.sqrt(8);return Array.from({length:8},(_,i)=>{let c=0,x=i;while(x){c+=x&1;x>>=1;}return[(a+b*(c%2?-1:1))/k,0];});}},
+  plus3:{d:'three separate |+⟩ qubits.',l:'|+++⟩',f:()=>PRE.plog.f(0)},
+  enc:{d:'the qubit to protect, plus two helpers at 0, before encoding.',l:'(α|0⟩+β|1⟩)|00⟩',f:th=>{const v=basisV(8,0);v[0]=[Math.cos(th*RAD/2),0];v[4]=[Math.sin(th*RAD/2),0];return v;}}
 };
 W.multi=function(o){
   o=Object.assign({n:2,presets:[],start:null,ops:[],measure:[],parity:[],syndrome:false,independence:false,slider:null,codeSpace:false,reset:false},o||{});
@@ -880,16 +911,18 @@ W.multi=function(o){
   const parts=[];
   const rowBtns=(title,btns)=>btns.length?h('div',{class:'col',style:'gap:6px'},h('div',{class:'mini'},title),h('div',{class:'btns'},btns)):null;
   const B=(t,fn,cls)=>h('button',{class:'btn sm'+(cls?' '+cls:''),type:'button',onclick:fn},t);
-  if(o.presets.length)parts.push(rowBtns('Start from',o.presets.map(id=>B(PRE[id].l,()=>{load(id);say('Loaded '+PRE[id].l+'.');draw();}))));
-  if(o.slider)parts.push(h('div',{class:'col'},slider(o.slider==='log'?'α, β of the logical qubit (θ)':'α, β of qubit 1 (θ)',0,180,1,theta,'°',v=>{theta=v;load(o.slider);say('State set to '+PRE[o.slider].l+' with θ = '+v+'°.');draw();}).el));
+  if(o.presets.length)parts.push(rowBtns('Start from',o.presets.map(id=>B(PRE[id].l,()=>{load(id);say('Loaded '+PRE[id].l+': '+PRE[id].d);draw();}))));
+  if(o.slider)parts.push(h('div',{class:'col'},slider((o.slider==='log'||o.slider==='plog')?'α, β of the logical qubit (θ)':'α, β of qubit 1 (θ)',0,180,1,theta,'°',v=>{theta=v;load(o.slider);say('State set to '+PRE[o.slider].l+' with θ = '+v+'°.');draw();}).el));
   const opName=op=>{let m;if(m=op.match(/^(H|X|Z)(\d)$/))return op[0]+' on q'+m[2];if(m=op.match(/^RX(\d)$/))return'tilt q'+m[1]+' by 20°';if(m=op.match(/^CNOT(\d)(\d)$/))return'CNOT q'+m[1]+'→q'+m[2];return op;};
   parts.push(rowBtns('Gates and errors',o.ops.map(op=>B(opName(op),()=>{doOp(op);say(opName(op)+' applied.');draw();}))));
   parts.push(rowBtns('Read one qubit (collapses the state)',(o.measure||[]).map(k=>B('Read q'+k,()=>{const r=measure(k);say('q'+k+' read as '+r+'. The state collapsed to match.');draw();}))));
   parts.push(rowBtns('Parity checks (read a relation)',(o.parity||[]).map(([i,j])=>B('Check q'+i+', q'+j,()=>{const r=parity(i,j);say('Parity of q'+i+', q'+j+' = '+r+' ('+(r?'odd, they differ':'even, they match')+'). The state was projected, then renormalised.');draw();}))));
   let fixBtn=null;
-  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp('X'+fix);say('Flipped q'+fix+' back.');fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
-    parts.push(rowBtns('Syndrome',[B('Read syndrome',()=>{const s1=parity(1,2),s2=parity(2,3),k=s1+''+s2;fix={'00':0,'10':1,'11':2,'01':3}[k];
-      say('Syndrome ('+s1+','+s2+'): '+(fix?'flip q'+fix+' back.':'no error found.'));fixBtn.disabled=!fix;draw();}),fixBtn]));}
+  const xs=o.syndrome==='x';
+  if(o.xparity&&o.xparity.length)parts.push(rowBtns('X-type checks (parity after H on every qubit)',o.xparity.map(([i,j])=>B('X-check q'+i+', q'+j,()=>{const r=xpar(i,j);say('X-check q'+i+', q'+j+' = '+r+' ('+(r?'odd, signs differ':'even, signs match')+').');draw();}))));
+  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp((xs?'Z':'X')+fix);say('Applied '+(xs?'Z':'X')+' on q'+fix+'.');fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
+    parts.push(rowBtns(xs?'Syndrome from X-type checks':'Syndrome',[B('Read syndrome',()=>{const f=xs?xpar:parity,s1=f(1,2),s2=f(2,3),k=s1+''+s2;fix={'00':0,'10':1,'11':2,'01':3}[k];
+      say('Syndrome ('+s1+','+s2+'): '+(fix?'apply '+(xs?'Z':'X')+' to q'+fix+'.':'no error found.'));fixBtn.disabled=!fix;draw();}),fixBtn]));}
   if(o.reset)parts.push(rowBtns('',[B('Reset',()=>{load(st);say('Reset.');fix=0;if(fixBtn)fixBtn.disabled=true;draw();})]));
   let fix=0;
   root.append(amps,info);if(test)root.append(test);root.append(...parts.filter(Boolean),msg);
@@ -904,11 +937,13 @@ W.multi=function(o){
   function measure(k){const m=1<<(n-k);let p1=0;psi.forEach((z,i)=>{if(i&m)p1+=Cx.abs2(z);});const one=Math.random()<p1;project(i=>!!(i&m)===one,one?p1:1-p1);return one?1:0;}
   function parity(i,j){const mi=1<<(n-i),mj=1<<(n-j),odd=x=>((x&mi)?1:0)^((x&mj)?1:0);let po=0;psi.forEach((z,x)=>{if(odd(x))po+=Cx.abs2(z);});
     const r=Math.random()<po?1:0;project(x=>odd(x)===r,r?po:1-po);return r;}
+  function xpar(i,j){for(let k=1;k<=n;k++)g1(GATE.H,k);const r=parity(i,j);for(let k=1;k<=n;k++)g1(GATE.H,k);return r;}
   function draw(){
     let tot=0;psi.forEach(z=>tot+=Cx.abs2(z));
     psi.forEach((z,i)=>{const p=Cx.abs2(z),r=rows[i];r.fill.style.width=pct(p);r.v.textContent=fAmp(z)+'  '+(p<1e-9?'':Math.round(p*100)+'%');r.r.classList.toggle('zero',p<1e-9);});
     let t='Total weight '+(Math.round(tot*1000)/1000);
-    if(o.codeSpace&&n===3){const c=Cx.abs2(psi[0])+Cx.abs2(psi[7]);t+='   inside the code (000, 111): '+pct(c);}
+    if(o.codeSpace==='x'&&n===3){let u=0,w=0;psi.forEach((z,i)=>{let c=0,x=i;while(x){c+=x&1;x>>=1;}u+=z[0];w+=z[0]*(c%2?-1:1);});t+='   inside the code (|+++⟩, |−−−⟩): '+pct((u*u+w*w)/8);}
+    else if(o.codeSpace&&n===3){const c=Cx.abs2(psi[0])+Cx.abs2(psi[7]);t+='   inside the code (000, 111): '+pct(c);}
     info.textContent=t;
     if(test){const d1=Cx.mul(psi[0],psi[3]),d2=Cx.mul(psi[1],psi[2]),eq=Math.hypot(d1[0]-d2[0],d1[1]-d2[1])<1e-6;
       test.textContent='';test.append(h('div',null,'a₀₀·a₁₁ = '+fAmp(d1)),h('div',null,'a₀₁·a₁₀ = '+fAmp(d2)),h('div',{class:'verdict '+(eq?'yes':'no')},eq?'Equal: independent. Each qubit has its own (α, β).':'Different: entangled. No (α, β) per qubit exists.'));}
@@ -1106,6 +1141,26 @@ function viewHowTo(){
       h('p',null,'Paste these instructions into any LLM, then tell it the topic. It returns one file. Add the file name to the list in notebooks/index.js and the notebook appears in the library.'),
       h('div',{class:'row'},copy,st),pre));
 }
+function viewRef(nb){
+  app.textContent='';
+  const G=Array.isArray(nb.glossary)?nb.glossary:[];
+  const body=h('div');
+  const q=h('input',{class:'ref-q',type:'search',placeholder:'Find a symbol or word','aria-label':'Find in cheat sheet',oninput:()=>draw()});
+  function draw(){
+    body.textContent='';const k=q.value.trim().toLowerCase();let any=false;
+    G.forEach(g=>{
+      const items=(g.items||[]).filter(it=>!k||(it.term+' '+it.means+' '+(it.more||'')).toLowerCase().includes(k));
+      if(!items.length)return;any=true;
+      body.append(h('section',{class:'gl-grp'},h('h2',null,g.group),g.note?h('p',null,g.note):null,
+        h('div',{class:'gl card'},items.map(it=>[h('div',{class:'tm'},it.term),h('div',{class:'mn'},h('span',{html:rich(it.means)}),it.more?h('small',{html:rich(it.more)}):null)]))));
+    });
+    if(!any)body.append(h('p',{class:'empty-note'},G.length?'Nothing matches “'+q.value+'”.':'This book has no cheat sheet yet.'));
+  }
+  draw();
+  app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Cheat sheet'}),
+    h('div',{class:'sec-head'},h('h1',null,'Cheat sheet'),h('p',null,'Every symbol, state and word used in '+nb.title+', in one place.')),
+    h('div',{class:'ref-top'},q),body);
+}
 function viewNotebook(nb){
   app.textContent='';const tot=tabCount(nb),dn=doneCount(nb);
   const secs=[];
@@ -1115,7 +1170,7 @@ function viewNotebook(nb){
     if(i<nb.sections.length-1)secs.push(h('div',{class:'link-between'},h('b',null,'Leads to section '+(i+2)+'. '),s.bridge));
   });
   app.append(crumbs({t:'Library',href:'#'},{t:nb.title}),
-    h('div',{class:'nb-hero',style:'--p0:'+artPal(nb)[0]+';--p1:'+artPal(nb)[1]},bookCover(nb),h('div',null,h('div',{class:'eb'},catOf(nb)),h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin:6px 0 16px'},dn+' of '+tot+' lessons done'),h('a',{class:'btn pri',href:nextTab(nb),style:'padding:11px 24px;font-size:15px'},dn&&dn<tot?'Resume':'Start reading'))),
+    h('div',{class:'nb-hero',style:'--p0:'+artPal(nb)[0]+';--p1:'+artPal(nb)[1]},bookCover(nb),h('div',null,h('div',{class:'eb'},catOf(nb)),h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin:6px 0 16px'},dn+' of '+tot+' lessons done'),h('a',{class:'btn pri',href:nextTab(nb),style:'padding:11px 24px;font-size:15px'},dn&&dn<tot?'Resume':'Start reading'),nb.glossary?h('a',{class:'btn ref-link',href:'#'+nb.id+'-ref',style:'padding:11px 20px;font-size:15px'},'Cheat sheet'):null)),
     nb._errors.length?h('div',{class:'msg',style:'margin-top:16px;color:var(--bad)'},'Validator: '+nb._errors.join(' | ')):'',
     h('div',{class:'secs'},secs));
 }
@@ -1134,7 +1189,7 @@ function viewSection(nb,si,ti){
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
   const body=h('div');
   app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
-    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),chain,body);
+    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro),nb.glossary?h('a',{class:'btn sm ref-link',href:'#'+nb.id+'-ref'},'Cheat sheet: what every symbol means'):null),chain,body);
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
   const tid=nb.id+'-'+si+'-'+ti;
@@ -1174,6 +1229,7 @@ function route(){
   document.body.classList.toggle('home',!hs||hs==='shelf');
   if(!hs||hs==='shelf')return viewLibrary();
   if(hs==='how-to-write')return viewHowTo();
+  if(m=hs.match(/^(.+)-ref$/)){const nb=nbById(m[1]);if(nb)return viewRef(nb);}
   if(m=hs.match(/^(.+)-s(\d+)-t(\d+)$/)){const nb=nbById(m[1]);if(nb)try{localStorage.setItem('jpLibrary.last',nb.id);}catch(e){}if(nb&&nb.sections[m[2]-1]&&nb.sections[m[2]-1].tabs[m[3]-1])return viewSection(nb,+m[2]-1,+m[3]-1);}
   if(m=hs.match(/^(.+)-s(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1])return viewSection(nb,+m[2]-1,0);}
   const nb=nbById(hs);if(nb){try{localStorage.setItem('jpLibrary.last',nb.id);}catch(e){}return viewNotebook(nb);}
