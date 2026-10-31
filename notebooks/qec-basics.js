@@ -189,9 +189,9 @@
     sections: [
       /* ============================ SECTION 1 ============================ */
       {
-        title: 'Why qubits need protecting',
-        intro: 'Quantum basics showed one X error ruining a qubit, and the three-qubit code that catches it. Real noise is messier. This section names its kinds.',
-        bridge: 'You know the two basic errors, X and Z, that small errors are blends of them, and that a code may neither copy nor read. Section 2 revisits the bit-flip code with new names for its checks.',
+        title: 'The full picture of errors',
+        intro: 'Quantum basics ended with a three-qubit code that undoes one X flip. Real noise is messier than full X flips. This section names what else can happen.',
+        bridge: 'You know the two basic errors, X and Z, and that small errors are blends of them. Section 2 takes the bit-flip code from Quantum basics and tests it against these.',
         tabs: [
           {
             title: 'Noise changes (α, β)',
@@ -235,7 +235,7 @@
             buildsOn: 'The noise tab said noise changes (α, β). The simplest changes are the gates X and Z from Quantum basics, used as errors.',
             leadsTo: 'Next, why these two are enough: any small error is a blend of them.',
             idea: [
-              '*X error* (bit flip) swaps α and β. It turns |0⟩ into |1⟩.',
+              '*X error* (bit flip), the one Quantum basics handled: swaps α and β, so |0⟩ ↔ |1⟩.',
               '*Z error* (phase flip) flips the sign of β. A Z readout cannot see it.',
               'Both at once is *Y*, up to a factor i. X, Y, Z and "no error" are the Pauli errors.'
             ],
@@ -263,7 +263,7 @@
           {
             title: 'Small errors are blends',
             buildsOn: 'The last tab named X, Y and Z as full flips. Real noise is usually a small nudge. This tab writes a nudge in terms of them.',
-            leadsTo: 'Next, the two rules that make fixing any of this hard: no copying, no peeking.',
+            leadsTo: 'Section 2 asks what the bit-flip code from Quantum basics does with these errors, starting with its checks in standard notation.',
             idea: [
               'Noise rarely does a full X. More often it drifts α and β a little: it tilts the qubit by a small angle δ.',
               'A tilt about x is a blend: *cos(δ/2) × (no error) − i·sin(δ/2) × (X error)*. Most of it is "no error".',
@@ -296,98 +296,25 @@
               answer: 0,
               why: 'sin(10°) ≈ 0.17, and 0.17² ≈ 0.03. The other 97% is "no error".'
             }
-          },
-          {
-            title: 'No copying, no peeking',
-            buildsOn: 'The blends tab showed what errors look like. Quantum basics Section 4 gave the two rules any fix must obey. A quick recap.',
-            leadsTo: 'Section 2 shows the way out: spread the state over several qubits and read only relations between them.',
-            idea: [
-              '*No-cloning*: an unknown state cannot be copied. CNOT on |+⟩|0⟩ gives a Bell pair, not |+⟩|+⟩.',
-              'Reading the qubit collapses it, so "look and fix" destroys α and β.',
-              'Way out: spread the state over several qubits and read only relations between them.'
-            ],
-            sketch: [
-              B(30, 50, 140, 60), T(100, 92, 'α|0⟩+β|1⟩', { anchor: 'middle', size: 28 }),
-              A(180, 80, 260, 80),
-              B(266, 50, 120, 60), T(326, 92, 'copier', { anchor: 'middle', size: 28 }),
-              L([[270, 54], [382, 106]], { c: 'red' }), L([[382, 54], [270, 106]], { c: 'red' }),
-              T(410, 90, 'not allowed', { size: 28, c: 'red' }),
-              O(100, 200, 34, { c: 'ink' }), O(100, 200, 12, { c: 'ink' }),
-              L([[50, 160], [150, 240]], { c: 'red' }), L([[150, 160], [50, 240]], { c: 'red' }),
-              T(180, 206, 'looking destroys the state', { size: 28, c: 'red' }),
-              H(30, 270, 560, 40, { c: 'yellow' }),
-              T(40, 300, 'spread it out, ask only about relations', { size: 30 })
-            ],
-            takeaway: 'We cannot copy or look. We spread the state and ask about relations.',
-            widget: null,
-            check: {
-              q: 'Why is "store three copies and vote" impossible for an unknown qubit?',
-              options: [
-                'Qubits are too small',
-                'Votes are slow',
-                'An unknown state cannot be copied',
-                'Three copies would be entangled'
-              ],
-              answer: 2,
-              why: 'No-cloning forbids copying an unknown quantum state.'
-            }
           }
         ]
       },
 
       /* ============================ SECTION 2 ============================ */
       {
-        title: 'The bit-flip code',
-        intro: 'Three qubits, one parity trick, and one error type handled. Every later code is a bigger version of this one.',
+        title: 'The bit-flip code under real errors',
+        intro: 'Quantum basics built the three-qubit bit-flip code and fixed one full X flip with it. Here: standard notation, small drifts, two flips, and its blind spot.',
         bridge: 'The bit-flip code fixes one X error and is blind to Z errors. Section 3 builds the mirror-image code for Z errors and joins the two.',
         tabs: [
           {
-            title: 'Classical repetition',
-            buildsOn: 'Section 1 ended with "spread the state". Quantum basics did exactly that, starting from the classical repetition code. A recap.',
-            leadsTo: 'Next, the standard names for the parity checks that replace the vote: Z1Z2 and Z2Z3, with answers +1 and −1.',
-            idea: [
-              'Send each bit three times: 0 → 000, 1 → 111.',
-              'If one copy flips, a majority vote recovers the bit.',
-              'Two flips fool the vote. One flip is the limit.',
-              'Qubit version, from Quantum basics: *α|000⟩ + β|111⟩*, built with two CNOTs. Flips are found by parity, not a vote.'
-            ],
-            sketch: [
-              T(40, 60, '1', { size: 40 }), A(80, 52, 150, 52),
-              B(160, 24, 140, 56), T(230, 62, '1 1 1', { anchor: 'middle', size: 36 }),
-              A(310, 52, 380, 52, { c: 'red' }), T(345, 36, 'noise', { anchor: 'middle', size: 22, c: 'red' }),
-              B(390, 24, 140, 56), T(460, 62, '1 0 1', { anchor: 'middle', size: 36, c: 'red' }),
-              A(460, 90, 460, 140, { c: 'green' }), T(486, 124, 'majority vote', { size: 26, c: 'green' }),
-              T(460, 180, '1', { anchor: 'middle', size: 44, c: 'green' }),
-              H(30, 220, 320, 40, { c: 'pink' }),
-              T(36, 250, 'two flips: 1 0 0  →  vote says 0', { size: 28 }),
-              T(36, 296, 'one flip is the limit', { size: 28, c: 'red' })
-            ],
-            takeaway: 'Repeat and vote. It fixes one flip, not two.',
-            widget: {
-              type: 'steps',
-              steps: [
-                { say: 'Encode the bit 1 as three copies.', show: '1  →  1 1 1' },
-                { say: 'Noise flips the middle copy.', show: '1 1 1  →  1 0 1' },
-                { say: 'Majority vote reads two 1s and one 0.', show: 'vote = 1   (fixed)' },
-                { say: 'Now suppose two copies flip.', show: '1 1 1  →  0 0 1' },
-                { say: 'The vote now gives the wrong answer.', show: 'vote = 0   (wrong)' }
-              ]
-            },
-            check: {
-              q: 'Three copies of a bit, and exactly two get flipped. What does a majority vote give?',
-              options: ['The right bit', 'The wrong bit', 'A random bit', 'No answer'],
-              answer: 1,
-              why: 'Two flipped copies outvote the one good copy.'
-            }
-          },
-          {
             title: 'Naming checks: Z1Z2 and ±1',
-            buildsOn: 'The recap tab used parity checks from Quantum basics, with answers 0 and 1. QEC writes the same checks as Z1Z2 with answers +1 and −1.',
-            leadsTo: 'Next, the two checks Z1Z2 and Z2Z3 together, finding the flipped qubit.',
+            buildsOn: 'Quantum basics found flips with two parity checks answering 0 or 1. QEC papers write the same checks as Z1Z2 and Z2Z3, answering +1 or −1.',
+            leadsTo: 'Next, errors that are not full flips: what a small drift on one qubit does to the code state.',
             idea: [
               'Z leaves |0⟩ alone and turns |1⟩ into −|1⟩. So Z marks 0 with a + sign and 1 with a − sign.',
               '*Z1Z2* means Z on q1 and Z on q2. On a pattern the two signs multiply: 00 gives +, 11 gives (−)(−) = +, 01 and 10 give −.',
-              'So Z1Z2 = +1 means q1 and q2 match (parity 0). Z1Z2 = −1 means they differ (parity 1). Same check, new name.'
+              'So Z1Z2 = +1 means q1 and q2 match (parity 0). Z1Z2 = −1 means they differ (parity 1). Same check, new name.',
+              'The syndrome table becomes: (+1, +1) no flip, (−1, +1) q1, (−1, −1) q2, (+1, −1) q3.'
             ],
             sketch: [
               T(70, 50, 'q1 q2', { anchor: 'middle', size: 26 }), T(250, 50, 'signs', { anchor: 'middle', size: 26 }), T(430, 50, 'Z1Z2', { anchor: 'middle', size: 26 }),
@@ -415,38 +342,8 @@
             }
           },
           {
-            title: 'Parity checks find the flipped qubit',
-            buildsOn: 'The naming tab turned a parity check into Z1Z2 = ±1. The bit-flip code uses two of them, as in Quantum basics.',
-            leadsTo: 'Next, errors that are not full flips: what a small drift on one qubit does to the code state.',
-            idea: [
-              'Check Z1Z2: do q1 and q2 match? Check Z2Z3: do q2 and q3 match?',
-              'Each check answers +1 (match) or −1 (differ). The pair of answers is the *syndrome*.',
-              'One flipped qubit gives a unique syndrome, so you know which one to flip back.'
-            ],
-            sketch: [
-              B(40, 50, 90, 80), B(160, 50, 90, 80, { c: 'red' }), B(280, 50, 90, 80),
-              T(85, 102, 'q1', { anchor: 'middle', size: 32 }), T(205, 102, 'q2', { anchor: 'middle', size: 32, c: 'red' }), T(325, 102, 'q3', { anchor: 'middle', size: 32 }),
-              K([[85, 140], [100, 172], [190, 172], [205, 140]], { c: 'blue' }),
-              T(145, 206, 'Z1Z2 = −1', { anchor: 'middle', size: 26, c: 'blue' }),
-              K([[205, 140], [220, 172], [310, 172], [325, 140]], { c: 'blue' }),
-              T(265, 240, 'Z2Z3 = −1', { anchor: 'middle', size: 26, c: 'blue' }),
-              A(400, 110, 470, 110, { c: 'green' }),
-              H(476, 76, 150, 50, { c: 'yellow' }),
-              T(482, 110, 'q2 flipped', { size: 28 }),
-              T(40, 300, 'both checks fire: the shared qubit is the culprit', { size: 26, c: 'green' })
-            ],
-            takeaway: 'Two parity checks name the flipped qubit.',
-            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3'], syndrome: true, codeSpace: true, reset: true },
-            check: {
-              q: 'Z1Z2 = +1 and Z2Z3 = −1. Which qubit flipped?',
-              options: ['q1', 'q2', 'q3', 'None'],
-              answer: 2,
-              why: 'q1 and q2 still match, but q2 and q3 differ, so q3 is the odd one out.'
-            }
-          },
-          {
             title: 'A drift leaks into the error zone',
-            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The parity tab gave the code its checks. Now tilt one qubit of the code.',
+            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The naming tab gave the checks their ±1 answers. Now tilt one qubit of the code.',
             leadsTo: 'Next, what the checks do with this two-part state: they force it to pick one part.',
             idea: [
               'Tilt q2 by 20°. The state becomes *0.98 × (α|000⟩ + β|111⟩) − 0.17i × (α|010⟩ + β|101⟩)*.',

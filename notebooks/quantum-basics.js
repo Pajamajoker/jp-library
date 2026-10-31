@@ -1165,7 +1165,7 @@
       {
         title: 'Finding a flip without looking',
         intro: 'A flip moves the code state off its codewords. Parity checks find which qubit moved, without reading α or β.',
-        bridge: 'You hold the repetition code and the parity trick. The next notebook, QEC basics, starts here: errors, syndromes, and why Z-type and X-type checks are both needed.',
+        bridge: 'You can encode a qubit, find a single flip without reading the data, and undo it. QEC basics picks up here: other kinds of error, small drifts, the limits of this code, and bigger codes.',
         tabs: [
           {
             title: 'What a flip does to the code',
@@ -1358,13 +1358,13 @@
             }
           },
           {
-            title: 'One full round, and its limits',
+            title: 'One full round',
             buildsOn: 'The earlier tabs gave each step on its own: encode, error, parity checks, syndrome, fix. This tab runs them in order.',
-            leadsTo: 'The QEC basics notebook takes this on: errors that are not full flips, and phase flips that these checks cannot see.',
+            leadsTo: 'QEC basics starts from here: the errors this code misses, how many flips it survives, and bigger codes.',
             idea: [
               'One round: encode with two CNOTs, noise acts, measure both checks, read the syndrome, flip the named qubit back.',
-              'One flip is always fixed. Two flips, on q1 and q2: the syndrome (0,1) blames q3, and the fix makes all three wrong.',
-              'A Z error flips the sign of β: α|000⟩ − β|111⟩. Every parity stays 0, so this code cannot see it at all.'
+              'Any single flip, on any of the three qubits, is found and undone. α and β come out exactly as they went in.',
+              'The code is not perfect. What it misses, and how bigger codes catch it, is where QEC basics begins.'
             ],
             sketch: [
               B(20, 50, 130, 56), T(85, 86, 'encode', { anchor: 'middle', size: 24 }),
@@ -1373,16 +1373,16 @@
               A(480, 78, 510, 78), B(512, 50, 108, 56, { c: 'green' }), T(566, 86, 'fix', { anchor: 'middle', size: 24, c: 'green' }),
               H(36, 140, 330, 40, { c: 'mint' }),
               T(40, 170, '1 flip  →  fixed', { size: 26, c: 'green' }),
-              T(40, 224, '2 flips  →  wrong fix', { size: 26, c: 'red' }),
-              T(40, 278, 'Z error  →  not seen', { size: 26, c: 'red' })
+              T(40, 224, 'α and β  →  unchanged', { size: 26, c: 'green' }),
+              T(40, 278, 'what it misses  →  QEC basics', { size: 26, c: 'blue' })
             ],
-            takeaway: 'Fixes any one X flip. Two flips or a Z error get through.',
-            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3', 'Z1'], syndrome: true, codeSpace: true, reset: true },
+            takeaway: 'Encode, flip, check, fix: any single flip is undone.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3'], syndrome: true, codeSpace: true, reset: true },
             check: {
-              q: 'Noise flips q1 and q2. The syndrome reads (0,1), so you flip q3. What is left?',
-              options: ['All three flipped: α|111⟩ + β|000⟩', 'The original state', 'Only q3 flipped', 'The state collapsed'],
+              q: 'Noise flips q3. The syndrome reads (0,1). What do you do, and what is left?',
+              options: ['Flip q3 back: α|000⟩ + β|111⟩ again', 'Flip q1 back: the state is fixed', 'Read all three and vote', 'Nothing: (0,1) means no error'],
               answer: 0,
-              why: '110 plus a flip on q3 is 111, and 001 becomes 000. α and β swapped places: one flip is the most this code fixes.'
+              why: '(0,1) means q1 and q2 match but q2 and q3 differ, so q3 is the odd one out. Flipping it back restores α|000⟩ + β|111⟩.'
             }
           }
         ]
