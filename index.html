@@ -448,6 +448,12 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .bridge2 p{max-width:none!important;color:var(--muted);font-size:15.5px!important;line-height:1.55}
 .bridge2 .bgo{position:relative;z-index:1;white-space:nowrap;padding:12px 22px;font-size:15px}
 @media (max-width:700px){.bridge2{grid-template-columns:1fr}.bridge2 .bgo{justify-self:start}}
+.snap-dots{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.snap-dots span{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.snap-dots span.done{color:var(--ink)}
+.snap-dots span.on{background:var(--accent);border-color:transparent;color:#fff}
+.snap-say{min-height:5.4em;margin:0 0 10px}.snap-say p{margin:0 0 6px;font-size:15.5px;line-height:1.5}
+.snap-sk{margin-bottom:10px}.snap-tally{margin-top:8px}
 </style>
 
 <div id="app"></div>
@@ -561,6 +567,8 @@ Rules
   { type: 'scaling' }   logical error rate versus code distance, with a physical error slider
   { type: 'stack', unit: 'ns', segments: [ { label: 'text', v: 100 }, ... ], note: 'text' }   one stacked time bar
   { type: 'steps', steps: [ { say: 'sentence', show: 'one line of math' }, ... ] }   reveal a derivation one line at a time
+  { type: 'snap', a: 0.6, b: 0.8, drift: 20 }   hand-drawn story of one check on the bit-flip code: stored state, drift on q2,
+      ancilla tags, reading the ancilla (nature spins a wheel), the snap and the fix. Use it where measurement-as-correction is taught.
   null   no widget
 
 If you need a widget that does not exist, use 'steps' and say so in a one-line comment at the top of the file so the library owner can add it.
@@ -718,7 +726,7 @@ const NB=window.NB={list:[],loadErrors:[],
     D:(x,y,o)=>Object.assign({t:'dot',x,y},o)
   }};
 const PART_TYPES=['text','box','arrow','line','curve','ellipse','hl','dot'];
-const WIDGETS=['qubit','multi','steps','surface','scaling','stack'];
+const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap'];
 function validate(nb){
   const E=[];const bad=/[—–]/;
   const need=(c,m)=>{if(!c)E.push(m);};
@@ -1082,6 +1090,136 @@ W.steps=function(o){
         rs=h('button',{class:'btn',type:'button',onclick:()=>{k=0;draw();}},'Restart');
   function draw(){list.textContent='';o.steps.slice(0,k||1).forEach(s=>list.append(h('div',null,h('div',{html:rich(s.say)}),s.show?h('div',{class:'mono',style:'font-size:17px;margin-top:2px'},s.show):null)));nx.disabled=k>=o.steps.length;}
   k=1;draw();root.append(list,h('div',{class:'btns'},nx,rs));return root;
+};
+
+/* snap: a hand-drawn, step by step story of how reading the ancilla snaps a drifted code state back.
+   Piles of weight: the clean code (000, 111) and the error zone (010, 101). Nature picks one with a wheel. */
+W.snap=function(o){
+  o=Object.assign({a:.6,b:.8,drift:20},o||{});
+  const A0=o.a,B0=o.b,NAMES=['000','111','010','101'];
+  const STEPS=['1 Stored','2 Drift','3 Tag','4 Read','5 Result'];
+  const root=h('div',{class:'w snapw'});
+  const dots=h('div',{class:'snap-dots'},STEPS.map(t=>h('span',null,t)));
+  const say=h('div',{class:'snap-say'});
+  const svg=sv('svg',{viewBox:'0 0 640 420',role:'img','aria-label':'Step by step: reading the ancilla snaps the drifted state back'});
+  const pad=h('div',{class:'sketch snap-sk'},svg);
+  const B=(t,fn,cls)=>h('button',{class:'btn'+(cls?' '+cls:''),type:'button',onclick:fn},t);
+  const back=B('← Back',()=>go(step===5?4:step-1)),next=B('Next →',()=>go(step+1),'pri'),act=B('',()=>action(),'pri'),again=B('Start over',()=>{cnt=[0,0];go(0);});
+  const tally=h('div',{class:'mini snap-tally'});
+  let delta=o.drift,step=0,outcome=-1,cnt=[0,0],raf=0,spinning=false;
+  const sl=slider('Drift on q2 (δ)',0,90,1,delta,'°',v=>{delta=v;if(step>=1&&step<=3)tween(goal(step),250);});
+  const cs=()=>[Math.cos(delta*RAD/2),Math.sin(delta*RAD/2)];
+  /* displayed quantities, animated toward a goal */
+  let D={amp:[A0,B0,0,0],fade:[1,1],tags:0,wheel:0,needle:-90,cross:[0,0],div:0,err:0};
+  function goal(s){const [c,sn]=cs(),g={amp:[A0*c,B0*c,A0*sn,B0*sn],fade:[1,1],tags:0,wheel:0,needle:D.needle,cross:[0,0],div:0,err:1};
+    if(s===0){g.amp=[A0,B0,0,0];g.err=0;}
+    if(s>=2)g.tags=1;
+    if(s>=3)g.wheel=1;
+    if(s===4&&outcome===0){g.amp=[A0,B0,A0*sn,B0*sn];g.fade=[1,.18];g.cross=[0,1];g.div=1;}
+    if(s===4&&outcome===1){g.amp=[A0*c,B0*c,A0,B0];g.fade=[.18,1];g.cross=[1,0];g.div=1;}
+    if(s===5){g.amp=[A0,B0,0,0];g.fade=[1,.18];g.cross=[0,0];g.err=0;g.div=0;}
+    return g;}
+  const lerp=(a,b,k)=>a+(b-a)*k;
+  function mix(a,b,k){const o2={};for(const key in b)o2[key]=Array.isArray(b[key])?b[key].map((v,i)=>lerp(a[key][i],v,k)):lerp(a[key],b[key],k);return o2;}
+  function tween(g,ms){cancelAnimationFrame(raf);const from=D,t0=performance.now();
+    if(reduce()||!ms){D=g;draw();return;}
+    const f=now=>{const k=Math.max(0,Math.min(1,(now-t0)/ms)),e=1-Math.pow(1-k,3);D=mix(from,g,e);draw();if(k<1)raf=requestAnimationFrame(f);};raf=requestAnimationFrame(f);}
+
+  /* rough drawing helpers, seeded per element so the jitter stays still while things move */
+  const P=(d,col,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:colr(col),'stroke-width':w||2.4,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op==null?1:op});if(dash)e.setAttribute('stroke-dasharray','7 6');return e;};
+  const rbox=(key,x,y,w,hh,col,op,dash)=>{const r=rng(hash(key)),pts=[[x,y],[x+w,y],[x+w,y+hh],[x,y+hh],[x+1,y-1]];
+    return [P(polyD(polyPts(r,pts,1.3,true)),col,2.4,op,dash),P(polyD(polyPts(r,pts,1.6,true)),col,1.1,op*.5,dash)];};
+  const rline=(key,pts,col,w,op)=>{const r=rng(hash(key));return P(polyD(polyPts(r,pts,1.2,true)),col,w,op);};
+  const txt=(x,y,s,size,col,op,anchor)=>sv('text',{x,y,'font-size':size,fill:colr(col),opacity:op==null?1:op,'text-anchor':anchor||'middle'},s);
+  const n3=v=>{const r=Math.round(v*1000)/1000;return String(r).replace(/^0\./,'0.');};
+
+  function draw(){
+    svg.textContent='';const g=sv('g',{});svg.append(g);
+    const BASE=220,MAXH=128,BW=58;
+    const groups=[{x:52,title:'clean code',col:'green',bars:[[0,92],[1,192]]},{x:382,title:'error zone (q2 flipped)',col:'red',bars:[[2,422],[3,522]]}];
+    const [c,sn]=cs();
+    groups.forEach((G,gi)=>{
+      const op=D.fade[gi];if(gi===1&&D.err<.02&&D.amp[2]<.005){
+        g.append(...rbox('frame'+gi,G.x,40,226,250,'red',.35,true),txt(G.x+113,30,G.title,22,'red',.45));return;}
+      g.append(...rbox('frame'+gi,G.x,40,226,250,G.col,.9*op,gi===1),txt(G.x+113,30,G.title,22,G.col,op));
+      let tot=0;
+      G.bars.forEach(([i,bx])=>{const v=D.amp[i],hh=Math.max(0,v*MAXH);tot+=v*v;
+        const fill=sv('rect',{x:bx,y:BASE-hh,width:BW,height:hh,fill:colr(i%2?'green':'blue'),opacity:.28*op});g.append(fill);
+        if(hh>2)g.append(...rbox('bar'+i,bx,BASE-hh,BW,hh,i%2?'green':'blue',op));
+        g.append(txt(bx+BW/2,BASE+24,NAMES[i],22,'ink',op));
+        if(v>.004)g.append(txt(bx+BW/2,BASE-hh-8,n3(v),20,i%2?'green':'blue',op));});
+      g.append(rline('base'+gi,[[G.x+14,BASE],[G.x+212,BASE]],'ink',2,op));
+      g.append(txt(G.x+113,BASE+52,'chance '+Math.round(tot*1000)/10+'%',20,'ink',.85*op));
+      const a=D.amp[G.bars[0][0]],b=D.amp[G.bars[1][0]];
+      if(a>.004&&b>.004)g.append(txt(G.x+113,64,'ratio '+n3(a/Math.hypot(a,b))+' : '+n3(b/Math.hypot(a,b)),19,'ink',.75*op));
+      if(D.cross[gi]>.01){const k=D.cross[gi],r=rng(hash('x'+gi)),pts=[];
+        for(let t=0;t<7;t++)pts.push([G.x+18+t*31,t%2?60:260]);
+        const e=P(smoothD(polyPts(r,pts,3,false)),'red',2.2,.6*k);g.append(e);}
+    });
+    /* rescale note on the surviving pile */
+    if(D.div>.02){const gi=outcome===1?1:0,G=groups[gi],f=outcome===1?sn:c;
+      g.append(sv('rect',{x:G.x+38,y:70,width:150,height:30,rx:6,fill:colr('yellow'),opacity:.45*D.div}),
+        txt(G.x+113,92,'÷ '+n3(f)+' to fill 100%',19,'ink',D.div));}
+    /* ancilla tags */
+    if(D.tags>.02){[[165,'a = 0','green',0],[495,'a = 1','red',1]].forEach(([x,s,col,gi])=>{const op=D.tags*(D.fade[gi]<.5?.35:1);
+      g.append(rline('str'+gi,[[x,292],[x-6,302],[x,312]],col,1.6,op));
+      const r=rng(hash('tag'+gi));g.append(P(smoothD(ellPts(r,x,338,34,22)),col,2.4,op),txt(x,345,s,22,col,op));});
+      g.append(txt(330,312,'ancilla tags',18,'ink',.6*D.tags));}
+    /* nature's wheel */
+    if(D.wheel>.02){const cx=330,cy=372,R=46,p1=sn*sn,op=D.wheel,a1=-90+360*(1-p1);
+      const arc=(a0,a1b,col,o2)=>{const r0=a0*RAD,r1=a1b*RAD,large=(a1b-a0)>180?1:0;
+        return sv('path',{d:'M'+cx+' '+cy+'L'+f1(cx+R*Math.cos(r0))+' '+f1(cy+R*Math.sin(r0))+'A'+R+' '+R+' 0 '+large+' 1 '+f1(cx+R*Math.cos(r1))+' '+f1(cy+R*Math.sin(r1))+'Z',fill:colr(col),opacity:o2});};
+      if(p1<.999)g.append(arc(-90,a1,'green',.35*op));if(p1>.001)g.append(arc(a1,270,'red',.45*op));
+      const r=rng(hash('wheel'));g.append(P(smoothD(ellPts(r,cx,cy,R,R)),'ink',2.4,op));
+      const na=D.needle*RAD;g.append(rline('needle',[[cx,cy],[cx+(R-6)*Math.cos(na),cy+(R-6)*Math.sin(na)]],'ink',3,op),sv('circle',{cx,cy,r:4,fill:colr('ink'),opacity:op}));
+      g.append(txt(cx-62,cy+6,Math.round((1-p1)*1000)/10+'% → 0',17,'green',op,'end'),txt(cx+62,cy+6,'1 ← '+Math.round(p1*1000)/10+'%',17,'red',op,'start'));}
+  }
+
+  function text(){const [c,sn]=cs(),p1=sn*sn;
+    const T={
+      0:['The stored qubit: α = '+A0+' on 000 and β = '+B0+' on 111. The error zone is empty. This is α|000⟩ + β|111⟩, exactly.'],
+      1:['Noise tilts q2 by δ = '+delta+'°. Both clean bars shrink by the same factor, '+n3(c)+'. The same shape leaks into the error zone, '+n3(sn)+' times as big.',
+         'Look at the ratio line: it is still '+A0+' : '+B0+' in both piles. The drift did not change α or β, it only moved weight.'],
+      2:['The two CNOTs tag the piles. The clean pile is now paired with ancilla 0, the flipped pile with ancilla 1.',
+         'Nothing is fixed yet. Both piles are still there, side by side.'],
+      3:['Now read the ancilla. Nobody chooses the answer: nature spins a wheel. The slices are the chances of the two piles: '+pct(1-p1)+' for 0 and '+pct(p1)+' for 1.',
+         'Press the button to read it.'],
+      4:outcome===0?['Ancilla read 0. Nature kept only the pile tagged 0. The error zone is gone, not fixed by us, just no longer true.',
+         'The clean bars are scaled up to fill 100%: '+n3(A0*c)+' ÷ '+n3(c)+' = '+A0+' and '+n3(B0*c)+' ÷ '+n3(c)+' = '+B0+'. Exactly the original. We do nothing.']
+        :['Ancilla read 1. Nature kept only the pile tagged 1: exactly α|010⟩ + β|101⟩, a full flip on q2, with α and β intact.',
+         'The answer tells us which qubit flipped. Press "Apply X on q2" to flip it back.'],
+      5:['X on q2 turns 010 into 000 and 101 into 111. The state is α|000⟩ + β|111⟩ again, exactly.','One known flip, one known fix.']};
+    say.textContent='';(T[step]||[]).forEach(s=>say.append(h('p',null,s)));
+    if(cnt[0]+cnt[1])tally.textContent='Readouts so far: 0 came up '+cnt[0]+' times, 1 came up '+cnt[1]+' times. Every one ended at exactly '+A0+'|000⟩ + '+B0+'|111⟩.';
+    else tally.textContent='';}
+
+  function controls(){
+    [...dots.children].forEach((d,i)=>{const k=Math.min(step,4);d.className=i===k?'on':i<k?'done':'';});
+    back.disabled=step===0||spinning;
+    next.hidden=step>=3;
+    act.hidden=!(step===3||step===4||step===5);act.disabled=spinning;
+    act.textContent=step===3?'Read the ancilla':(step===4&&outcome===1)?'Apply X on q2':'Spin again';
+    sl.el.style.display=step>=1&&step<=3?'':'none';
+  }
+  function go(s){if(spinning)return;step=Math.max(0,Math.min(5,s));if(step<=3)outcome=-1;tween(goal(step),650);text();controls();}
+  function action(){
+    if(step===3)return spin();
+    if(step===4&&outcome===1){step=5;tween(goal(5),900);text();controls();return;}
+    outcome=-1;step=3;tween(goal(3),500);text();controls();}
+  function spin(){const p1=cs()[1]**2,res=Math.random()<p1?1:0,a1=-90+360*(1-p1);
+    const lo=res?a1:-90,hi=res?270:a1,land=lo+(hi-lo)*(.15+.7*Math.random());
+    const start=D.needle,end=start+360*3+(((land-start)%360)+360)%360;
+    spinning=true;controls();
+    const fin=()=>{spinning=false;outcome=res;cnt[res]++;step=4;D.needle=land;tween(goal(4),900);text();controls();};
+    if(reduce()){D.needle=land;fin();return;}
+    const t0=performance.now(),ms=1700;cancelAnimationFrame(raf);
+    const f=now=>{const k=Math.max(0,Math.min(1,(now-t0)/ms)),e=1-Math.pow(1-k,3);D=Object.assign({},D,{needle:start+(end-start)*e});draw();if(k<1)raf=requestAnimationFrame(f);else fin();};
+    raf=requestAnimationFrame(f);}
+
+  root.append(dots,say,pad,sl.el,h('div',{class:'btns'},back,next,act,again),tally);
+  draw();text();controls();
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
+  return root;
 };
 
 /* surface code patch, distance 3 (rotated layout): 9 data qubits, 8 checks */

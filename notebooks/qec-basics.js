@@ -42,6 +42,11 @@
             "means": "A small error written as mostly I plus a little X, Y or Z. A tilt by δ: cos(δ/2)·I − i·sin(δ/2)·X."
           },
           {
+            "term": "Pile",
+            "hover": false,
+            "means": "Notebook word for one part of a drifted state: the clean pile (000, 111) or the flipped pile (010, 101). Each holds the same α : β."
+          },
+          {
             "term": "Discretisation of errors",
             "aka": ["discretisation"],
             "means": "Measuring the checks turns any small drift into either no error or one full flip. So fixing full flips is enough."
@@ -237,7 +242,8 @@
             idea: [
               '*X error* (bit flip), the one Quantum basics handled: swaps α and β, so |0⟩ ↔ |1⟩.',
               '*Z error* (phase flip) flips the sign of β. A Z readout cannot see it.',
-              'Both at once is *Y*, up to a factor i. X, Y, Z and "no error" are the Pauli errors.'
+              'Both at once is *Y*, up to a factor i. X, Y, Z and "no error" are the Pauli errors.',
+              'Real noise is rarely a full flip; it drifts. These four are the building blocks a drift is made of. Next tab.'
             ],
             sketch: [
               B(30, 40, 160, 70), T(110, 86, '(α, β)', { anchor: 'middle', size: 34 }),
@@ -268,7 +274,7 @@
               'Noise rarely does a full X. More often it drifts α and β a little: it tilts the qubit by a small angle δ.',
               'A tilt about x is a blend: *cos(δ/2) × (no error) − i·sin(δ/2) × (X error)*. Most of it is "no error".',
               'For δ = 20°: cos 10° = 0.98 and sin 10° = 0.17. Squared, that is about 97% clean and 3% X.',
-              'Any small error splits like this into I, X, Y and Z parts. Section 2 shows a check picks one part.'
+              'Any small error splits like this into I, X, Y, Z parts. Like a tilted coin, Section 2 makes it fall flat: clean, or fully over.'
             ],
             sketch: [
               T(40, 60, 'small tilt', { size: 30, c: 'red' }),
@@ -343,42 +349,117 @@
           },
           {
             title: 'A drift leaks into the error zone',
-            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The naming tab gave the checks their ±1 answers. Now tilt one qubit of the code.',
-            leadsTo: 'Next, what the checks do with this two-part state: they force it to pick one part.',
+            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The naming tab gave the checks their ±1 answers. Now tilt one qubit of a real code state.',
+            leadsTo: 'Next, the step before any measurement: the CNOTs tag the clean pile and the flipped pile on the ancilla.',
             idea: [
-              'Tilt q2 by 20°. The state becomes *0.98 × (α|000⟩ + β|111⟩) − 0.17i × (α|010⟩ + β|101⟩)*.',
-              'The first part is the clean code. The second is "q2 fully flipped". About 3% of the weight leaked into the error zone.',
-              'This drift hit one physical qubit. Changing the stored α and β as a whole would need all three qubits changed together.',
-              'Noise acts on one qubit at a time, so all it can do is leak weight into the error zone. The checks can see that.'
+              'Take α = 0.6, β = 0.8. Tilt q2 by 20°. The amplitudes become 000: 0.591, 111: 0.788, 010: 0.104, 101: 0.139.',
+              'Read them as two piles. Clean pile: 0.985 × (0.6, 0.8). Flipped pile: 0.174 × (0.6, 0.8). The pair 0.6, 0.8 is in both.',
+              'So the drift did not change α or β. It moved about 3% of the weight into the error zone. 0.985 and 0.174 say how much.',
+              'Why: noise on q2 cannot tell 000 from 111, so it treats both alike. Like a 2% tax on two accounts: their ratio stays.'
             ],
             sketch: [
-              T(320, 40, 'q2 tilted by 20°', { anchor: 'middle', size: 28, c: 'red' }),
-              A(260, 56, 170, 100), A(380, 56, 470, 100, { c: 'red' }),
-              B(50, 106, 240, 70, { c: 'green' }), T(170, 150, '0.98 × (000, 111)', { anchor: 'middle', size: 24, c: 'green' }),
-              B(350, 106, 240, 70, { c: 'red' }), T(470, 150, '0.17 × (010, 101)', { anchor: 'middle', size: 24, c: 'red' }),
-              T(170, 212, 'clean code, 97%', { anchor: 'middle', size: 24 }),
-              T(470, 212, 'q2 flipped, 3%', { anchor: 'middle', size: 24 }),
-              H(60, 250, 520, 44, { c: 'yellow' }),
-              T(320, 282, 'a drift = a little weight in the error zone', { anchor: 'middle', size: 24 })
+              T(320, 36, 'q2 tilted by 20°', { anchor: 'middle', size: 26, c: 'red' }),
+              A(250, 50, 170, 88), A(390, 50, 470, 88, { c: 'red' }),
+              B(50, 94, 240, 110, { c: 'green' }), T(170, 132, 'clean pile', { anchor: 'middle', size: 24, c: 'green' }),
+              T(170, 166, '0.985 ×', { anchor: 'middle', size: 26 }), T(170, 194, '(0.6, 0.8)', { anchor: 'middle', size: 26, c: 'blue' }),
+              B(350, 94, 240, 110, { c: 'red', dash: true }), T(470, 132, 'flipped pile', { anchor: 'middle', size: 24, c: 'red' }),
+              T(470, 166, '0.174 ×', { anchor: 'middle', size: 26 }), T(470, 194, '(0.6, 0.8)', { anchor: 'middle', size: 26, c: 'blue' }),
+              H(80, 236, 480, 44, { c: 'yellow' }),
+              T(320, 268, 'same α, β in both piles', { anchor: 'middle', size: 28 }),
+              T(320, 312, 'only the pile sizes changed', { anchor: 'middle', size: 22, c: 'green' })
             ],
-            takeaway: 'A small drift puts a little weight in the error zone.',
-            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2', 'X2'], codeSpace: true, reset: true },
+            takeaway: 'A drift moves weight between piles. α and β stay the same.',
+            widget: { type: 'steps', steps: [
+              { say: 'Start: α = 0.6 on 000, β = 0.8 on 111.', show: '000: 0.6 · 111: 0.8 · others: 0' },
+              { say: 'Noise tilts q2 by 20°. Write it as mostly "nothing" plus a little X on q2.', show: '0.985 × (nothing)  −  0.174i × (X on q2)' },
+              { say: '"Nothing" keeps the clean patterns, shrunk.', show: '000: 0.6 × 0.985 = 0.591 · 111: 0.8 × 0.985 = 0.788' },
+              { say: '"X on q2" puts a small copy on 010 and 101.', show: '010: 0.6 × 0.174 = 0.104 · 101: 0.8 × 0.174 = 0.139' },
+              { say: 'The chances (amplitude squared) still add to 100%.', show: '34.9% + 62.1% + 1.1% + 1.9% = 100%' },
+              { say: 'Both piles carry the same pair 0.6 : 0.8. Only the pile sizes are new.', show: 'α, β untouched · 3% leaked' },
+              { say: 'Compare one bare qubit with no code. The same tilt mixes 0.6 and 0.8 into new numbers, and nothing can undo it.', show: 'no code: α, β damaged' }
+            ] },
             check: {
-              q: 'q2 of the code is tilted by 20°. Roughly how much weight is now outside 000 and 111?',
-              options: ['About 3%', 'About 50%', 'None', 'About 20%'],
+              q: 'After the 20° tilt on q2, what is the ratio of the 010 and 101 amplitudes?',
+              options: ['0.6 : 0.8, the same as α : β', '0.985 : 0.174', '0.8 : 0.6', '1 : 1'],
               answer: 0,
-              why: 'The flipped part has amplitude about 0.17, and 0.17² ≈ 0.03. The other 97% is still the clean code.'
+              why: '010 has 0.6 × 0.174 and 101 has 0.8 × 0.174. The common factor drops out, leaving 0.6 : 0.8.'
             }
           },
           {
-            title: 'A check makes small errors whole',
-            buildsOn: 'The leak tab left the state 97% clean code and 3% "q2 flipped". Now the bit-flip checks are measured on it.',
+            title: 'The ancilla tags the two piles',
+            buildsOn: 'The drift tab left two piles: clean, and q2 flipped. Before anything is read, the check circuit runs its CNOTs into the ancilla.',
+            leadsTo: 'Next, the moment that matters: reading the ancilla, and what nature does with the two piles.',
+            idea: [
+              'Take the check on q1 and q2. Its ancilla starts at |0⟩ and is flipped once for each 1 among q1, q2. It ends at their parity.',
+              'Clean pile: q1 and q2 match, so its ancilla is 0. Flipped pile: they differ, so its ancilla is 1.',
+              'The state is now *0.985 × (clean pile)|0⟩ − 0.174i × (flipped pile)|1⟩*. Each pile carries a tag.',
+              'The CNOTs correct nothing. Both piles are still there. They are only labelled.'
+            ],
+            sketch: [
+              B(50, 50, 240, 90, { c: 'green' }), T(170, 90, 'clean pile', { anchor: 'middle', size: 26, c: 'green' }),
+              T(170, 124, 'q1 = q2', { anchor: 'middle', size: 22 }),
+              B(350, 50, 240, 90, { c: 'red', dash: true }), T(470, 90, 'flipped pile', { anchor: 'middle', size: 26, c: 'red' }),
+              T(470, 124, 'q1 ≠ q2', { anchor: 'middle', size: 22 }),
+              L([[170, 140], [170, 180]], { c: 'green' }), L([[470, 140], [470, 180]], { c: 'red' }),
+              O(170, 210, 30, { c: 'green' }), T(170, 218, 'a = 0', { anchor: 'middle', size: 22, c: 'green' }),
+              O(470, 210, 30, { c: 'red' }), T(470, 218, 'a = 1', { anchor: 'middle', size: 22, c: 'red' }),
+              H(110, 262, 420, 44, { c: 'yellow' }),
+              T(320, 294, 'CNOTs: tag, not fix', { anchor: 'middle', size: 28 })
+            ],
+            takeaway: 'The CNOTs tag the piles. They do not fix anything.',
+            widget: { type: 'steps', steps: [
+              { say: 'Before the CNOTs: two piles, and the ancilla is 0 for both.', show: '0.985 × (clean)|0⟩  −  0.174i × (flipped)|0⟩' },
+              { say: 'Clean pile: q1 q2 is 00 or 11, so the ancilla flips 0 or 2 times.', show: 'clean → ancilla 0' },
+              { say: 'Flipped pile: q1 q2 is 01 or 10, so the ancilla flips once.', show: 'flipped → ancilla 1' },
+              { say: 'After the CNOTs:', show: '0.985 × (clean)|0⟩  −  0.174i × (flipped)|1⟩' },
+              { say: 'The drift is still fully there. It is now labelled by the ancilla.', show: 'tagged, not fixed' }
+            ] },
+            check: {
+              q: 'Right after the CNOTs, before the ancilla is read, is the drift gone?',
+              options: ['No, both piles are still there, now tagged', 'Yes, the CNOTs removed it', 'Yes, but only on q2', 'No, and the CNOTs made it bigger'],
+              answer: 0,
+              why: 'The CNOTs only pair each pile with an ancilla value. Nothing is removed until the ancilla is read.'
+            }
+          },
+          {
+            title: 'Reading the ancilla: nature snaps it',
+            buildsOn: 'The tagging tab paired the clean pile with ancilla 0 and the flipped pile with ancilla 1. Now the ancilla is read.',
+            leadsTo: 'Next, what we actually do after each answer, and what a "no" can and cannot promise.',
+            idea: [
+              'Reading the ancilla gives 0 or 1. Nobody picks: nature does, with the pile sizes as odds. 0.985² ≈ 97% for 0, 0.174² ≈ 3% for 1.',
+              'Like a die: told "it is even", 1, 3 and 5 are out, and 2, 4, 6 grow from 1/6 to 1/3 each. Same ratio, scaled up.',
+              'Read 0: the flipped pile is no longer true. The clean pile fills 100%: 0.591 ÷ 0.985 = 0.6 and 0.788 ÷ 0.985 = 0.8. Exact.',
+              'Read 1: only the flipped pile is left, exactly α|010⟩ + β|101⟩. Below, step through it and spin the wheel a few times.'
+            ],
+            sketch: [
+              T(320, 34, 'nature spins', { anchor: 'middle', size: 24 }),
+              O(320, 120, 70),
+              L([[320, 120], [320, 50]]), L([[320, 120], [362, 64]], { c: 'red' }),
+              A(320, 120, 268, 162),
+              T(190, 104, '0: 97%', { anchor: 'middle', size: 26, c: 'green' }),
+              T(462, 74, '1: 3%', { anchor: 'middle', size: 26, c: 'red' }),
+              A(270, 192, 172, 236, { c: 'green' }), A(370, 192, 468, 236, { c: 'red' }),
+              B(40, 242, 260, 60, { c: 'green' }), T(170, 280, 'clean pile kept: exact', { anchor: 'middle', size: 22, c: 'green' }),
+              B(340, 242, 260, 60, { c: 'red' }), T(470, 280, 'full flip kept: one X', { anchor: 'middle', size: 22, c: 'red' })
+            ],
+            takeaway: 'Reading the ancilla makes nature keep one pile. No drift is left.',
+            widget: { type: 'snap', a: 0.6, b: 0.8, drift: 20 },
+            check: {
+              q: 'The ancilla reads 0. What is the data now?',
+              options: ['Exactly α|000⟩ + β|111⟩', 'Still slightly drifted', 'α|010⟩ + β|101⟩', 'Unknown until the data is read'],
+              answer: 0,
+              why: 'Reading 0 removes the flipped pile. The clean pile is scaled back to 100%, which gives exactly 0.6 and 0.8 again.'
+            }
+          },
+          {
+            title: 'What we do: nothing, or one X',
+            buildsOn: 'The snap tab showed nature keeping one pile when the ancilla is read. Now the part that is up to us.',
             leadsTo: 'Next, how many full flips this code can survive. That limit is called the distance.',
             idea: [
-              'The two parts give different check answers. Clean part: (+1, +1). Flipped part: (−1, −1). A measurement returns only one.',
-              'About 97% of the time: (+1, +1). The state snaps to exactly α|000⟩ + β|111⟩. The drift is simply gone, nothing to fix.',
-              'About 3%: (−1, −1). The state snaps to exactly α|010⟩ + β|101⟩, a full flip on q2. The syndrome names it; flip q2 back.',
-              'Either way α and β are untouched. So fixing full flips is enough: this is the *discretisation of errors*.'
+              'Ancilla 0: we do *nothing*. The measurement already removed the drift. No gate is applied.',
+              'Ancilla 1: with the second check, the syndrome names q2. Apply one X to q2. This is the only physical correction.',
+              'So fixing full flips is enough for every small drift. This is the *discretisation of errors*.',
+              'A "no" means no flip that this check can see. It cannot rule out a Z error or two flips. Both come next.'
             ],
             sketch: [
               T(40, 60, 'small drift', { size: 30, c: 'red' }),
@@ -394,16 +475,8 @@
               H(36, 280, 500, 36, { c: 'mint' }),
               T(40, 308, 'either way, we can fix it', { size: 30 })
             ],
-            takeaway: 'A check turns a messy error into a clean one we can fix.',
-            widget: { type: 'steps', steps: [
-              { say: 'After the tilt on q2, the state has two parts.', show: '0.98 × (α|000⟩ + β|111⟩)  −  0.17i × (α|010⟩ + β|101⟩)' },
-              { say: 'Ask the checks. The clean part answers match, match.', show: 'α|000⟩ + β|111⟩  →  (+1, +1)' },
-              { say: 'The flipped part answers differ, differ.', show: 'α|010⟩ + β|101⟩  →  (−1, −1)' },
-              { say: 'A measurement gives one answer. The odds are the squared sizes of the parts.', show: '(+1, +1): 0.98² ≈ 97% · (−1, −1): 0.17² ≈ 3%' },
-              { say: 'If (+1, +1): only the clean part survives, rescaled.', show: 'state = α|000⟩ + β|111⟩ · drift gone' },
-              { say: 'If (−1, −1): only the flipped part survives. The syndrome points at q2.', show: 'state = α|010⟩ + β|101⟩  →  X on q2  →  α|000⟩ + β|111⟩' },
-              { say: 'Both ways end at the original α and β. A drift of any size became "none" or "one full flip".', show: 'discretisation of errors' }
-            ] },
+            takeaway: 'Read 0: do nothing. Read 1: one X. Drift never survives a check.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2', 'X2'], syndrome: true, codeSpace: true, reset: true },
             check: {
               q: 'A small partial error hits one qubit. The syndrome is read. What is the qubit now?',
               options: [
@@ -418,7 +491,7 @@
           },
           {
             title: 'Distance: how many flips it fixes',
-            buildsOn: 'The last two tabs reduced any small drift to none or one full flip. Here we ask what happens with two flips.',
+            buildsOn: 'The snap tabs reduced any small drift to none or one full flip. Here we ask what happens with two flips.',
             leadsTo: 'Next, a different failure: errors of a different type that these checks cannot see at all.',
             idea: [
               '*Distance d* is the smallest number of flips that turns one code state into another.',
