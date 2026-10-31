@@ -393,6 +393,28 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .gtip .mn{margin-top:3px}
 .gtip button{margin-top:8px;border:0;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
 @media (max-width:600px){.cs-panel{left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;width:auto;height:72vh}.cs-fab{right:14px;bottom:14px}}
+
+/* Tab rail: vertical timeline on wide screens */
+.chip.done .n{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
+.chip.on.done .n{background:rgba(255,255,255,.25);color:#fff}
+.join.done{background:var(--accent)}
+.chain{scrollbar-width:none}.chain::-webkit-scrollbar{display:none}
+.rail-h{display:none}
+@media (min-width:1100px){
+  body.secv #app{max-width:1260px}
+  .sec-grid{display:grid;grid-template-columns:264px minmax(0,1fr);gap:36px;align-items:start}
+  .rail{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow-y:auto;scrollbar-width:none;padding:14px 8px 10px;border-radius:20px}
+  .rail::-webkit-scrollbar{display:none}
+  .rail-h{display:flex;justify-content:space-between;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:2px 12px 10px}
+  .rail .chain{flex-direction:column;overflow:visible;padding:0;margin:0}
+  .rail .chip{max-width:none;white-space:normal;align-items:flex-start;text-align:left;border-radius:14px;padding:10px 12px;line-height:1.35;font-size:14px;
+    background:transparent;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;transition:background .2s,color .2s}
+  .rail .chip:hover{background:rgba(127,127,127,.12)}
+  .rail .chip.on{background:var(--accent);color:#fff}
+  .rail .chip .t{overflow:visible;text-overflow:clip;padding-top:2px}
+  .rail .join{flex:0 0 12px;width:2px;height:12px;align-self:auto;margin-left:22px;border-radius:2px}
+}
+@media (max-width:1099px){.rail{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0}}
 </style>
 
 <div id="app"></div>
@@ -1279,11 +1301,14 @@ function neighbours(nb,si,ti){
 function viewSection(nb,si,ti){
   app.textContent='';const s=nb.sections[si];
   const chain=h('div',{class:'chain',role:'tablist','aria-label':'Tabs in this section'});
-  s.tabs.forEach((t,j)=>{if(j)chain.append(h('span',{class:'join'}));
+  s.tabs.forEach((t,j)=>{if(j)chain.append(h('span',{class:'join'+(isDone(nb,si,j-1)?' done':'')}));
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
   const body=h('div');
+  const dn=s.tabs.filter((_,j)=>isDone(nb,si,j)).length;
+  const rail=h('aside',{class:'rail glass','aria-label':'Tabs'},h('div',{class:'rail-h'},h('span',null,'Section '+(si+1)),h('span',null,dn+' / '+s.tabs.length+' done')),chain);
+  document.body.classList.add('secv');
   app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
-    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),chain,body);
+    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),h('div',{class:'sec-grid'},rail,body));
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
   const tid=nb.id+'-'+si+'-'+ti;
@@ -1307,7 +1332,19 @@ function viewSection(nb,si,ti){
       h('div',{class:'row'},isDone(nb,si,ti)?h('span',{class:'mini'},'Marked done'):null,doneBtn)))
   );
   annotate(app,nb);csNext=nb;
+  railScroll(nb.id+'-'+si,rail,chain);
   sk._start();
+}
+const railPos={};
+function railScroll(key,rail,chain){
+  const on=chain.querySelector('.chip.on');if(!on)return;
+  const vert=getComputedStyle(chain).flexDirection==='column',box=vert?rail:chain,prop=vert?'scrollTop':'scrollLeft';
+  if(railPos[key]&&railPos[key][0]===vert)box[prop]=railPos[key][1];
+  requestAnimationFrame(()=>{const a=on.getBoundingClientRect(),b=box.getBoundingClientRect();
+    const d=vert?(a.top-b.top)-(box.clientHeight-a.height)/2:(a.left-b.left)-(box.clientWidth-a.width)/2;
+    box.scrollBy({[vert?'top':'left']:d,behavior:reduce()?'auto':'smooth'});
+    setTimeout(()=>{railPos[key]=[vert,box[prop]];},400);});
+  box.addEventListener('scroll',()=>{railPos[key]=[vert,box[prop]];},{passive:true});
 }
 function checkBlock(c){
   let locked=false;const why=h('div',{class:'why',hidden:true},c.why);
@@ -1318,6 +1355,7 @@ function checkBlock(c){
 function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#'},'Back to the library'));}
 
 function route(){
+  document.body.classList.remove('secv');
   csNext=null;setTimeout(()=>csAttach(csNext),0);gtipHide(true);
   const po=document.querySelector('.pull');if(po)po.remove();
   const hs=decodeURIComponent(location.hash.slice(1));let m;
