@@ -364,6 +364,35 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .ref-link{margin-left:10px}
 .sec-head .ref-link{margin:0 0 14px;display:inline-flex}
 @media (max-width:600px){.gl{grid-template-columns:1fr}.gl .tm{border-top:1px solid var(--line);padding-bottom:0}.gl .mn{border-top:0;padding-top:4px}.gl>div:first-child{border-top:0}}
+
+/* Floating cheat sheet + hover terms */
+.cs-fab{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:9px;padding:11px 18px 11px 12px;border-radius:999px;font:inherit;font-weight:600;font-size:14.5px;color:var(--ink);
+  border:1px solid var(--g-bd);background:var(--g-bg);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 14px 34px -10px rgba(0,0,0,.5),inset 0 1px 0 var(--g-hi);cursor:pointer}
+.cs-fab i{font-style:normal;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
+.cs-fab[hidden],.cs-panel[hidden]{display:none}
+.cs-panel{position:fixed;right:22px;bottom:80px;z-index:61;width:min(430px,calc(100vw - 24px));height:min(72vh,680px);display:flex;flex-direction:column;border-radius:20px;overflow:hidden;
+  border:1px solid var(--g-bd);background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);box-shadow:0 30px 70px -20px rgba(0,0,0,.6),inset 0 1px 0 var(--g-hi)}
+.cs-hd{display:flex;align-items:center;gap:10px;padding:12px 12px 10px 18px;cursor:move;user-select:none;touch-action:none;border-bottom:1px solid var(--line)}
+.cs-hd b{font-size:15px;white-space:nowrap}
+.cs-hd span{color:var(--muted);font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-x{border:0;background:rgba(127,127,127,.18);color:var(--ink);width:30px;height:30px;border-radius:50%;font-size:15px;cursor:pointer;flex:none}
+.cs-q{margin:12px 14px 4px;font:inherit;font-size:14px;padding:9px 14px;border-radius:999px;border:1px solid var(--g-bd);background:var(--g-bg);color:var(--ink);outline:none}
+.cs-body{overflow:auto;padding:0 10px 16px;flex:1}
+.cs-g h4{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 8px 4px;font-weight:700}
+.cs-it{padding:9px 10px;border-radius:12px;transition:background .2s}
+.cs-it:hover{background:rgba(127,127,127,.1)}
+.cs-it.hit{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.cs-it .tm,.gtip .tm{font-family:var(--f-mono);font-weight:600;color:var(--accent);font-size:14.5px}
+.cs-it .mn{font-size:13.5px;line-height:1.45;margin-top:2px}
+.cs-it small,.gtip small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.4}
+.cs-none{color:var(--muted);padding:16px 8px;font-size:14px}
+.gterm{text-decoration:underline dotted;text-decoration-color:color-mix(in srgb,var(--accent) 75%,transparent);text-decoration-thickness:1.5px;text-underline-offset:3px;cursor:help}
+.gterm:hover,.gterm.on{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:4px}
+.gtip{position:fixed;z-index:70;width:max-content;max-width:min(320px,calc(100vw - 20px));padding:12px 14px;border-radius:14px;font-size:13.5px;line-height:1.45;color:var(--ink);
+  border:1px solid var(--g-bd);background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 18px 40px -12px rgba(0,0,0,.55)}
+.gtip .mn{margin-top:3px}
+.gtip button{margin-top:8px;border:0;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
+@media (max-width:600px){.cs-panel{left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;width:auto;height:72vh}.cs-fab{right:14px;bottom:14px}}
 </style>
 
 <div id="app"></div>
@@ -517,7 +546,7 @@ Rules for cover.art:
   - cover.image: 'https://...' replaces the generated cover with a picture instead.
 
 7c. CHEAT SHEET (recommended)
-Add a glossary field next to title. It becomes the book's Cheat sheet page, linked from the book page and every section.
+Add a glossary field next to title. It becomes the book's Cheat sheet.
 List every symbol, state, gate and term the book uses, grouped, in plain words.
 
   glossary: [
@@ -527,7 +556,18 @@ List every symbol, state, gate and term the book uses, grouped, in plain words.
       ] }
   ],
 
-Rules: term is short (a symbol or a word). means is one sentence, under 140 characters. *bold* works. Every preset, state or symbol a reader meets in a widget or sketch appears here.
+The cheat sheet opens as a floating window from a button on every page of the book. Wherever a term appears in the
+text (intros, Builds on / Leads to, idea lines, takeaways, check questions), it is underlined and shows its meaning on hover or tap.
+
+  Optional per item:  aka: ['Bell state', 'Bell pair']   other spellings to underline in the text
+                      hover: false                       list it, but do not underline it in the text
+
+Rules:
+  - term is short (a symbol or a word). Write it exactly as it appears in the text, e.g. |+⟩|0⟩ not |+>|0>, so hover can find it.
+  - Several spellings in one term: separate with a comma ('|+i⟩, |−i⟩'). Plurals (checks, errors) are matched automatically.
+  - Single characters (X, i, α) are listed but never underlined, because they appear everywhere. Give them a longer aka if needed ('X gate').
+  - means is one sentence, under 140 characters. *bold* works. more is an optional second line.
+  - Every preset, state, gate, symbol and technical word a reader meets in the text, a widget or a sketch appears here.
 
 ----------------------------------------------------------------
 8. REGISTRATION
@@ -542,6 +582,7 @@ The library owner then adds 'notebooks/<id>.js' to the list in notebooks/index.j
 9. CHECKLIST (verify each item before you return the file)
 [ ] One NB.register call, valid JavaScript, no trailing prose inside the file.
 [ ] cover.art is a 4 to 8 part line drawing of the book's central object, in the 100 x 100 box.
+[ ] glossary lists every symbol, state, gate and term, each written exactly as in the text, with aka for other spellings.
 [ ] 3 to 6 sections, each with intro and bridge; 3 to 7 tabs each.
 [ ] Every tab has buildsOn and leadsTo, specific, each 25+ characters, and they agree with the neighbouring tabs.
 [ ] Tabs go from smallest piece upward. No tab uses an idea that appears later.
@@ -1141,26 +1182,78 @@ function viewHowTo(){
       h('p',null,'Paste these instructions into any LLM, then tell it the topic. It returns one file. Add the file name to the list in notebooks/index.js and the notebook appears in the library.'),
       h('div',{class:'row'},copy,st),pre));
 }
-function viewRef(nb){
-  app.textContent='';
-  const G=Array.isArray(nb.glossary)?nb.glossary:[];
-  const body=h('div');
-  const q=h('input',{class:'ref-q',type:'search',placeholder:'Find a symbol or word','aria-label':'Find in cheat sheet',oninput:()=>draw()});
-  function draw(){
-    body.textContent='';const k=q.value.trim().toLowerCase();let any=false;
-    G.forEach(g=>{
-      const items=(g.items||[]).filter(it=>!k||(it.term+' '+it.means+' '+(it.more||'')).toLowerCase().includes(k));
-      if(!items.length)return;any=true;
-      body.append(h('section',{class:'gl-grp'},h('h2',null,g.group),g.note?h('p',null,g.note):null,
-        h('div',{class:'gl card'},items.map(it=>[h('div',{class:'tm'},it.term),h('div',{class:'mn'},h('span',{html:rich(it.means)}),it.more?h('small',{html:rich(it.more)}):null)]))));
-    });
-    if(!any)body.append(h('p',{class:'empty-note'},G.length?'Nothing matches “'+q.value+'”.':'This book has no cheat sheet yet.'));
-  }
-  draw();
-  app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Cheat sheet'}),
-    h('div',{class:'sec-head'},h('h1',null,'Cheat sheet'),h('p',null,'Every symbol, state and word used in '+nb.title+', in one place.')),
-    h('div',{class:'ref-top'},q),body);
+/* ---------- floating cheat sheet ---------- */
+let csNb=null,csNext=null;
+const csFab=h('button',{class:'cs-fab',type:'button',hidden:true,'aria-label':'Open the cheat sheet',onclick:()=>csPanel.hidden?csOpen():csClose()},h('i',null,'?'),'Cheat sheet');
+const csQ=h('input',{class:'cs-q',type:'search',placeholder:'Find a symbol or word','aria-label':'Find in cheat sheet',oninput:()=>csDraw()});
+const csBody=h('div',{class:'cs-body'}),csSub=h('span');
+const csHd=h('div',{class:'cs-hd'},h('b',null,'Cheat sheet'),csSub,h('button',{class:'cs-x',type:'button','aria-label':'Close cheat sheet',onclick:()=>csClose()},'✕'));
+const csPanel=h('div',{class:'cs-panel',hidden:true,role:'dialog','aria-label':'Cheat sheet'},csHd,csQ,csBody);
+document.body.append(csFab,csPanel);
+function csDraw(hit){
+  csBody.textContent='';const G=(csNb&&csNb.glossary)||[],k=csQ.value.trim().toLowerCase();let any=false,hitEl=null;
+  G.forEach(g=>{const items=(g.items||[]).filter(it=>!k||(it.term+' '+(it.aka||[]).join(' ')+' '+it.means+' '+(it.more||'')).toLowerCase().includes(k));
+    if(!items.length)return;any=true;
+    csBody.append(h('div',{class:'cs-g'},h('h4',null,g.group),items.map(it=>{const e=h('div',{class:'cs-it'+(it===hit?' hit':'')},h('div',{class:'tm'},it.term),h('div',{class:'mn',html:rich(it.means)}),it.more?h('small',{html:rich(it.more)}):null);if(it===hit)hitEl=e;return e;})));});
+  if(!any)csBody.append(h('div',{class:'cs-none'},'Nothing matches “'+csQ.value+'”.'));
+  if(hitEl)requestAnimationFrame(()=>hitEl.scrollIntoView({block:'center'}));
 }
+function csOpen(hit){if(!csNb)return;csPanel.hidden=false;if(hit)csQ.value='';csDraw(hit);if(!hit&&matchMedia('(hover:hover)').matches)csQ.focus({preventScroll:true});}
+function csClose(){csPanel.hidden=true;}
+function csAttach(nb){
+  const has=!!(nb&&Array.isArray(nb.glossary)&&nb.glossary.length);
+  if(!has){csNb=null;csFab.hidden=true;csPanel.hidden=true;return;}
+  csFab.hidden=false;
+  if(nb!==csNb){csNb=nb;csQ.value='';csSub.textContent=nb.title;csDraw();}
+}
+/* drag the panel by its header */
+(function(){let sx,sy,ox,oy,drag=false;
+  csHd.addEventListener('pointerdown',e=>{if(e.target.closest('button')||innerWidth<=600)return;const r=csPanel.getBoundingClientRect();drag=true;sx=e.clientX;sy=e.clientY;ox=r.left;oy=r.top;csHd.setPointerCapture(e.pointerId);});
+  csHd.addEventListener('pointermove',e=>{if(!drag)return;const w=csPanel.offsetWidth,hh=csPanel.offsetHeight;
+    const x=Math.max(8,Math.min(innerWidth-w-8,ox+e.clientX-sx)),y=Math.max(8,Math.min(innerHeight-60,oy+e.clientY-sy));
+    Object.assign(csPanel.style,{left:x+'px',top:y+'px',right:'auto',bottom:'auto'});});
+  csHd.addEventListener('pointerup',()=>{drag=false;});})();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){gtipHide(true);csClose();}});
+
+/* ---------- hover terms: any cheat-sheet term in the text shows its meaning ---------- */
+function glossIndex(nb){
+  if(nb._gidx!==undefined)return nb._gidx;
+  const map=new Map(),keys=[];
+  (nb.glossary||[]).forEach(g=>(g.items||[]).forEach(it=>{if(it.hover===false)return;
+    [...String(it.term).split(/,\s*/),...(it.aka||[])].forEach(k=>{k=k.trim();if(k.length<2)return;const lk=k.toLowerCase();if(!map.has(lk)){map.set(lk,it);keys.push(k);}});}));
+  if(!keys.length)return nb._gidx=null;
+  keys.sort((x,y)=>y.length-x.length);
+  const esc=k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const pat=keys.map(k=>{const w=/^[A-Za-z0-9]/.test(k),e=/[A-Za-z]$/.test(k);return (w?'(?<![A-Za-z0-9])':'')+esc(k)+(e?'(?:s|es)?(?![A-Za-z0-9])':'');}).join('|');
+  return nb._gidx={re:new RegExp(pat,'gi'),map};
+}
+const GSKIP='svg,canvas,button,input,textarea,select,label,a,pre,code,h1,h2,h3,.w,.gterm,.chip,.crumbs,.cs-panel,.gtip,.mini';
+function annotate(root,nb){
+  const gi=nb&&glossIndex(nb);if(!gi)return;
+  const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeValue.trim()&&!n.parentElement.closest(GSKIP)?1:2});
+  const nodes=[];while(tw.nextNode())nodes.push(tw.currentNode);
+  nodes.forEach(n=>{const t=n.nodeValue;gi.re.lastIndex=0;let m,last=0,frag=null;
+    while((m=gi.re.exec(t))){let lk=m[0].toLowerCase(),it=gi.map.get(lk);
+      if(!it)it=gi.map.get(lk.replace(/es$/,''))||gi.map.get(lk.replace(/s$/,''));
+      if(!it)continue;frag=frag||document.createDocumentFragment();
+      frag.append(t.slice(last,m.index));const sp=h('span',{class:'gterm',tabindex:0},m[0]);sp._g=it;frag.append(sp);last=m.index+m[0].length;}
+    if(frag){frag.append(t.slice(last));n.replaceWith(frag);}});
+}
+const gtip=h('div',{class:'gtip',role:'tooltip',hidden:true});document.body.append(gtip);
+let gtT=0,gtOn=null;
+function gtipShow(el){
+  clearTimeout(gtT);const it=el._g;if(gtOn)gtOn.classList.remove('on');gtOn=el;el.classList.add('on');
+  gtip.textContent='';gtip.append(h('div',{class:'tm'},it.term),h('div',{class:'mn',html:rich(it.means)}),it.more?h('small',{html:rich(it.more)}):null,
+    h('button',{type:'button',onclick:()=>{gtipHide(true);csOpen(it);}},'Open in cheat sheet ›'));
+  gtip.hidden=false;const r=el.getBoundingClientRect(),w=gtip.offsetWidth,hh=gtip.offsetHeight;
+  const x=Math.max(10,Math.min(innerWidth-w-10,r.left+r.width/2-w/2));let y=r.bottom+8;if(y+hh>innerHeight-10)y=r.top-hh-8;
+  gtip.style.left=x+'px';gtip.style.top=Math.max(10,y)+'px';
+}
+function gtipHide(now){clearTimeout(gtT);const f=()=>{gtip.hidden=true;if(gtOn){gtOn.classList.remove('on');gtOn=null;}};if(now)f();else gtT=setTimeout(f,180);}
+document.addEventListener('mouseover',e=>{const g=e.target.closest&&e.target.closest('.gterm');if(g)gtipShow(g);else if(e.target.closest&&e.target.closest('.gtip'))clearTimeout(gtT);else if(gtOn)gtipHide();});
+document.addEventListener('click',e=>{const g=e.target.closest('.gterm');if(g){if(gtOn===g&&!gtip.hidden)gtipHide(true);else gtipShow(g);return;}if(!e.target.closest('.gtip'))gtipHide(true);});
+document.addEventListener('focusin',e=>{if(e.target.classList&&e.target.classList.contains('gterm'))gtipShow(e.target);});
+addEventListener('scroll',()=>{if(gtOn)gtipHide(true);},{passive:true});
 function viewNotebook(nb){
   app.textContent='';const tot=tabCount(nb),dn=doneCount(nb);
   const secs=[];
@@ -1170,9 +1263,10 @@ function viewNotebook(nb){
     if(i<nb.sections.length-1)secs.push(h('div',{class:'link-between'},h('b',null,'Leads to section '+(i+2)+'. '),s.bridge));
   });
   app.append(crumbs({t:'Library',href:'#'},{t:nb.title}),
-    h('div',{class:'nb-hero',style:'--p0:'+artPal(nb)[0]+';--p1:'+artPal(nb)[1]},bookCover(nb),h('div',null,h('div',{class:'eb'},catOf(nb)),h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin:6px 0 16px'},dn+' of '+tot+' lessons done'),h('a',{class:'btn pri',href:nextTab(nb),style:'padding:11px 24px;font-size:15px'},dn&&dn<tot?'Resume':'Start reading'),nb.glossary?h('a',{class:'btn ref-link',href:'#'+nb.id+'-ref',style:'padding:11px 20px;font-size:15px'},'Cheat sheet'):null)),
+    h('div',{class:'nb-hero',style:'--p0:'+artPal(nb)[0]+';--p1:'+artPal(nb)[1]},bookCover(nb),h('div',null,h('div',{class:'eb'},catOf(nb)),h('h1',null,nb.title),h('p',null,nb.subtitle),h('div',{class:'bar'},h('i',{style:'width:'+(tot?100*dn/tot:0)+'%'})),h('div',{class:'mini',style:'margin:6px 0 16px'},dn+' of '+tot+' lessons done'),h('a',{class:'btn pri',href:nextTab(nb),style:'padding:11px 24px;font-size:15px'},dn&&dn<tot?'Resume':'Start reading'),nb.glossary?h('button',{class:'btn ref-link',type:'button',style:'padding:11px 20px;font-size:15px',onclick:()=>csOpen()},'Cheat sheet'):null)),
     nb._errors.length?h('div',{class:'msg',style:'margin-top:16px;color:var(--bad)'},'Validator: '+nb._errors.join(' | ')):'',
     h('div',{class:'secs'},secs));
+  annotate(app,nb);csNext=nb;
 }
 function neighbours(nb,si,ti){
   const s=nb.sections[si];let prev=null,next=null;
@@ -1189,7 +1283,7 @@ function viewSection(nb,si,ti){
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
   const body=h('div');
   app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
-    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro),nb.glossary?h('a',{class:'btn sm ref-link',href:'#'+nb.id+'-ref'},'Cheat sheet: what every symbol means'):null),chain,body);
+    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),chain,body);
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
   const tid=nb.id+'-'+si+'-'+ti;
@@ -1212,6 +1306,7 @@ function viewSection(nb,si,ti){
       nbr.prev?h('button',{class:'btn',type:'button',onclick:()=>go(nbr.prev.go.slice(1))},'← '+nbr.prev.t):h('span'),
       h('div',{class:'row'},isDone(nb,si,ti)?h('span',{class:'mini'},'Marked done'):null,doneBtn)))
   );
+  annotate(app,nb);csNext=nb;
   sk._start();
 }
 function checkBlock(c){
@@ -1223,13 +1318,14 @@ function checkBlock(c){
 function viewNotFound(){app.textContent='';app.append(h('p',null,'That page is not in the library.'),h('a',{class:'btn',href:'#'},'Back to the library'));}
 
 function route(){
+  csNext=null;setTimeout(()=>csAttach(csNext),0);gtipHide(true);
   const po=document.querySelector('.pull');if(po)po.remove();
   const hs=decodeURIComponent(location.hash.slice(1));let m;
   window.scrollTo(0,0);
   document.body.classList.toggle('home',!hs||hs==='shelf');
   if(!hs||hs==='shelf')return viewLibrary();
   if(hs==='how-to-write')return viewHowTo();
-  if(m=hs.match(/^(.+)-ref$/)){const nb=nbById(m[1]);if(nb)return viewRef(nb);}
+  if(m=hs.match(/^(.+)-ref$/)){const nb=nbById(m[1]);if(nb){viewNotebook(nb);csAttach(nb);csOpen();return;}}
   if(m=hs.match(/^(.+)-s(\d+)-t(\d+)$/)){const nb=nbById(m[1]);if(nb)try{localStorage.setItem('jpLibrary.last',nb.id);}catch(e){}if(nb&&nb.sections[m[2]-1]&&nb.sections[m[2]-1].tabs[m[3]-1])return viewSection(nb,+m[2]-1,+m[3]-1);}
   if(m=hs.match(/^(.+)-s(\d+)$/)){const nb=nbById(m[1]);if(nb&&nb.sections[m[2]-1])return viewSection(nb,+m[2]-1,0);}
   const nb=nbById(hs);if(nb){try{localStorage.setItem('jpLibrary.last',nb.id);}catch(e){}return viewNotebook(nb);}

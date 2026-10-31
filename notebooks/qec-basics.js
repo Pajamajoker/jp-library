@@ -42,6 +42,7 @@
           },
           {
             "term": "I",
+            "hover": false,
             "means": "No error."
           },
           {
@@ -63,14 +64,17 @@
         "items": [
           {
             "term": "Repetition",
+            "aka": ["classical repetition"],
             "means": "Classical: 0 → 000, 1 → 111. A majority vote fixes one flip."
           },
           {
             "term": "Bit-flip code",
+            "aka": ["bit-flip"],
             "means": "α|000⟩ + β|111⟩. Fixes one X error. Blind to Z errors."
           },
           {
             "term": "Phase-flip code",
+            "aka": ["phase-flip"],
             "means": "α|+++⟩ + β|−−−⟩. Fixes one Z error. Blind to X errors. The bit-flip code seen through H."
           },
           {
@@ -87,6 +91,7 @@
           },
           {
             "term": "Distance d",
+            "aka": ["distance"],
             "means": "The fewest single-qubit errors that change the stored qubit with every check quiet.",
             "more": "A distance-d code fixes up to (d − 1)/2 errors. Distance 3 fixes 1."
           },
@@ -134,6 +139,7 @@
           },
           {
             "term": "Ancilla",
+            "aka": ["ancilla qubit"],
             "means": "A helper qubit that measures one check and reports it, then is reset for the next round."
           },
           {

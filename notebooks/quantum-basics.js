@@ -109,20 +109,24 @@
         "items": [
           {
             "term": "X",
+            "aka": ["X gate"],
             "means": "Swaps α and β. |0⟩ ↔ |1⟩. A bit flip.",
             "more": "Half turn about the x axis of the Bloch sphere."
           },
           {
             "term": "Z",
+            "aka": ["Z gate"],
             "means": "Flips the sign of β. |+⟩ ↔ |−⟩. A phase flip: the 0/1 readout cannot see it.",
             "more": "Half turn about the z axis."
           },
           {
             "term": "H",
+            "aka": ["H gate"],
             "means": "|0⟩ ↔ |+⟩ and |1⟩ ↔ |−⟩. Swaps the Z view and the X view."
           },
           {
             "term": "CNOT12",
+            "aka": ["CNOT"],
             "means": "Flips qubit 2 (target) if qubit 1 (control) is 1. Does nothing if it is 0.",
             "more": "H on qubit 1, then CNOT12, turns |00⟩ into a Bell pair."
           },
@@ -150,6 +154,7 @@
           },
           {
             "term": "Bell (00+11)",
+            "aka": ["Bell state", "Bell pair"],
             "means": "(|00⟩ + |11⟩)/√2. Glued pair: 00 or 11, 50/50, never 01 or 10. Entangled.",
             "more": "Each qubit alone is a fair coin. They also agree in the X readout."
           },
@@ -173,10 +178,12 @@
           },
           {
             "term": "Entangled",
+            "aka": ["entanglement"],
             "means": "Not independent. Only the pair has a state; no (α, β) exists for one qubit alone. Like glued coins."
           },
           {
             "term": "The test",
+            "hover": false,
             "means": "*a₀₀·a₁₁ = a₀₁·a₁₀* exactly when the two qubits are independent."
           }
         ]
@@ -194,10 +201,12 @@
           },
           {
             "term": "GHZ",
+            "aka": ["GHZ state"],
             "means": "(|000⟩ + |111⟩)/√2. Three glued qubits: 000 or 111, 50/50."
           },
           {
             "term": "α|000⟩ + β|111⟩",
+            "aka": ["repetition code"],
             "means": "The repetition code: one qubit (α, β) spread over three. Not three copies.",
             "more": "Reading any one qubit would collapse it. Parity checks ask only whether neighbours agree."
           },
