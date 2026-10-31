@@ -189,6 +189,70 @@
         ]
       },
       {
+        "group": "Codes",
+        "note": "Sections 4 to 6.",
+        "items": [
+          {
+            "term": "Code",
+            "hover": false,
+            "means": "A rule for storing a little information in more bits or qubits, so that damage shows and can be undone."
+          },
+          {
+            "term": "Codeword",
+            "means": "An allowed pattern of a code. The repetition code has two: 000 and 111. Anything else means an error."
+          },
+          {
+            "term": "Encode",
+            "aka": [
+              "encoding"
+            ],
+            "means": "Turn the information into its codeword form. Bits: 0 → 000. Qubits: α|0⟩+β|1⟩ → α|000⟩+β|111⟩, with two CNOTs."
+          },
+          {
+            "term": "Decode",
+            "aka": [
+              "decoding"
+            ],
+            "means": "Map a damaged pattern back to the nearest codeword, and so to the stored information."
+          },
+          {
+            "term": "Majority vote",
+            "means": "Bits only: read all three and keep the value that appears at least twice. Fixes one flip."
+          },
+          {
+            "term": "X error",
+            "means": "An X gate nobody asked for, caused by noise. Swaps α and β, so |0⟩ ↔ |1⟩."
+          },
+          {
+            "term": "Z error",
+            "means": "A Z gate caused by noise. Flips the sign of β. Parity checks on 0/1 cannot see it."
+          },
+          {
+            "term": "No copying",
+            "means": "No gate turns an unknown qubit plus a blank one into two copies. CNOT on |+⟩|0⟩ gives a Bell pair, not |+⟩|+⟩."
+          },
+          {
+            "term": "No peeking",
+            "means": "Reading a qubit collapses it, so a code must find errors without reading the stored data."
+          },
+          {
+            "term": "Logical qubit",
+            "means": "The one protected qubit stored across several physical qubits, e.g. α|000⟩ + β|111⟩."
+          },
+          {
+            "term": "Physical qubit",
+            "means": "One real hardware qubit. The repetition code uses three to store one logical qubit."
+          },
+          {
+            "term": "Ancilla",
+            "aka": [
+              "ancilla qubit"
+            ],
+            "means": "A helper qubit that collects a parity with CNOTs and is then read, so the data qubits never are."
+          }
+        ]
+      },
+      {
         "group": "Three qubits and parity",
         "items": [
           {
@@ -577,7 +641,7 @@
       {
         title: 'Two qubits',
         intro: 'Two qubits are not two copies of the one-qubit picture. They share four amplitudes.',
-        bridge: 'You can tell independent from entangled, make entanglement with CNOT, and see what a readout of one qubit does to its partner. Section 4 stretches this to three qubits, the smallest code that detects a flip.',
+        bridge: 'You can tell independent from entangled, make entanglement with CNOT, and see what a readout of one qubit does to its partner. Section 4 asks why a qubit needs protecting, and what a code is.',
         tabs: [
           {
             title: 'Two qubits, four amplitudes',
@@ -745,7 +809,7 @@
           {
             title: 'Reading one qubit of a pair',
             buildsOn: 'The CNOT tab made a Bell pair. Now read one of its qubits and watch the other.',
-            leadsTo: 'Section 4 uses the same fact in reverse: a smart readout of a relation between qubits leaves the pattern weights alone.',
+            leadsTo: 'Section 4 turns to protecting a qubit. Gluing qubits like this turns out to be how a quantum code stores one.',
             idea: [
               'Reading qubit 1 of a Bell pair gives 0 or 1 at random.',
               'Qubit 2 then matches, every time.',
@@ -776,18 +840,162 @@
 
       /* ============================ SECTION 4 ============================ */
       {
-        title: 'Three qubits and parity',
-        intro: 'Three qubits in the pattern α|000⟩ + β|111⟩ carry one qubit of information in a form that can survive a flip.',
-        bridge: 'You hold the repetition code and the parity trick. The next notebook, QEC basics, starts here: errors, syndromes, and why Z-type and X-type checks are both needed.',
+        title: 'Why protect a qubit, and what a code is',
+        intro: 'Real qubits get nudged by noise. A code stores a little information in more bits, so damage can be spotted and undone. We start with plain bits.',
+        bridge: 'You know what a code is, and the two rules a quantum code must obey: no copying, no peeking. Section 5 builds a three-qubit code that obeys both.',
+        tabs: [
+          {
+            title: 'Errors: a qubit gets flipped',
+            buildsOn: 'Sections 1 to 3 treated gates as moves you choose. Noise makes the same moves without asking, starting with X.',
+            leadsTo: 'Next, how ordinary computers survive flips: store each bit three times and take a vote.',
+            idea: [
+              'Real qubits sit in noisy hardware. Stray heat and fields nudge them. The simplest damage is an *X error*: an X gate nobody asked for.',
+              'X swaps α and β. So α|0⟩ + β|1⟩ becomes β|0⟩ + α|1⟩. The stored numbers are now wrong.',
+              'Nothing warns you. A readout only gives 0 or 1, and it collapses the qubit anyway.'
+            ],
+            sketch: [
+              B(30, 70, 200, 70), T(130, 114, 'α|0⟩ + β|1⟩', { anchor: 'middle', size: 28 }),
+              T(130, 172, 'stored', { anchor: 'middle', size: 24, c: 'blue' }),
+              A(240, 105, 380, 105, { c: 'red' }), T(310, 88, 'noise: X', { anchor: 'middle', size: 24, c: 'red' }),
+              B(390, 70, 200, 70, { c: 'red' }), T(490, 114, 'β|0⟩ + α|1⟩', { anchor: 'middle', size: 28, c: 'red' }),
+              T(490, 172, 'α and β swapped', { anchor: 'middle', size: 24, c: 'red' }),
+              H(80, 226, 480, 44, { c: 'yellow' }),
+              T(320, 258, 'a readout cannot tell you it happened', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'An X error swaps α and β. Nothing warns you.',
+            widget: { type: 'qubit', sliders: ['theta'], gates: ['X'], readouts: true, start: { theta: 60, phi: 0 } },
+            check: {
+              q: 'A qubit is 0.8|0⟩ + 0.6|1⟩. An X error hits it. What is it now?',
+              options: ['0.6|0⟩ + 0.8|1⟩', '0.8|0⟩ + 0.6|1⟩', '0.8|0⟩ − 0.6|1⟩', '|1⟩'],
+              answer: 0,
+              why: 'X swaps the two amplitudes: the 0.8 moves to the 1 side, the 0.6 to the 0 side.'
+            }
+          },
+          {
+            title: 'The bit fix: say it three times',
+            buildsOn: 'The errors tab showed that a flip ruins a qubit silently. Ordinary bits get flipped too, and they have an old, simple fix.',
+            leadsTo: 'Next, the general words for this trick: code, encode, codeword, decode. They carry over to qubits.',
+            idea: [
+              'Ordinary computers can protect a bit by repeating it: store 0 as 000 and 1 as 111.',
+              'Noise flips one bit: 000 becomes 010. Two of the three still say 0.',
+              'A *majority vote* gives back 0. One flip is fixed, whichever bit it hit. Two flips fool the vote.'
+            ],
+            sketch: [
+              T(50, 112, '0', { anchor: 'middle', size: 40 }),
+              A(76, 100, 142, 100), B(150, 70, 120, 60), T(210, 110, '000', { anchor: 'middle', size: 30 }),
+              T(210, 162, 'repeat', { anchor: 'middle', size: 24, c: 'blue' }),
+              A(280, 100, 342, 100, { c: 'red' }), T(311, 84, 'flip', { anchor: 'middle', size: 22, c: 'red' }),
+              B(350, 70, 120, 60, { c: 'red' }), T(410, 110, '010', { anchor: 'middle', size: 30, c: 'red' }),
+              T(410, 162, 'two 0s, one 1', { anchor: 'middle', size: 22 }),
+              A(480, 100, 544, 100, { c: 'green' }), T(575, 112, '0', { anchor: 'middle', size: 40, c: 'green' }),
+              T(570, 162, 'vote', { anchor: 'middle', size: 24, c: 'green' }),
+              H(60, 220, 520, 44, { c: 'yellow' }),
+              T(320, 252, 'a majority vote fixes any one flip', { anchor: 'middle', size: 28 })
+            ],
+            takeaway: 'Repeat the bit three times. A vote fixes one flip.',
+            widget: { type: 'steps', steps: [
+              { say: 'Store one bit, 0, as three copies.', show: '0  →  000' },
+              { say: 'Noise flips the middle bit.', show: '000  →  010' },
+              { say: 'Count the votes.', show: '010: two 0s, one 1' },
+              { say: 'The majority wins.', show: 'vote → 0, correct' },
+              { say: 'Same for 1: flip any one bit of 111 and the vote still says 1.', show: '111 → 101 → vote → 1' },
+              { say: 'Two flips are too many. The vote now picks the wrong bit.', show: '000 → 110 → vote → 1, wrong' }
+            ] },
+            check: {
+              q: 'You stored 1 as 111 and later read 011. What does the vote give?',
+              options: ['1', '0', 'Cannot tell', 'Two bits flipped'],
+              answer: 0,
+              why: 'Two of the three bits say 1, so the vote gives 1. Only the first bit was flipped.'
+            }
+          },
+          {
+            title: 'What a code is',
+            buildsOn: 'The repetition tab stored 0 as 000 and 1 as 111. That is the simplest example of a code. This tab names its parts.',
+            leadsTo: 'Next, why the same trick fails for a qubit as it stands: you cannot copy α and β, and you cannot look at them.',
+            idea: [
+              'A *code* is a rule for storing a little information in more bits, so that damage shows. Here: 1 bit stored in 3.',
+              '*Encode*: 0 → 000, 1 → 111. These allowed patterns are the *codewords*.',
+              'The other six patterns are never stored. Seeing one means an error happened.',
+              '*Decode*: map a damaged pattern back to the nearest codeword. Each of the six is one flip from just one codeword.'
+            ],
+            sketch: [
+              T(110, 50, 'codewords', { anchor: 'middle', size: 26, c: 'green' }),
+              T(410, 50, 'one flip away', { anchor: 'middle', size: 26, c: 'red' }),
+              B(50, 80, 120, 60, { c: 'green' }), T(110, 120, '000', { anchor: 'middle', size: 30 }),
+              B(50, 170, 120, 60, { c: 'green' }), T(110, 210, '111', { anchor: 'middle', size: 30 }),
+              T(410, 120, '001  010  100', { anchor: 'middle', size: 28, c: 'red' }),
+              T(410, 210, '011  101  110', { anchor: 'middle', size: 28, c: 'red' }),
+              A(300, 110, 182, 110, { c: 'blue' }), A(300, 200, 182, 200, { c: 'blue' }),
+              T(240, 162, 'decode', { anchor: 'middle', size: 22, c: 'blue' }),
+              H(70, 262, 500, 44, { c: 'yellow' }),
+              T(320, 294, 'never stored, so seeing one means damage', { anchor: 'middle', size: 24 })
+            ],
+            takeaway: 'A code: few allowed patterns, so damage shows.',
+            widget: { type: 'steps', steps: [
+              { say: 'The information: one bit.', show: '0 or 1' },
+              { say: '*Encode* it into three bits.', show: '0 → 000 · 1 → 111' },
+              { say: 'The *codewords* are the only patterns you ever store.', show: '000, 111' },
+              { say: 'Any other pattern is a sign of damage.', show: '001 010 100 011 101 110' },
+              { say: 'Each sits one flip from one codeword and two flips from the other.', show: '010: one flip from 000, two from 111' },
+              { say: '*Decode* to the nearest codeword.', show: '010 → 000 → 0' },
+              { say: 'The cost and the gain.', show: '3 physical bits store 1 protected bit · any one flip is fixed' }
+            ] },
+            check: {
+              q: 'Which of these is a codeword of the three-bit repetition code?',
+              options: ['111', '101', '011', '110'],
+              answer: 0,
+              why: 'Only 000 and 111 are codewords. The other patterns only appear after an error.'
+            }
+          },
+          {
+            title: 'Two rules a quantum code must obey',
+            buildsOn: 'The code tab used two moves: copy the bit three times, then read all three to vote. A qubit allows neither as it stands.',
+            leadsTo: 'Section 5 gets around both rules: spread the qubit with CNOTs instead of copying, and later check relations instead of values.',
+            idea: [
+              '*No copying*: no gate turns (α|0⟩ + β|1⟩)|0⟩ into two copies for every α and β. Try CNOT on |+⟩|0⟩ below.',
+              'You get the Bell state, not |+⟩|+⟩. CNOT repeats the 0/1 pattern, not the amplitudes.',
+              '*No peeking*: reading the qubits to vote collapses them to 0s and 1s. α and β are lost.',
+              'So a quantum code must store the qubit without copies, and find errors without reading the data.'
+            ],
+            sketch: [
+              T(160, 40, 'no copying', { anchor: 'middle', size: 28, c: 'red' }),
+              T(160, 96, '|+⟩|0⟩', { anchor: 'middle', size: 30 }),
+              A(160, 112, 160, 160), T(176, 142, 'CNOT', { size: 22 }),
+              T(160, 196, 'Bell, not |+⟩|+⟩', { anchor: 'middle', size: 24, c: 'green' }),
+              L([[320, 30], [320, 220]], { dash: true }),
+              T(480, 40, 'no peeking', { anchor: 'middle', size: 28, c: 'red' }),
+              T(480, 96, 'α|0⟩ + β|1⟩', { anchor: 'middle', size: 28 }),
+              A(480, 112, 480, 160), T(496, 142, 'read', { size: 22 }),
+              T(480, 196, '0 or 1: α, β gone', { anchor: 'middle', size: 24, c: 'red' }),
+              H(40, 246, 560, 44, { c: 'yellow' }),
+              T(320, 278, 'spread it out, and check only relations', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'A quantum code can neither copy the qubit nor read it.',
+            widget: { type: 'multi', n: 2, presets: ['plus0', 'plusplus'], start: 'plus0', ops: ['CNOT12'], independence: true, reset: true },
+            check: {
+              q: 'You apply CNOT12 to |+⟩|0⟩. Do you get two copies of |+⟩?',
+              options: ['No, you get the Bell state (|00⟩ + |11⟩)/√2', 'Yes, |+⟩|+⟩', 'Yes, but only half the time', 'No, you get |00⟩'],
+              answer: 0,
+              why: 'CNOT acts on 00 and 10 separately: 00 stays, 10 becomes 11. Two copies of |+⟩ would put 25% on all four patterns.'
+            }
+          }
+        ]
+      },
+
+      /* ============================ SECTION 5 ============================ */
+      {
+        title: 'Spreading one qubit over three',
+        intro: 'The bit code stored 0 as 000. The qubit version stores α|0⟩ + β|1⟩ as α|000⟩ + β|111⟩, without making copies.',
+        bridge: 'You can build α|000⟩ + β|111⟩ and you know it is one qubit spread out, not three copies. Section 6 lets noise flip one qubit and finds it without reading the data.',
         tabs: [
           {
             title: 'Three qubits, eight amplitudes',
-            buildsOn: 'Section 3 used four amplitudes for two qubits. Three qubits add a third bit to every pattern.',
-            leadsTo: 'Next, we choose a state that uses only two of the eight patterns and see how to build it.',
+            buildsOn: 'Section 3 gave two qubits four amplitudes, one per readout pattern. Three qubits also get one per pattern, and there are eight.',
+            leadsTo: 'Next, how a gate like CNOT acts when the state is a sum of several patterns.',
             idea: [
-              'Eight patterns, 000 up to 111, so eight amplitudes.',
-              'A code state puts weight on only a few patterns. The rest stay zero.',
-              'Here only 000 and 111 are used.'
+              'Three qubits: eight patterns, 000 up to 111, so eight amplitudes. Their squares still add to 1.',
+              'The bit code used only the codewords 000 and 111. The qubit version uses the same two patterns.',
+              'Target: *α|000⟩ + β|111⟩*. α sits on 000, β on 111, and the other six stay zero.'
             ],
             sketch: [
               T(60, 40, '000', { anchor: 'middle', size: 26 }), T(132, 40, '001', { anchor: 'middle', size: 26 }),
@@ -802,7 +1010,7 @@
               T(300, 274, 'code state: only 000 and 111 carry weight', { anchor: 'middle', size: 30 }),
               T(300, 308, 'α|000⟩ + β|111⟩', { anchor: 'middle', size: 30, c: 'green' })
             ],
-            takeaway: 'The code uses two of the eight patterns.',
+            takeaway: 'The code state uses only the two codewords, 000 and 111.',
             widget: { type: 'multi', n: 3, presets: ['zero3', 'plus00', 'ghz', 'log'], start: 'log', slider: 'log', ops: ['H1', 'X1', 'X2', 'X3'] },
             check: {
               q: 'Which patterns does α|000⟩ + β|111⟩ put weight on?',
@@ -812,13 +1020,49 @@
             }
           },
           {
-            title: 'Spreading one qubit over three',
-            buildsOn: 'The eight-amplitudes tab named the target state. This tab builds it from one qubit and two blank ones using CNOT from the CNOT tab.',
-            leadsTo: 'Next, the check that tells you whether the three qubits still agree, without reading them.',
+            title: 'A gate acts on each pattern',
+            buildsOn: 'The eight-amplitudes tab wrote states as sums of patterns. CNOT in Section 3 was described on single patterns like |10⟩.',
+            leadsTo: 'Next, the same rule with two CNOTs on three qubits. That builds the code state.',
             idea: [
-              'Start with (α|0⟩ + β|1⟩)|00⟩. Two CNOTs copy the *pattern*, not the amplitudes.',
-              'Result: *α|000⟩ + β|111⟩*. That is one logical qubit stored in three.',
-              'The unknown (α, β) was never copied. It belongs to the whole triple.'
+              'A state like α|00⟩ + β|10⟩ is a sum of patterns. A gate acts on each pattern on its own, and each keeps its amplitude.',
+              'CNOT12 on |00⟩: control is 0, nothing happens. On |10⟩: control is 1, so qubit 2 flips, giving |11⟩.',
+              'So CNOT12 turns α|00⟩ + β|10⟩ into *α|00⟩ + β|11⟩*. The amplitudes ride along unchanged.'
+            ],
+            sketch: [
+              T(320, 46, 'α|00⟩ + β|10⟩', { anchor: 'middle', size: 32 }),
+              A(260, 66, 170, 124, { c: 'blue' }), A(380, 66, 470, 124, { c: 'red' }),
+              B(60, 130, 210, 56, { c: 'blue' }), T(165, 166, '|00⟩ → |00⟩', { anchor: 'middle', size: 26, c: 'blue' }),
+              B(370, 130, 210, 56, { c: 'red' }), T(475, 166, '|10⟩ → |11⟩', { anchor: 'middle', size: 26, c: 'red' }),
+              T(165, 214, 'control 0: stay', { anchor: 'middle', size: 22 }),
+              T(475, 214, 'control 1: flip q2', { anchor: 'middle', size: 22 }),
+              H(170, 238, 300, 44, { c: 'yellow' }),
+              T(320, 270, 'α|00⟩ + β|11⟩', { anchor: 'middle', size: 30 }),
+              T(320, 312, 'amplitudes ride along', { anchor: 'middle', size: 22, c: 'green' })
+            ],
+            takeaway: 'A gate acts on each pattern. The amplitudes ride along.',
+            widget: { type: 'steps', steps: [
+              { say: 'Start: qubit 1 is α|0⟩ + β|1⟩, qubit 2 is |0⟩.', show: '(α|0⟩ + β|1⟩)|0⟩' },
+              { say: 'Multiply out, like the coin table.', show: 'α|00⟩ + β|10⟩' },
+              { say: 'CNOT12 on the first pattern: the control is 0, no change.', show: 'α|00⟩  →  α|00⟩' },
+              { say: 'On the second pattern: the control is 1, so qubit 2 flips.', show: 'β|10⟩  →  β|11⟩' },
+              { say: 'Add the pieces back up.', show: 'α|00⟩ + β|11⟩' },
+              { say: 'With α = β = 0.707 this is the Bell state from Section 3.', show: '0.707|00⟩ + 0.707|11⟩' }
+            ] },
+            check: {
+              q: 'CNOT12 acts on 0.6|00⟩ + 0.8|10⟩. Result?',
+              options: ['0.6|00⟩ + 0.8|11⟩', '0.6|01⟩ + 0.8|11⟩', '0.8|00⟩ + 0.6|11⟩', '0.6|00⟩ + 0.8|10⟩'],
+              answer: 0,
+              why: '|00⟩ has control 0 and stays. |10⟩ has control 1 and becomes |11⟩. Each keeps its amplitude.'
+            }
+          },
+          {
+            title: 'Encoding: two CNOTs',
+            buildsOn: 'The previous tab ran one CNOT on a sum of two patterns. Here two CNOTs do the same on three qubits.',
+            leadsTo: 'Next, why the result is not three copies of the qubit, even though each pattern repeats one bit.',
+            idea: [
+              'Start: *(α|0⟩ + β|1⟩)|00⟩*, which multiplies out to α|000⟩ + β|100⟩. Qubit 1 holds the data; 2 and 3 are blank.',
+              'CNOT12 turns 100 into 110. CNOT13 turns 110 into 111. The pattern 000 never changes.',
+              'Result: *α|000⟩ + β|111⟩*. One *logical qubit* stored in three physical qubits. This step is *encoding*.'
             ],
             sketch: [
               T(10, 88, 'α|0⟩+β|1⟩', { size: 24 }), T(24, 168, '|0⟩', { size: 28 }), T(24, 248, '|0⟩', { size: 28 }),
@@ -829,25 +1073,149 @@
               L([[306, 240], [334, 240]], { c: 'blue' }),
               T(440, 150, 'α|000⟩\n+ β|111⟩', { size: 32 }),
               H(436, 108, 170, 78, { c: 'yellow' }),
-              T(320, 296, 'copies the pattern, not (α, β)', { anchor: 'middle', size: 28, c: 'red' })
+              T(320, 296, 'repeats the pattern, not (α, β)', { anchor: 'middle', size: 28, c: 'red' })
             ],
             takeaway: 'Two CNOTs encode: α|0⟩+β|1⟩ → α|000⟩+β|111⟩.',
             widget: { type: 'multi', n: 3, presets: [], start: 'enc', slider: 'enc', ops: ['CNOT12', 'CNOT13'], reset: true },
             check: {
-              q: 'After encoding, do the three qubits each hold a copy of (α, β)?',
-              options: ['Yes, three copies', 'No. The triple holds (α, β) together', 'Only qubit 1', 'Only qubits 2 and 3'],
-              answer: 1,
-              why: 'Copying an unknown state is not allowed. Encoding spreads it across the three as one entangled state.'
+              q: 'After CNOT12 only (before CNOT13), the state is…',
+              options: ['α|000⟩ + β|110⟩', 'α|000⟩ + β|111⟩', 'α|000⟩ + β|100⟩', 'α|110⟩ + β|000⟩'],
+              answer: 0,
+              why: 'CNOT12 flips qubit 2 only in the pattern 100, giving 110. Qubit 3 waits for CNOT13.'
+            }
+          },
+          {
+            title: 'Spread out, not three copies',
+            buildsOn: 'The encoding tab built α|000⟩ + β|111⟩. Each pattern repeats one bit, so it is tempting to call it three copies.',
+            leadsTo: 'Section 6 lets noise flip one of the three qubits and asks how to find it without reading.',
+            idea: [
+              'Three real copies would be (α|0⟩+β|1⟩)(α|0⟩+β|1⟩)(α|0⟩+β|1⟩). Multiplied out, that fills all eight patterns.',
+              'The code state fills only 000 and 111. Like the Bell state, the three qubits are glued: entangled.',
+              'Read q1 of |+++⟩ (copies): q2 and q3 are untouched. Read q1 of the code: all three collapse together.'
+            ],
+            sketch: [
+              T(30, 74, '3 copies', { size: 26, c: 'blue' }),
+              H(180, 44, 36, 40, { c: 'mint' }), H(232, 44, 36, 40, { c: 'mint' }), H(284, 44, 36, 40, { c: 'mint' }), H(336, 44, 36, 40, { c: 'mint' }),
+              H(388, 44, 36, 40, { c: 'mint' }), H(440, 44, 36, 40, { c: 'mint' }), H(492, 44, 36, 40, { c: 'mint' }), H(544, 44, 36, 40, { c: 'mint' }),
+              L([[170, 86], [600, 86]]),
+              T(30, 160, 'code', { size: 26, c: 'green' }),
+              H(180, 110, 36, 60, { c: 'yellow' }), H(544, 110, 36, 60, { c: 'yellow' }),
+              L([[170, 172], [600, 172]]),
+              T(198, 200, '000', { anchor: 'middle', size: 20 }), T(562, 200, '111', { anchor: 'middle', size: 20 }),
+              T(320, 252, 'copies: all 8 patterns, separate qubits', { anchor: 'middle', size: 24, c: 'blue' }),
+              T(320, 292, 'code: 2 patterns, glued like a Bell pair', { anchor: 'middle', size: 24, c: 'green' })
+            ],
+            takeaway: 'One qubit spread over three is entangled, not copied.',
+            widget: { type: 'multi', n: 3, presets: ['ghz', 'plus3'], start: 'ghz', measure: [1], ops: [], reset: true },
+            check: {
+              q: 'You read q1 of α|000⟩ + β|111⟩ and get 1. What are q2 and q3 now?',
+              options: ['Both 1, for sure', 'Each still α|0⟩ + β|1⟩', 'Random', 'Both 0'],
+              answer: 0,
+              why: 'Only the pattern 111 has q1 = 1, so the whole state becomes |111⟩. Like the Bell pair, the three are glued.'
+            }
+          }
+        ]
+      },
+
+      /* ============================ SECTION 6 ============================ */
+      {
+        title: 'Finding a flip without looking',
+        intro: 'A flip moves the code state off its codewords. Parity checks find which qubit moved, without reading α or β.',
+        bridge: 'You hold the repetition code and the parity trick. The next notebook, QEC basics, starts here: errors, syndromes, and why Z-type and X-type checks are both needed.',
+        tabs: [
+          {
+            title: 'What a flip does to the code',
+            buildsOn: 'Section 5 built α|000⟩ + β|111⟩. Section 4 showed an X error swapping 0 and 1. Now X hits one of the three qubits.',
+            leadsTo: 'Next, the obvious fix for bits, reading all three and voting, and why it destroys the qubit.',
+            idea: [
+              'X on q2 flips the middle bit of every pattern: α|000⟩ + β|111⟩ becomes *α|010⟩ + β|101⟩*.',
+              'α and β are still intact. They just moved to two patterns outside the code.',
+              'Each single flip has its own pair: q1 gives 100, 011. q2 gives 010, 101. q3 gives 001, 110.'
+            ],
+            sketch: [
+              T(330, 40, 'with α', { anchor: 'middle', size: 22, c: 'red' }),
+              T(490, 40, 'with β', { anchor: 'middle', size: 22, c: 'blue' }),
+              H(30, 64, 580, 38, { c: 'mint' }),
+              T(40, 92, 'no flip', { size: 24 }), T(330, 92, '000', { anchor: 'middle', size: 28 }), T(490, 92, '111', { anchor: 'middle', size: 28 }),
+              T(40, 142, 'X on q1', { size: 24, c: 'red' }), T(330, 142, '100', { anchor: 'middle', size: 28 }), T(490, 142, '011', { anchor: 'middle', size: 28 }),
+              T(40, 192, 'X on q2', { size: 24, c: 'red' }), T(330, 192, '010', { anchor: 'middle', size: 28 }), T(490, 192, '101', { anchor: 'middle', size: 28 }),
+              T(40, 242, 'X on q3', { size: 24, c: 'red' }), T(330, 242, '001', { anchor: 'middle', size: 28 }), T(490, 242, '110', { anchor: 'middle', size: 28 }),
+              T(320, 298, 'each flip has its own pair of patterns', { anchor: 'middle', size: 26, c: 'green' })
+            ],
+            takeaway: 'A flip moves α and β to a pair of its own.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3'], codeSpace: true, reset: true },
+            check: {
+              q: 'X hits q3 of α|000⟩ + β|111⟩. Result?',
+              options: ['α|001⟩ + β|110⟩', 'α|100⟩ + β|011⟩', 'β|000⟩ + α|111⟩', 'α|000⟩ + β|111⟩'],
+              answer: 0,
+              why: 'X flips the last bit in both patterns: 000 → 001 and 111 → 110. α and β stay with their patterns.'
+            }
+          },
+          {
+            title: 'Why not just read and vote?',
+            buildsOn: 'The flip tab showed each error has its own pair of patterns. For bits, Section 4 found the flip by reading all three and voting.',
+            leadsTo: 'Next, a gentler question to ask the qubits: not "what are you?" but "do you two agree?".',
+            idea: [
+              'Read all three of α|010⟩ + β|101⟩ and you get 010 or 101. Both say "q2 is the odd one out". The flip is found.',
+              'But the readout collapsed the state. You now hold |010⟩ or |101⟩, and α and β are gone for good.',
+              'Fixing q2 then gives |000⟩ or |111⟩: a plain bit, not the qubit you stored. We must find the flip *without* reading values.'
+            ],
+            sketch: [
+              T(320, 46, 'α|010⟩ + β|101⟩', { anchor: 'middle', size: 32 }),
+              A(320, 64, 320, 110, { c: 'red' }), T(340, 94, 'read all three', { size: 22, c: 'red' }),
+              B(220, 116, 200, 56), T(320, 152, '010  or  101', { anchor: 'middle', size: 28 }),
+              A(220, 160, 130, 206, { c: 'green' }), T(120, 236, 'q2 is the odd one', { anchor: 'middle', size: 22, c: 'green' }),
+              A(420, 160, 510, 206, { c: 'red' }), T(520, 236, 'α, β gone', { anchor: 'middle', size: 24, c: 'red' }),
+              H(70, 262, 500, 44, { c: 'yellow' }),
+              T(320, 294, 'find the flip without reading values', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'Reading finds the flip but destroys α and β.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X2'], measure: [1, 2, 3], codeSpace: true, reset: true },
+            check: {
+              q: 'You read all three qubits of α|010⟩ + β|101⟩. Can you still recover α and β?',
+              options: ['No, the readout collapsed the state', 'Yes, flip q2 back', 'Yes, from the vote', 'Only if α = β'],
+              answer: 0,
+              why: 'The readout left a single pattern, 010 or 101. The numbers α and β are not stored anywhere any more.'
             }
           },
           {
             title: 'Parity: ask about a relation',
-            buildsOn: 'The encoding tab gave us α|000⟩ + β|111⟩. In both patterns the qubits agree. A readout should ask exactly that.',
-            leadsTo: 'Next, what happens when one qubit gets flipped: the agreement breaks and the check notices.',
+            buildsOn: 'The reading tab showed that full readouts destroy the qubit. Parity asks for less: only whether two qubits agree.',
+            leadsTo: 'Next, how a helper qubit, the ancilla, measures parity without reading q1 or q2.',
             idea: [
-              '*Parity* of two qubits: do they match (even, 0) or differ (odd, 1)?',
-              'An extra qubit, the ancilla, collects it with two CNOTs. Reading the ancilla gives the parity.',
-              'In α|000⟩ + β|111⟩ every pair matches, so parity is even for sure.'
+              '*Parity* of two bits: 0 (even) if they match, 1 (odd) if they differ. 00 and 11 give 0; 01 and 10 give 1.',
+              'In α|000⟩ + β|111⟩ every pair matches in both patterns, so the parity is 0 for sure. It says nothing about α or β.',
+              'After a flip it changes: in 010 and in 101, q1 and q2 differ. Their parity is 1, so the error shows.'
+            ],
+            sketch: [
+              T(80, 50, 'q1 q2', { anchor: 'middle', size: 26 }), T(240, 50, 'parity', { anchor: 'middle', size: 26 }),
+              L([[30, 64], [320, 64]]),
+              T(80, 100, '0 0', { anchor: 'middle', size: 28 }), T(240, 100, '0  even', { anchor: 'middle', size: 26, c: 'green' }),
+              T(80, 145, '1 1', { anchor: 'middle', size: 28 }), T(240, 145, '0  even', { anchor: 'middle', size: 26, c: 'green' }),
+              T(80, 190, '0 1', { anchor: 'middle', size: 28 }), T(240, 190, '1  odd', { anchor: 'middle', size: 26, c: 'red' }),
+              T(80, 235, '1 0', { anchor: 'middle', size: 28 }), T(240, 235, '1  odd', { anchor: 'middle', size: 26, c: 'red' }),
+              B(370, 70, 240, 120, { c: 'blue' }),
+              T(490, 118, 'same or', { anchor: 'middle', size: 28, c: 'blue' }), T(490, 158, 'different?', { anchor: 'middle', size: 28, c: 'blue' }),
+              H(40, 262, 560, 44, { c: 'yellow' }),
+              T(320, 294, 'a relation, never the values', { anchor: 'middle', size: 28 })
+            ],
+            takeaway: 'Parity reads a relation, not a value.',
+            widget: { type: 'multi', n: 3, presets: ['log', 'ghz'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3'], parity: [[1, 2], [2, 3]], codeSpace: true, reset: true },
+            check: {
+              q: 'Parity of q1 and q2 in α|000⟩ + β|111⟩ is…',
+              options: ['Odd, always', 'Even, always', '50/50', 'Depends on α'],
+              answer: 1,
+              why: 'In 000 and 111 the two qubits match, so the parity is even whatever α and β are.'
+            }
+          },
+          {
+            title: 'How the ancilla reads parity',
+            buildsOn: 'The parity tab defined the question. This tab builds the circuit that asks it, with one extra qubit and two CNOTs.',
+            leadsTo: 'Next, two such checks together. Their answers point at exactly which qubit flipped.',
+            idea: [
+              'Add a helper qubit, the *ancilla*, starting at |0⟩. CNOT from q1 flips it if q1 is 1. CNOT from q2 flips it if q2 is 1.',
+              'Flipped twice is back to 0. So the ancilla ends at 0 when q1 and q2 match, and at 1 when they differ.',
+              'Then read the ancilla, not q1 or q2. The data qubits are never measured.'
             ],
             sketch: [
               T(24, 88, 'q1', { size: 28 }), T(24, 158, 'q2', { size: 28 }), T(14, 238, 'ancilla\n|0⟩', { size: 22, c: 'green' }),
@@ -861,22 +1229,29 @@
               T(440, 208, 'odd → 1', { size: 26, c: 'red' }),
               T(300, 304, 'we learn "same or different", never the values', { anchor: 'middle', size: 26 })
             ],
-            takeaway: 'Parity reads a relation, not a value.',
-            widget: { type: 'multi', n: 3, presets: ['log', 'ghz'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3'], parity: [[1, 2], [2, 3]], codeSpace: true, reset: true },
+            takeaway: 'The ancilla flips once per 1, so it ends at the parity.',
+            widget: { type: 'steps', steps: [
+              { say: 'The ancilla starts at 0. Take q1 q2 = 00: neither CNOT fires.', show: 'flips: 0 · ancilla 0 · even' },
+              { say: 'q1 q2 = 10: the CNOT from q1 fires.', show: 'flips: 1 · ancilla 1 · odd' },
+              { say: 'q1 q2 = 01: the CNOT from q2 fires.', show: 'flips: 1 · ancilla 1 · odd' },
+              { say: 'q1 q2 = 11: both fire, and the ancilla is back at 0.', show: 'flips: 2 · ancilla 0 · even' },
+              { say: 'On the code state, 000 and 111 both leave the ancilla at 0.', show: 'α|000⟩|0⟩ + β|111⟩|0⟩' },
+              { say: 'The ancilla is the same in both patterns, so reading it gives 0 and leaves α and β in place.', show: 'read ancilla → 0 · data untouched' }
+            ] },
             check: {
-              q: 'Parity of q1 and q2 in α|000⟩ + β|111⟩ is…',
-              options: ['Odd, always', 'Even, always', '50/50', 'Depends on α'],
-              answer: 1,
-              why: 'In 000 and 111 the two qubits match, so the parity is even whatever α and β are.'
+              q: 'q1 = 1 and q2 = 1. The ancilla starts at 0. After both CNOTs it is…',
+              options: ['0', '1', 'Random', 'Depends on α'],
+              answer: 0,
+              why: 'Each CNOT flips it once. Two flips bring it back to 0, meaning even: the qubits match.'
             }
           },
           {
             title: 'A flip shows up as a syndrome',
-            buildsOn: 'The parity tab built two parity checks. Here one qubit gets flipped and the two checks give a pattern.',
+            buildsOn: 'The ancilla tab measured one parity. The code uses two: q1 with q2, and q2 with q3. Here one qubit gets flipped.',
             leadsTo: 'Next, why running these checks does not wipe out α and β, even though it is a readout.',
             idea: [
-              'Flip one qubit: now one pair differs.',
-              'The two check answers together are the *syndrome*.',
+              'Two checks: check 1 asks "q1 = q2?", check 2 asks "q2 = q3?". Each answers 0 (match) or 1 (differ).',
+              'The pair of answers is the *syndrome*. Each single flip gives a different one.',
               '(0,0) none, (1,0) q1, (1,1) q2, (0,1) q3. Flip that qubit back to repair.'
             ],
             sketch: [
@@ -907,7 +1282,7 @@
           {
             title: 'Why the check leaves α and β alone',
             buildsOn: 'The syndrome tab read the syndrome, which is a readout. This tab shows why that readout does not destroy the encoded data.',
-            leadsTo: 'The QEC basics notebook takes this on: errors that are not full flips, and phase flips that these checks cannot see.',
+            leadsTo: 'Next, the whole cycle in one place, and what this code still cannot fix.',
             idea: [
               'Parity gives the same answer for 000 and 111, so it cannot tell them apart. Both keep their weights.',
               'Only the relation is read. The encoded (α, β) survives the check.',
@@ -936,6 +1311,34 @@
               ],
               answer: 1,
               why: 'A readout only collapses what its answers distinguish. Both patterns give "even", so they stay together.'
+            }
+          },
+          {
+            title: 'One full round, and its limits',
+            buildsOn: 'The earlier tabs gave each step on its own: encode, error, parity checks, syndrome, fix. This tab runs them in order.',
+            leadsTo: 'The QEC basics notebook takes this on: errors that are not full flips, and phase flips that these checks cannot see.',
+            idea: [
+              'One round: encode with two CNOTs, noise acts, measure both checks, read the syndrome, flip the named qubit back.',
+              'One flip is always fixed. Two flips, on q1 and q2: the syndrome (0,1) blames q3, and the fix makes all three wrong.',
+              'A Z error flips the sign of β: α|000⟩ − β|111⟩. Every parity stays 0, so this code cannot see it at all.'
+            ],
+            sketch: [
+              B(20, 50, 130, 56), T(85, 86, 'encode', { anchor: 'middle', size: 24 }),
+              A(152, 78, 182, 78), B(184, 50, 130, 56, { c: 'red' }), T(249, 86, 'noise', { anchor: 'middle', size: 24, c: 'red' }),
+              A(316, 78, 346, 78), B(348, 50, 130, 56, { c: 'blue' }), T(413, 86, 'checks', { anchor: 'middle', size: 24, c: 'blue' }),
+              A(480, 78, 510, 78), B(512, 50, 108, 56, { c: 'green' }), T(566, 86, 'fix', { anchor: 'middle', size: 24, c: 'green' }),
+              H(36, 140, 330, 40, { c: 'mint' }),
+              T(40, 170, '1 flip  →  fixed', { size: 26, c: 'green' }),
+              T(40, 224, '2 flips  →  wrong fix', { size: 26, c: 'red' }),
+              T(40, 278, 'Z error  →  not seen', { size: 26, c: 'red' })
+            ],
+            takeaway: 'Fixes any one X flip. Two flips or a Z error get through.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3', 'Z1'], syndrome: true, codeSpace: true, reset: true },
+            check: {
+              q: 'Noise flips q1 and q2. The syndrome reads (0,1), so you flip q3. What is left?',
+              options: ['All three flipped: α|111⟩ + β|000⟩', 'The original state', 'Only q3 flipped', 'The state collapsed'],
+              answer: 0,
+              why: '110 plus a flip on q3 is 111, and 001 becomes 000. α and β swapped places: one flip is the most this code fixes.'
             }
           }
         ]
