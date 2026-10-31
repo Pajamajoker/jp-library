@@ -395,14 +395,21 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 @media (max-width:600px){.cs-panel{left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;width:auto;height:72vh}.cs-fab{right:14px;bottom:14px}}
 
 /* Tab rail: vertical timeline on wide screens */
-.chip.done .n{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
+.sec-grid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "rail" "body";align-items:start}
+.sec-top{grid-area:top}.rail{grid-area:rail;min-width:0}.sec-body{grid-area:body;min-width:0}
+@media (min-width:1400px){
+  body.secv #app{max-width:1800px}
+  .sec-grid{grid-template-columns:minmax(0,1fr) minmax(0,920px) minmax(0,1fr)!important;column-gap:0!important;grid-template-areas:". top ." "rail body ."!important}
+  .rail{justify-self:end;width:256px;margin-right:36px}
+}
+.chip.done .n{background:var(--ok);color:#fff}
 .chip.on.done .n{background:rgba(255,255,255,.25);color:#fff}
-.join.done{background:var(--accent)}
+.join.done{background:var(--ok)}
 .chain{scrollbar-width:none}.chain::-webkit-scrollbar{display:none}
 .rail-h{display:none}
 @media (min-width:1100px){
   body.secv #app{max-width:1260px}
-  .sec-grid{display:grid;grid-template-columns:264px minmax(0,1fr);gap:36px;align-items:start}
+  .sec-grid{grid-template-columns:256px minmax(0,1fr);column-gap:36px;grid-template-areas:". top" "rail body"}
   .rail{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow-y:auto;scrollbar-width:none;padding:14px 8px 10px;border-radius:20px}
   .rail::-webkit-scrollbar{display:none}
   .rail-h{display:flex;justify-content:space-between;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:2px 12px 10px}
@@ -1303,12 +1310,12 @@ function viewSection(nb,si,ti){
   const chain=h('div',{class:'chain',role:'tablist','aria-label':'Tabs in this section'});
   s.tabs.forEach((t,j)=>{if(j)chain.append(h('span',{class:'join'+(isDone(nb,si,j-1)?' done':'')}));
     chain.append(h('button',{class:'chip'+(j===ti?' on':'')+(isDone(nb,si,j)?' done':''),type:'button',role:'tab','aria-selected':j===ti,onclick:()=>go(nb.id+'-s'+(si+1)+'-t'+(j+1))},h('span',{class:'n'},isDone(nb,si,j)?'✓':j+1),h('span',{class:'t'},t.title)));});
-  const body=h('div');
+  const body=h('div',{class:'sec-body'});
   const dn=s.tabs.filter((_,j)=>isDone(nb,si,j)).length;
   const rail=h('aside',{class:'rail glass','aria-label':'Tabs'},h('div',{class:'rail-h'},h('span',null,'Section '+(si+1)),h('span',null,dn+' / '+s.tabs.length+' done')),chain);
   document.body.classList.add('secv');
-  app.append(crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
-    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro)),h('div',{class:'sec-grid'},rail,body));
+  app.append(h('div',{class:'sec-grid'},h('div',{class:'sec-top'},crumbs({t:'Library',href:'#'},{t:nb.title,href:'#'+nb.id},{t:'Section '+(si+1)+': '+s.title}),
+    h('div',{class:'sec-head'},h('h1',null,s.title),h('p',null,s.intro))),rail,body));
   const tab=s.tabs[ti],nbr=neighbours(nb,si,ti);
   const refBtn=(x,fallback)=>x?h('button',{class:'ref',type:'button',onclick:()=>go(x.go.slice(1))},(x.sec?'Section: ':'')+x.t):h('span',{class:'mini'},fallback);
   const tid=nb.id+'-'+si+'-'+ti;
