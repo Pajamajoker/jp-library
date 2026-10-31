@@ -96,6 +96,7 @@ a.sec:hover{border-color:var(--accent)}
 .conn button.ref{align-self:flex-start;border:0;background:var(--soft);color:var(--accent);border-radius:6px;padding:3px 9px;font-weight:600;font-size:13.5px;text-align:left}
 .conn button.ref:hover{text-decoration:underline}
 .conn p{margin:0;color:var(--muted)}
+.conn.one{grid-template-columns:1fr}
 .idea{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
 .idea li{font-size:18.5px;line-height:1.45;padding-left:22px;position:relative;max-width:62ch}
 .idea li::before{content:"";position:absolute;left:0;top:.62em;width:11px;height:2px;background:var(--accent);transform:rotate(-8deg);border-radius:2px}
@@ -1345,13 +1346,14 @@ function viewSection(nb,si,ti){
   const isLast=ti===s.tabs.length-1;
   body.append(h('article',{class:'tab'},
     h('h2',null,'Tab '+(ti+1)+'. '+tab.title),
-    h('div',{class:'conn'},
-      h('div',null,h('span',{class:'k'},'← Builds on'),refBtn(nbr.prev,'Start of the notebook'),h('p',null,tab.buildsOn)),
-      h('div',null,h('span',{class:'k'},'Leads to →'),refBtn(nbr.next,'End of the notebook'),h('p',null,tab.leadsTo))),
     h('ul',{class:'idea'},tab.idea.map(l=>h('li',{html:rich(l)}))),
     sk,
     w?h('div',null,h('div',{class:'blockhead'},h('h3',null,'Try it')),w):null,
     chk,
+    h('section',{class:'fits'},h('div',{class:'blockhead'},h('h3',null,'Where this fits')),
+      h('div',{class:'conn'+(isLast?' one':'')},
+        h('div',null,h('span',{class:'k'},'← Builds on'),refBtn(nbr.prev,'Start of the notebook'),h('p',null,tab.buildsOn)),
+        isLast?null:h('div',null,h('span',{class:'k'},'Leads to →'),refBtn(nbr.next,'End of the notebook'),h('p',null,tab.leadsTo)))),
     isLast?(()=>{const nx=nb.sections[si+1];
       return h('div',{class:'bridge bridge2'},
         h('div',{class:'bx'},h('span',{class:'k'},nx?'Up next · Section '+(si+2):'End of the book'),h('h3',null,nx?nx.title:'You finished '+nb.title),h('p',null,s.bridge)),
