@@ -479,6 +479,9 @@ Tab = one small step. Tabs run from the smallest piece up to the whole concept. 
 CONNECTION RULE (most important)
 Every tab must say how it connects to its neighbours. buildsOn and leadsTo are mandatory, must be specific (name the idea, not "the previous tab"), and each must be at least 25 characters. The first tab of a section builds on the previous section's bridge. The last tab of a section leads into the section's bridge.
 
+WHERE THEY SHOW
+buildsOn and leadsTo are shown at the END of each tab, under "Where this fits", after the check question. The reader meets the title and the idea lines first. So the idea lines must stand on their own: never open them with "as the last tab showed" or lean on buildsOn to explain them.
+
 ----------------------------------------------------------------
 3. WRITING RULES
 - Plain Unicode math only: α β θ φ ψ |0⟩ ⟨0| ² ₀ ₁ ⊕ √ ⇔ →. No LaTeX, no code blocks, no markdown except *bold*.
@@ -487,6 +490,19 @@ Every tab must say how it connects to its neighbours. buildsOn and leadsTo are m
 - No filler: no "it is worth noting", no "let us", no "in this tab we will".
 - Facts about a specific paper must be checked against the paper. If unsure, leave it out.
 - Prefer one concrete example over a general statement.
+
+----------------------------------------------------------------
+3b. PACING (go slow, never skip a step)
+The reader should never hit a word, a symbol or a move that was not set up first. When in doubt, add a tab. Fifteen small tabs beat five dense ones.
+- WHY BEFORE HOW. Before a section builds a new kind of object (a code, a check, a decoder), one tab says what problem it solves, with a concrete failure. Example: "noise flips a qubit, α and β swap, nothing warns you".
+- PLAIN VERSION FIRST. If a quantum idea has a classical cousin, teach the classical one in its own tab first (coins before amplitudes, the bit repetition code before the qubit one), then say exactly what changes.
+- NAME BEFORE USE. A term like code, codeword, encode, logical qubit or syndrome gets a tab, or at least an idea line, that defines it before any other tab uses it. A section intro may not be the first place a term appears.
+- NAIVE TRY, THEN WHY IT FAILS. When the right method is not the obvious one, show the obvious one and why it breaks before the right one ("read all three and vote" collapses the qubit, so we need parity).
+- ONE NEW MOVE PER TAB. If a tab needs two new facts, split it (the parity idea and the ancilla circuit that measures it are two tabs).
+- SHOW EVERY LINE OF A DERIVATION. Never jump from A to C. If a state changes under a gate, write each pattern before and after: (α|0⟩+β|1⟩)|00⟩ = α|000⟩ + β|100⟩, then 100 → 110, then 110 → 111. Use a 'steps' widget for anything longer than two lines.
+- HEAD OFF THE LIKELY WRONG PICTURE. If readers will probably guess wrong (three copies instead of one spread-out qubit), give the wrong picture its own tab and compare it with the right one.
+- SECTION BOUNDARIES. The first tab of a section restates in one line what the reader holds from the last section. A section that introduces more than about five new terms should be split in two.
+- CLOSE THE LOOP. The last tab of a big topic runs the whole process once in order and states its limits (what it fixes, what gets through).
 
 ----------------------------------------------------------------
 4. SKETCH SPEC
@@ -627,6 +643,8 @@ The library owner then adds 'notebooks/<id>.js' to the list in notebooks/index.j
 [ ] 3 to 6 sections, each with intro and bridge; 3 to 7 tabs each.
 [ ] Every tab has buildsOn and leadsTo, specific, each 25+ characters, and they agree with the neighbouring tabs.
 [ ] Tabs go from smallest piece upward. No tab uses an idea that appears later.
+[ ] Pacing (3b): a why-tab before each new mechanism, classical version first where one exists, every term defined before use, no skipped lines in any derivation.
+[ ] Idea lines make sense without reading buildsOn (it is shown at the end of the tab).
 [ ] Every tab has 2 to 4 idea lines of at most 140 characters.
 [ ] Every sketch has 6 to 18 parts, inside 640 x 320, with 3 or more text labels, drawn in teaching order.
 [ ] Every tab has a takeaway of at most 80 characters, a widget (or null) and a check with a valid answer index.
