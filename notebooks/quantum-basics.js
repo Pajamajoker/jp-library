@@ -198,6 +198,10 @@
             "means": "A rule for storing a little information in more bits or qubits, so that damage shows and can be undone."
           },
           {
+            "term": "Error zone",
+            "means": "The six patterns of three qubits the code never uses (all but 000 and 111). Weight there means something went wrong."
+          },
+          {
             "term": "Codeword",
             "means": "An allowed pattern of a code. The repetition code has two: 000 and 111. Anything else means an error."
           },
@@ -851,7 +855,8 @@
             idea: [
               'Real qubits sit in noisy hardware. Stray heat and fields nudge them. The simplest damage is an *X error*: an X gate nobody asked for.',
               'X swaps α and β. So α|0⟩ + β|1⟩ becomes β|0⟩ + α|1⟩. The stored numbers are now wrong.',
-              'Nothing warns you. A readout only gives 0 or 1, and it collapses the qubit anyway.'
+              'Nothing warns you. A readout only gives 0 or 1, and it collapses the qubit anyway.',
+              'Noise can also drift α and β a little instead of a full flip. Codes handle that too; QEC basics shows how.'
             ],
             sketch: [
               B(30, 70, 200, 70), T(130, 114, 'α|0⟩ + β|1⟩', { anchor: 'middle', size: 28 }),
@@ -991,11 +996,12 @@
           {
             title: 'Three qubits, eight amplitudes',
             buildsOn: 'Section 3 gave two qubits four amplitudes, one per readout pattern. Three qubits also get one per pattern, and there are eight.',
-            leadsTo: 'Next, how a gate like CNOT acts when the state is a sum of several patterns.',
+            leadsTo: 'Next, how to prepare such a state. First, how a gate like CNOT acts on a sum of several patterns.',
             idea: [
               'Three qubits: eight patterns, 000 up to 111, so eight amplitudes. Their squares still add to 1.',
-              'Same codewords as the bit code: 000 and 111. Bits hold one of them at a time. Qubits can hold both at once, weighted.',
-              'Target: *α|000⟩ + β|111⟩*. α sits on 000, β on 111, and the other six stay zero.'
+              'Three qubits *can* put weight on all eight. The code is a choice: we only ever prepare states that use 000 and 111.',
+              'Same codewords as the bit code. Bits hold one of them at a time; qubits hold both at once, weighted: *α|000⟩ + β|111⟩*.',
+              'The other six patterns are the *error zone*. Weight showing up there means something disturbed the qubits.'
             ],
             sketch: [
               T(60, 40, '000', { anchor: 'middle', size: 26 }), T(132, 40, '001', { anchor: 'middle', size: 26 }),
@@ -1010,7 +1016,7 @@
               T(300, 274, 'code state: only 000 and 111 carry weight', { anchor: 'middle', size: 30 }),
               T(300, 308, 'α|000⟩ + β|111⟩', { anchor: 'middle', size: 30, c: 'green' })
             ],
-            takeaway: 'The code state uses only the two codewords, 000 and 111.',
+            takeaway: 'We choose to use only 000 and 111. The other six flag errors.',
             widget: { type: 'multi', n: 3, presets: ['zero3', 'plus00', 'ghz', 'log'], start: 'log', slider: 'log', ops: ['H1', 'X1', 'X2', 'X3'] },
             check: {
               q: 'Which patterns does α|000⟩ + β|111⟩ put weight on?',
@@ -1056,12 +1062,50 @@
             }
           },
           {
-            title: 'Encoding: two CNOTs',
-            buildsOn: 'The previous tab ran one CNOT on a sum of two patterns. Here two CNOTs do the same on three qubits.',
+            title: 'Encoding, one gate at a time',
+            buildsOn: 'The per-pattern tab ran one CNOT on a sum of two patterns. Encoding does the same thing twice, on three qubits.',
+            leadsTo: 'Next, run the two CNOTs yourself and watch the weight jump from pattern to pattern.',
+            idea: [
+              'Start: q1 = α|0⟩ + β|1⟩, q2 = q3 = |0⟩. Multiplied out: *α|000⟩ + β|100⟩*. Only two patterns, since q2 and q3 are surely 0.',
+              'CNOT q1→q2 moves β from 100 to 110: *α|000⟩ + β|110⟩*. 100 is now empty, so a readout can no longer give 100.',
+              'CNOT q1→q3 moves β from 110 to 111: *α|000⟩ + β|111⟩*. 000 never moves, because its q1 is 0.',
+              'A CNOT only moves weight from one pattern to another. It never splits one into several. Two patterns in, two out.'
+            ],
+            sketch: [
+              T(250, 40, 'state', { anchor: 'middle', size: 24, c: 'blue' }),
+              T(500, 40, 'empty now', { anchor: 'middle', size: 24, c: 'red' }),
+              L([[20, 56], [620, 56]]),
+              T(30, 100, 'start', { size: 24 }), T(250, 100, 'α|000⟩ + β|100⟩', { anchor: 'middle', size: 28 }), T(500, 100, 'the other 6', { anchor: 'middle', size: 24, c: 'red' }),
+              T(30, 160, 'CNOT q1→q2', { size: 22 }), T(270, 160, 'α|000⟩ + β|110⟩', { anchor: 'middle', size: 28 }), T(500, 160, '+ 100', { anchor: 'middle', size: 24, c: 'red' }),
+              H(160, 194, 220, 40, { c: 'yellow' }),
+              T(30, 222, 'CNOT q1→q3', { size: 22 }), T(270, 222, 'α|000⟩ + β|111⟩', { anchor: 'middle', size: 28 }), T(500, 222, '+ 110', { anchor: 'middle', size: 24, c: 'red' }),
+              T(320, 296, 'weight moves, it never splits: 2 in, 2 out', { anchor: 'middle', size: 24, c: 'green' })
+            ],
+            takeaway: 'Each CNOT moves β to a new pattern. 2 patterns in, 2 out.',
+            widget: { type: 'steps', steps: [
+              { say: 'Start: q1 holds the data, q2 and q3 are blank.', show: 'q1 = α|0⟩ + β|1⟩ · q2 = |0⟩ · q3 = |0⟩' },
+              { say: 'Multiply out. q2 and q3 are surely 0, so only two of the eight patterns get weight.', show: 'α|000⟩ + β|100⟩ · the other six: 0' },
+              { say: 'CNOT q1→q2 on 000: q1 is 0, so nothing happens.', show: 'α|000⟩  →  α|000⟩' },
+              { say: 'CNOT q1→q2 on 100: q1 is 1, so q2 flips.', show: 'β|100⟩  →  β|110⟩' },
+              { say: 'The β weight *moved*. 100 is now empty: its chance is 0.', show: 'α|000⟩ + β|110⟩ · 100: 0' },
+              { say: 'CNOT q1→q3 on 000: nothing. On 110: q1 is 1, so q3 flips.', show: 'β|110⟩  →  β|111⟩' },
+              { say: 'β moved again, so 110 is empty too.', show: 'α|000⟩ + β|111⟩ · 100: 0 · 110: 0' },
+              { say: 'Two patterns in, two patterns out. α and β never changed. This is *encoding*.', show: 'only 000 and 111 carry weight' }
+            ] },
+            check: {
+              q: 'Right after CNOT q1→q2, what is the chance of reading 100?',
+              options: ['0', '|β|²', '|α|²', '1/8'],
+              answer: 0,
+              why: 'CNOT moved all of the β weight from 100 to 110. 100 has amplitude 0 now, so its chance is 0.'
+            }
+          },
+          {
+            title: 'Encoding: try it',
+            buildsOn: 'The previous tab did encoding on paper, one gate at a time. Here you press the two CNOTs yourself.',
             leadsTo: 'Next, why the result is not three copies of the qubit, even though each pattern repeats one bit.',
             idea: [
-              'Start: *(α|0⟩ + β|1⟩)|00⟩*, which multiplies out to α|000⟩ + β|100⟩. Qubit 1 holds the data; 2 and 3 are blank.',
-              'CNOT12 turns 100 into 110. CNOT13 turns 110 into 111. The pattern 000 never changes.',
+              'Below, the bars start on 000 (α) and 100 (β). Press CNOT q1→q2: the β bar jumps to 110 and 100 empties. Then CNOT q1→q3.',
+              'The α bar on 000 never moves. The slider changes α and β: the bars change size, but still only two patterns are used.',
               'Result: *α|000⟩ + β|111⟩*. One *logical qubit* stored in three physical qubits. This step is *encoding*.'
             ],
             sketch: [
@@ -1286,7 +1330,7 @@
             idea: [
               'Parity gives the same answer for 000 and 111, so it cannot tell them apart. Both keep their weights.',
               'Only the relation is read. The encoded (α, β) survives the check.',
-              'A partial error is forced by the check to become either "none" or "fully flipped". Both are fixable.'
+              'Small drifts instead of full flips? The checks handle those too. That needs one more idea, saved for QEC basics, Section 2.'
             ],
             sketch: [
               B(30, 40, 130, 56), T(95, 78, '000', { anchor: 'middle', size: 30 }), T(95, 118, 'weight α', { anchor: 'middle', size: 22, c: 'red' }),
@@ -1296,11 +1340,11 @@
               A(470, 122, 524, 122, { c: 'green' }),
               H(526, 96, 100, 54, { c: 'mint' }),
               T(530, 124, 'α, β\nkept', { size: 26, c: 'green' }),
-              T(40, 284, 'small tilt → the check forces a choice:', { size: 26 }),
-              T(40, 314, 'clean, or fully flipped. Then fix.', { size: 26, c: 'red' })
+              T(40, 284, 'small drifts, not full flips?', { size: 26 }),
+              T(40, 314, 'handled in QEC basics, Section 2', { size: 26, c: 'red' })
             ],
             takeaway: 'Checks read the relation, so α and β survive.',
-            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2', 'X2'], syndrome: true, parity: [[1, 2], [2, 3]], codeSpace: true, reset: true },
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X2'], syndrome: true, parity: [[1, 2], [2, 3]], codeSpace: true, reset: true },
             check: {
               q: 'Why does the parity check not collapse α|000⟩ + β|111⟩?',
               options: [

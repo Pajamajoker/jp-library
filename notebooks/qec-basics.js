@@ -42,6 +42,15 @@
             "means": "A small error written as mostly I plus a little X, Y or Z. A tilt by δ: cos(δ/2)·I − i·sin(δ/2)·X."
           },
           {
+            "term": "Discretisation of errors",
+            "aka": ["discretisation"],
+            "means": "Measuring the checks turns any small drift into either no error or one full flip. So fixing full flips is enough."
+          },
+          {
+            "term": "Error zone",
+            "means": "Patterns the code never uses. For the bit-flip code: everything except 000 and 111."
+          },
+          {
             "term": "Y error",
             "means": "X and Z together (up to an overall phase)."
           },
@@ -256,7 +265,7 @@
             buildsOn: 'The last tab named X, Y and Z as full flips. Real noise is usually a small nudge. This tab writes a nudge in terms of them.',
             leadsTo: 'Next, the two rules that make fixing any of this hard: no copying, no peeking.',
             idea: [
-              'Noise rarely does a full X. It tilts the qubit a little, by a small angle δ.',
+              'Noise rarely does a full X. More often it drifts α and β a little: it tilts the qubit by a small angle δ.',
               'A tilt about x is a blend: *cos(δ/2) × (no error) − i·sin(δ/2) × (X error)*. Most of it is "no error".',
               'For δ = 20°: cos 10° = 0.98 and sin 10° = 0.17. Squared, that is about 97% clean and 3% X.',
               'Any small error splits like this into I, X, Y and Z parts. Section 2 shows a check picks one part.'
@@ -408,7 +417,7 @@
           {
             title: 'Parity checks find the flipped qubit',
             buildsOn: 'The naming tab turned a parity check into Z1Z2 = ±1. The bit-flip code uses two of them, as in Quantum basics.',
-            leadsTo: 'Next, what the checks do to a small tilt instead of a full flip.',
+            leadsTo: 'Next, errors that are not full flips: what a small drift on one qubit does to the code state.',
             idea: [
               'Check Z1Z2: do q1 and q2 match? Check Z2Z3: do q2 and q3 match?',
               'Each check answers +1 (match) or −1 (differ). The pair of answers is the *syndrome*.',
@@ -436,14 +445,43 @@
             }
           },
           {
+            title: 'A drift leaks into the error zone',
+            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The parity tab gave the code its checks. Now tilt one qubit of the code.',
+            leadsTo: 'Next, what the checks do with this two-part state: they force it to pick one part.',
+            idea: [
+              'Tilt q2 by 20°. The state becomes *0.98 × (α|000⟩ + β|111⟩) − 0.17i × (α|010⟩ + β|101⟩)*.',
+              'The first part is the clean code. The second is "q2 fully flipped". About 3% of the weight leaked into the error zone.',
+              'This drift hit one physical qubit. Changing the stored α and β as a whole would need all three qubits changed together.',
+              'Noise acts on one qubit at a time, so all it can do is leak weight into the error zone. The checks can see that.'
+            ],
+            sketch: [
+              T(320, 40, 'q2 tilted by 20°', { anchor: 'middle', size: 28, c: 'red' }),
+              A(260, 56, 170, 100), A(380, 56, 470, 100, { c: 'red' }),
+              B(50, 106, 240, 70, { c: 'green' }), T(170, 150, '0.98 × (000, 111)', { anchor: 'middle', size: 24, c: 'green' }),
+              B(350, 106, 240, 70, { c: 'red' }), T(470, 150, '0.17 × (010, 101)', { anchor: 'middle', size: 24, c: 'red' }),
+              T(170, 212, 'clean code, 97%', { anchor: 'middle', size: 24 }),
+              T(470, 212, 'q2 flipped, 3%', { anchor: 'middle', size: 24 }),
+              H(60, 250, 520, 44, { c: 'yellow' }),
+              T(320, 282, 'a drift = a little weight in the error zone', { anchor: 'middle', size: 24 })
+            ],
+            takeaway: 'A small drift puts a little weight in the error zone.',
+            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2', 'X2'], codeSpace: true, reset: true },
+            check: {
+              q: 'q2 of the code is tilted by 20°. Roughly how much weight is now outside 000 and 111?',
+              options: ['About 3%', 'About 50%', 'None', 'About 20%'],
+              answer: 0,
+              why: 'The flipped part has amplitude about 0.17, and 0.17² ≈ 0.03. The other 97% is still the clean code.'
+            }
+          },
+          {
             title: 'A check makes small errors whole',
-            buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. Now the bit-flip checks measure such a tilt.',
+            buildsOn: 'The leak tab left the state 97% clean code and 3% "q2 flipped". Now the bit-flip checks are measured on it.',
             leadsTo: 'Next, how many full flips this code can survive. That limit is called the distance.',
             idea: [
-              'Tilt q2 of α|000⟩ + β|111⟩ a little. The state becomes mostly the code state, plus a small part α|010⟩ + β|101⟩.',
-              'The code part gives syndrome (+1, +1). The flipped part gives (−1, −1). A readout must pick one answer.',
-              'Mostly it says (+1, +1) and the tilt is simply gone. Rarely it says (−1, −1): a full flip on q2, which we fix.',
-              'So fixing full X, Y and Z flips is enough to fix every small error. Try the tilt below a few times.'
+              'The two parts give different check answers. Clean part: (+1, +1). Flipped part: (−1, −1). A measurement returns only one.',
+              'About 97% of the time: (+1, +1). The state snaps to exactly α|000⟩ + β|111⟩. The drift is simply gone, nothing to fix.',
+              'About 3%: (−1, −1). The state snaps to exactly α|010⟩ + β|101⟩, a full flip on q2. The syndrome names it; flip q2 back.',
+              'Either way α and β are untouched. So fixing full flips is enough: this is the *discretisation of errors*.'
             ],
             sketch: [
               T(40, 60, 'small drift', { size: 30, c: 'red' }),
@@ -460,7 +498,15 @@
               T(40, 308, 'either way, we can fix it', { size: 30 })
             ],
             takeaway: 'A check turns a messy error into a clean one we can fix.',
-            widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2'], syndrome: true, codeSpace: true, reset: true },
+            widget: { type: 'steps', steps: [
+              { say: 'After the tilt on q2, the state has two parts.', show: '0.98 × (α|000⟩ + β|111⟩)  −  0.17i × (α|010⟩ + β|101⟩)' },
+              { say: 'Ask the checks. The clean part answers match, match.', show: 'α|000⟩ + β|111⟩  →  (+1, +1)' },
+              { say: 'The flipped part answers differ, differ.', show: 'α|010⟩ + β|101⟩  →  (−1, −1)' },
+              { say: 'A measurement gives one answer. The odds are the squared sizes of the parts.', show: '(+1, +1): 0.98² ≈ 97% · (−1, −1): 0.17² ≈ 3%' },
+              { say: 'If (+1, +1): only the clean part survives, rescaled.', show: 'state = α|000⟩ + β|111⟩ · drift gone' },
+              { say: 'If (−1, −1): only the flipped part survives. The syndrome points at q2.', show: 'state = α|010⟩ + β|101⟩  →  X on q2  →  α|000⟩ + β|111⟩' },
+              { say: 'Both ways end at the original α and β. A drift of any size became "none" or "one full flip".', show: 'discretisation of errors' }
+            ] },
             check: {
               q: 'A small partial error hits one qubit. The syndrome is read. What is the qubit now?',
               options: [
@@ -475,12 +521,13 @@
           },
           {
             title: 'Distance: how many flips it fixes',
-            buildsOn: 'The parity tab fixed one full flip, and the last tab reduced small errors to full flips. Here we ask what happens with two.',
+            buildsOn: 'The last two tabs reduced any small drift to none or one full flip. Here we ask what happens with two flips.',
             leadsTo: 'Next, a different failure: errors of a different type that these checks cannot see at all.',
             idea: [
               '*Distance d* is the smallest number of flips that turns one code state into another.',
               'Here d = 3: flipping all three qubits turns 000 into 111.',
-              'A code of distance d fixes up to (d−1)/2 flips. For d = 3 that is one.'
+              'A code of distance d fixes up to (d−1)/2 flips. For d = 3 that is one.',
+              'Two flips at once is rare: if each qubit fails with chance p, it is about 3p². With p = 1%, about 0.03%.'
             ],
             sketch: [
               B(40, 60, 120, 60), T(100, 102, '000', { anchor: 'middle', size: 36 }),
@@ -509,7 +556,8 @@
             idea: [
               'Z on q1 turns α|000⟩ + β|111⟩ into α|000⟩ − β|111⟩.',
               'Parity checks only see 0s and 1s. Both patterns keep their parity, so every check says "fine".',
-              'The sign of β changed, so the stored qubit is damaged and nobody noticed.'
+              'The sign of β changed, so the stored qubit is damaged and nobody noticed.',
+              'A small phase drift is a little Z, so it slips past too. Section 3 builds the checks that catch it.'
             ],
             sketch: [
               T(40, 60, 'before', { size: 26, c: 'blue' }), T(130, 60, 'α|000⟩ + β|111⟩', { size: 32 }),
