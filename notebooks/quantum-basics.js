@@ -994,7 +994,7 @@
             leadsTo: 'Next, how a gate like CNOT acts when the state is a sum of several patterns.',
             idea: [
               'Three qubits: eight patterns, 000 up to 111, so eight amplitudes. Their squares still add to 1.',
-              'The bit code used only the codewords 000 and 111. The qubit version uses the same two patterns.',
+              'Same codewords as the bit code: 000 and 111. Bits hold one of them at a time. Qubits can hold both at once, weighted.',
               'Target: *α|000⟩ + β|111⟩*. α sits on 000, β on 111, and the other six stay zero.'
             ],
             sketch: [
