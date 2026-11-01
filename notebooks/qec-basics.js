@@ -273,15 +273,15 @@
             idea: [
               'Noise rarely does a full X. More often it drifts α and β a little: it tilts the qubit by a small angle δ.',
               'A tilt about x is a blend: *cos(δ/2) × (no error) − i·sin(δ/2) × (X error)*. Most of it is "no error".',
-              'For δ = 20°: cos 10° = 0.98 and sin 10° = 0.17. Squared, that is about 97% clean and 3% X.',
+              'For δ = 20°: cos 10° = 0.985 and sin 10° = 0.174. Squared, that is about 97% clean and 3% X.',
               'Any small error splits like this into I, X, Y, Z parts. Like a tilted coin, Section 2 makes it fall flat: clean, or fully over.'
             ],
             sketch: [
               T(40, 60, 'small tilt', { size: 30, c: 'red' }),
               A(180, 52, 250, 52),
               T(264, 60, 'cos(δ/2)·none  −  i·sin(δ/2)·X', { size: 28 }),
-              B(60, 120, 220, 70, { c: 'green' }), T(170, 164, '0.98 · none', { anchor: 'middle', size: 30, c: 'green' }),
-              B(360, 120, 220, 70, { c: 'red' }), T(470, 164, '0.17 · X', { anchor: 'middle', size: 30, c: 'red' }),
+              B(60, 120, 220, 70, { c: 'green' }), T(170, 164, '0.985 · none', { anchor: 'middle', size: 30, c: 'green' }),
+              B(360, 120, 220, 70, { c: 'red' }), T(470, 164, '0.174 · X', { anchor: 'middle', size: 30, c: 'red' }),
               T(170, 226, '97% weight', { anchor: 'middle', size: 24 }),
               T(470, 226, '3% weight', { anchor: 'middle', size: 24 }),
               H(60, 256, 520, 44, { c: 'yellow' }),
@@ -290,9 +290,9 @@
             takeaway: 'A small error is mostly "no error" plus a little X, Y or Z.',
             widget: { type: 'steps', steps: [
               { say: 'Noise tilts the qubit by δ = 20° about the x axis.', show: 'tilt(20°)' },
-              { say: 'Write the tilt as a blend of "no error" and X.', show: 'cos(10°) · none  −  i · sin(10°) · X' },
-              { say: 'Put in the numbers.', show: '0.98 · none  −  0.17i · X' },
-              { say: 'Square the sizes to get the weights.', show: '0.98² ≈ 0.97 · 0.17² ≈ 0.03' },
+              { say: 'Write the tilt as a blend of "no error" and X. A turn of δ uses δ/2 in the amplitudes, so 20° gives 10°.', show: 'cos(10°) · none  −  i · sin(10°) · X' },
+              { say: 'Put in the numbers.', show: '0.985 · none  −  0.174i · X' },
+              { say: 'Square the sizes to get the weights.', show: '0.985² ≈ 0.97 · 0.174² ≈ 0.03' },
               { say: 'So the nudge is about 97% "nothing happened" and 3% "X happened".', show: '97% none · 3% X' },
               { say: 'Tilts about other axes blend in Y or Z the same way.', show: 'any small error = a·I + b·X + c·Y + d·Z' }
             ] },
@@ -300,7 +300,7 @@
               q: 'A tilt of δ = 20° about x. Roughly how much of it is an X error?',
               options: ['About 3%', 'About 50%', 'About 20%', 'All of it'],
               answer: 0,
-              why: 'sin(10°) ≈ 0.17, and 0.17² ≈ 0.03. The other 97% is "no error".'
+              why: 'sin(10°) ≈ 0.174, and 0.174² ≈ 0.03. The other 97% is "no error".'
             }
           }
         ]
@@ -348,14 +348,54 @@
             }
           },
           {
-            title: 'A drift leaks into the error zone',
+            title: 'A tilt on q2 splits each pattern',
             buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The naming tab gave the checks their ±1 answers. Now tilt one qubit of a real code state.',
+            leadsTo: 'Next, the four new amplitudes sorted into two piles, and what survives in each.',
+            idea: [
+              'Code state α|000⟩ + β|111⟩ with α = 0.6, β = 0.8. Noise tilts only q2 by 20°. What happens to each amplitude?',
+              'Section 1 split a 20° tilt into 0.985 × (no error) − 0.174i × (X). A gate on q2 acts on each pattern on its own.',
+              'So every pattern splits in two: 0.985 of it stays put, and −0.174i of it moves to the same pattern with bit 2 flipped.',
+              '000 → 0.985·|000⟩ − 0.174i·|010⟩. 111 → 0.985·|111⟩ − 0.174i·|101⟩. Then multiply each by its α or β.'
+            ],
+            sketch: [
+              T(320, 36, 'tilt on q2: each pattern splits', { anchor: 'middle', size: 24, c: 'red' }),
+              B(40, 66, 150, 64), T(115, 108, 'α · 000', { anchor: 'middle', size: 28 }),
+              A(196, 86, 296, 78, { c: 'green' }), T(306, 86, '0.985 · α · 000', { size: 24, c: 'green' }),
+              A(196, 112, 296, 122, { c: 'red' }), T(306, 130, '−0.174i · α · 010', { size: 24, c: 'red' }),
+              B(40, 166, 150, 64), T(115, 208, 'β · 111', { anchor: 'middle', size: 28 }),
+              A(196, 186, 296, 178, { c: 'green' }), T(306, 186, '0.985 · β · 111', { size: 24, c: 'green' }),
+              A(196, 212, 296, 222, { c: 'red' }), T(306, 230, '−0.174i · β · 101', { size: 24, c: 'red' }),
+              H(40, 262, 560, 44, { c: 'yellow' }),
+              T(320, 294, 'only bit 2 can change: 000 → 010, 111 → 101', { anchor: 'middle', size: 22 })
+            ],
+            takeaway: 'Each pattern splits: 0.985 stays, 0.174 moves to bit 2 flipped.',
+            widget: { type: 'steps', steps: [
+              { say: 'Start: two patterns hold all the weight.', show: '000: 0.6 · 111: 0.8 · the other six: 0' },
+              { say: 'The 20° tilt uses half the angle in its amplitudes, as in Section 1.', show: 'cos 10° = 0.985 · sin 10° = 0.174' },
+              { say: 'The tilt on one qubit: each value keeps 0.985 of itself and sends −0.174i to the other value.', show: '|0⟩ → 0.985|0⟩ − 0.174i|1⟩ · |1⟩ → 0.985|1⟩ − 0.174i|0⟩' },
+              { say: 'Pattern 000: bit 2 is 0. Apply the rule to bit 2 only. Bits 1 and 3 ride along unchanged.', show: '|000⟩ → 0.985|000⟩ − 0.174i|010⟩' },
+              { say: 'Pattern 111: bit 2 is 1. The same rule, the same two numbers.', show: '|111⟩ → 0.985|111⟩ − 0.174i|101⟩' },
+              { say: 'Now bring α = 0.6 in. It multiplies both halves of the 000 split.', show: '000: 0.6 × 0.985 = 0.591 · 010: 0.6 × (−0.174i) = −0.104i' },
+              { say: 'And β = 0.8 multiplies both halves of the 111 split.', show: '111: 0.8 × 0.985 = 0.788 · 101: 0.8 × (−0.174i) = −0.139i' },
+              { say: 'Four patterns now hold weight, where there were two.', show: '000: 0.591 · 111: 0.788 · 010: −0.104i · 101: −0.139i' },
+              { say: 'Nothing lands on 001, 011, 100 or 110. Reaching them would need bit 1 or bit 3 to change.', show: 'a tilt on q2 only reaches the bit-2 flip of each pattern' }
+            ] },
+            check: {
+              q: 'The tilt hits q2 only. Which pattern can the 111 part leak into?',
+              options: ['Only 101', '000', '101 and 110', 'All seven others'],
+              answer: 0,
+              why: 'A gate on q2 can only change bit 2. Flipping bit 2 of 111 gives 101. Reaching 000 would need all three bits to flip.'
+            }
+          },
+          {
+            title: 'Two piles, the same α and β',
+            buildsOn: 'The last tab left four amplitudes: 0.591 and 0.788 on the codewords, −0.104i and −0.139i on 010 and 101.',
             leadsTo: 'Next, the step before any measurement: the CNOTs tag the clean pile and the flipped pile on the ancilla.',
             idea: [
-              'Take α = 0.6, β = 0.8. Tilt q2 by 20°. The amplitudes become 000: 0.591, 111: 0.788, 010: 0.104, 101: 0.139.',
-              'Read them as two piles. Clean pile: 0.985 × (0.6, 0.8). Flipped pile: 0.174 × (0.6, 0.8). The pair 0.6, 0.8 is in both.',
-              'So the drift did not change α or β. It moved about 3% of the weight into the error zone. 0.985 and 0.174 say how much.',
-              'Why: noise on q2 cannot tell 000 from 111, so it treats both alike. Like a 2% tax on two accounts: their ratio stays.'
+              'Group the four patterns. *Clean pile*: 000 and 111, the codewords. *Flipped pile*: 010 and 101, in the error zone.',
+              'Pull out the common factor. Clean pile: 0.985 × (0.6, 0.8). Flipped pile: −0.174i × (0.6, 0.8). The pair 0.6 : 0.8 is in both.',
+              'Why the same pair: the tilt used the same two numbers on every pattern. Like a flat 1.5% tax on two accounts: the ratio stays.',
+              'So the state did change: 3% of the weight sits in the error zone. What survived is the ratio α : β, which is our information.'
             ],
             sketch: [
               T(320, 36, 'q2 tilted by 20°', { anchor: 'middle', size: 26, c: 'red' }),
@@ -363,31 +403,34 @@
               B(50, 94, 240, 110, { c: 'green' }), T(170, 132, 'clean pile', { anchor: 'middle', size: 24, c: 'green' }),
               T(170, 166, '0.985 ×', { anchor: 'middle', size: 26 }), T(170, 194, '(0.6, 0.8)', { anchor: 'middle', size: 26, c: 'blue' }),
               B(350, 94, 240, 110, { c: 'red', dash: true }), T(470, 132, 'flipped pile', { anchor: 'middle', size: 24, c: 'red' }),
-              T(470, 166, '0.174 ×', { anchor: 'middle', size: 26 }), T(470, 194, '(0.6, 0.8)', { anchor: 'middle', size: 26, c: 'blue' }),
+              T(470, 166, '−0.174i ×', { anchor: 'middle', size: 26 }), T(470, 194, '(0.6, 0.8)', { anchor: 'middle', size: 26, c: 'blue' }),
               H(80, 236, 480, 44, { c: 'yellow' }),
-              T(320, 268, 'same α, β in both piles', { anchor: 'middle', size: 28 }),
-              T(320, 312, 'only the pile sizes changed', { anchor: 'middle', size: 22, c: 'green' })
+              T(320, 268, 'same 0.6 : 0.8 in both piles', { anchor: 'middle', size: 28 }),
+              T(320, 312, 'pile weights: 97% and 3%', { anchor: 'middle', size: 22, c: 'green' })
             ],
-            takeaway: 'A drift moves weight between piles. α and β stay the same.',
+            takeaway: 'The drift moves 3% of weight into the error zone. The ratio α : β is kept.',
             widget: { type: 'steps', steps: [
-              { say: 'Start: α = 0.6 on 000, β = 0.8 on 111.', show: '000: 0.6 · 111: 0.8 · others: 0' },
-              { say: 'Noise tilts q2 by 20°. Write it as mostly "nothing" plus a little X on q2.', show: '0.985 × (nothing)  −  0.174i × (X on q2)' },
-              { say: '"Nothing" keeps the clean patterns, shrunk.', show: '000: 0.6 × 0.985 = 0.591 · 111: 0.8 × 0.985 = 0.788' },
-              { say: '"X on q2" puts a small copy on 010 and 101.', show: '010: 0.6 × 0.174 = 0.104 · 101: 0.8 × 0.174 = 0.139' },
-              { say: 'The chances (amplitude squared) still add to 100%.', show: '34.9% + 62.1% + 1.1% + 1.9% = 100%' },
-              { say: 'Both piles carry the same pair 0.6 : 0.8. Only the pile sizes are new.', show: 'α, β untouched · 3% leaked' },
-              { say: 'Compare one bare qubit with no code. The same tilt mixes 0.6 and 0.8 into new numbers, and nothing can undo it.', show: 'no code: α, β damaged' }
+              { say: 'Sort the four amplitudes into the two piles.', show: 'clean: 000 0.591, 111 0.788 · flipped: 010 −0.104i, 101 −0.139i' },
+              { say: 'Clean pile: both numbers share the factor 0.985.', show: '0.591 = 0.985 × 0.6 · 0.788 = 0.985 × 0.8' },
+              { say: 'Flipped pile: both numbers share the factor −0.174i.', show: '−0.104i = −0.174i × 0.6 · −0.139i = −0.174i × 0.8' },
+              { say: 'Check the ratio directly. All three give the same number.', show: '0.591 ÷ 0.788 = 0.75 · 0.104 ÷ 0.139 = 0.75 · 0.6 ÷ 0.8 = 0.75' },
+              { say: 'Chance of a pattern = size squared. The −i only turns the number, so it drops out of the size.', show: '000: 34.9% · 111: 62.1% · 010: 1.1% · 101: 1.9%' },
+              { say: 'Add up each pile. Together they are still 100%.', show: 'clean: 34.9 + 62.1 = 97% · flipped: 1.1 + 1.9 = 3%' },
+              { say: 'The pile weights are just the two factors, squared.', show: '0.985² = 0.970 · 0.174² = 0.030' },
+              { say: 'Compare one bare qubit with no code. There the same tilt mixes α and β into each other.', show: 'α → 0.985×0.6 − 0.174i×0.8 · β → 0.985×0.8 − 0.174i×0.6' },
+              { say: 'Its odds move from 36 : 64 to 37 : 63, and nothing tells you what to undo. The code kept the ratio instead.', show: 'no code: α, β damaged · code: ratio kept, 3% leaked' },
+              { say: 'The 3% is not removed yet. The next two tabs show how it goes away.', show: 'changed, but repairable' }
             ] },
             check: {
               q: 'After the 20° tilt on q2, what is the ratio of the 010 and 101 amplitudes?',
               options: ['0.6 : 0.8, the same as α : β', '0.985 : 0.174', '0.8 : 0.6', '1 : 1'],
               answer: 0,
-              why: '010 has 0.6 × 0.174 and 101 has 0.8 × 0.174. The common factor drops out, leaving 0.6 : 0.8.'
+              why: '010 has 0.6 × (−0.174i) and 101 has 0.8 × (−0.174i). The common factor drops out, leaving 0.6 : 0.8.'
             }
           },
           {
             title: 'The ancilla tags the two piles',
-            buildsOn: 'The drift tab left two piles: clean, and q2 flipped. Before anything is read, the check circuit runs its CNOTs into the ancilla.',
+            buildsOn: 'The piles tab left two piles: clean, and q2 flipped. Before anything is read, the check circuit runs its CNOTs into the ancilla.',
             leadsTo: 'Next, the moment that matters: reading the ancilla, and what nature does with the two piles.',
             idea: [
               'Take the check on q1 and q2. Its ancilla starts at |0⟩ and is flipped once for each 1 among q1, q2. It ends at their parity.',
