@@ -1130,7 +1130,7 @@ W.snap=function(o){
   const root=h('div',{class:'w snapw'});
   const dots=h('div',{class:'snap-dots'},STEPS.map(t=>h('span',null,t)));
   const say=h('div',{class:'snap-say'});
-  const svg=sv('svg',{viewBox:'0 0 640 420',role:'img','aria-label':'Step by step: reading the ancilla snaps the drifted state back'});
+  const svg=sv('svg',{viewBox:'0 0 640 474',role:'img','aria-label':'Step by step: reading the ancilla snaps the drifted state back'});
   const pad=h('div',{class:'sketch snap-sk'},svg);
   const B=(t,fn,cls)=>h('button',{class:'btn'+(cls?' '+cls:''),type:'button',onclick:fn},t);
   const back=B('← Back',()=>go(step===5?4:step-1)),next=B('Next →',()=>go(step+1),'pri'),act=B('',()=>action(),'pri'),again=B('Start over',()=>{cnt=[0,0];go(0);});
@@ -1188,7 +1188,12 @@ W.snap=function(o){
     /* rescale note on the surviving pile */
     if(D.div>.02){const gi=outcome===1?1:0,G=groups[gi],f=outcome===1?sn:c;
       g.append(sv('rect',{x:G.x+38,y:70,width:150,height:30,rx:6,fill:colr('yellow'),opacity:.45*D.div}),
-        txt(G.x+113,92,'÷ '+n3(f)+' to fill 100%',19,'ink',D.div));}
+        txt(G.x+113,92,'÷ '+n3(f)+' to fill 100%',19,'ink',D.div));
+      /* why the other pile is scratched, in one line under everything */
+      const r=rng(hash('why'+outcome)),k=outcome===1?0:1;
+      g.append(P(polyD(polyPts(r,[[24,428],[616,428],[616,468],[24,468],[25,427]],1.2,true)),'yellow',2,.7*D.div),
+        sv('rect',{x:24,y:428,width:592,height:40,rx:4,fill:colr('yellow'),opacity:.3*D.div}),
+        txt(320,455,'ancilla read '+(1-k)+', so the pile tagged '+k+' cannot be true: it drops out, and the rest is scaled up',19,'ink',D.div));}
     /* ancilla tags */
     if(D.tags>.02){[[165,'a = 0','green',0],[495,'a = 1','red',1]].forEach(([x,s,col,gi])=>{const op=D.tags*(D.fade[gi]<.5?.35:1);
       g.append(rline('str'+gi,[[x,292],[x-6,302],[x,312]],col,1.6,op));
