@@ -472,10 +472,13 @@
               { say: 'The drift is still fully there. It is now labelled by the ancilla.', show: 'tagged, not fixed' }
             ] },
             math: [
-              { h: 'Add the ancilla', eq: ['000,0   111,0   010,0   101,0'], why: 'Every pattern gets an ancilla bit a, starting at 0. The amplitudes do not change.' },
-              { h: 'CX from q1 to a', eq: ['000,0   111,1   010,0   101,1'], why: 'a flips in the patterns where q1 = 1.' },
-              { h: 'CX from q2 to a', eq: ['000,0   111,0   010,1   101,1'], why: 'a flips where q2 = 1. Now a = q1 ⊕ q2 in every pattern.' },
-              { h: 'Group by the tag', eq: ['(0.591|000⟩ + 0.788|111⟩) |0⟩', '+ (−0.104i|010⟩ − 0.139i|101⟩) |1⟩'], why: 'Clean pile tagged 0, flipped pile tagged 1. Both are still there.' }
+              { h: 'Start: the state after the tilt', eq: ['0.591|000⟩ + 0.788|111⟩', '− 0.104i|010⟩ − 0.139i|101⟩'], why: 'Four patterns, from the last two tabs.' },
+              { h: 'Group the patterns into two piles', eq: ['(0.591|000⟩ + 0.788|111⟩)', '+ (−0.104i|010⟩ − 0.139i|101⟩)'], why: '000 and 111 are the codewords: the clean pile. 010 and 101 have bit 2 flipped: the flipped pile.' },
+              { h: 'Pull out each pile’s common factor', eq: ['0.591  = 0.985 × 0.6      0.788  = 0.985 × 0.8', '−0.104i = −0.174i × 0.6   −0.139i = −0.174i × 0.8'], why: 'Each pile is the stored pair 0.6, 0.8 times one number.' },
+              { h: 'Give the piles short names', eq: ['clean   = 0.6|000⟩ + 0.8|111⟩', 'flipped = 0.6|010⟩ + 0.8|101⟩', 'state   = 0.985 (clean) − 0.174i (flipped)'], why: 'Nothing physical happened. The same state is only regrouped, like writing 6 + 8 as 2 × (3 + 4).' },
+              { h: 'Add the ancilla at |0⟩', eq: ['every pattern gains a 0:   |000⟩ → |000,0⟩', '0.985 (clean)|0⟩ − 0.174i (flipped)|0⟩'], why: 'The ancilla is |0⟩ with amplitude 1. Joining qubits multiplies amplitudes, so every number stays.' },
+              { h: 'Run the CNOTs q1 → a and q2 → a', eq: ['000:  q1 q2 = 0 0  →  0 flips  →  a = 0', '111:  q1 q2 = 1 1  →  2 flips  →  a = 0', '010:  q1 q2 = 0 1  →  1 flip   →  a = 1', '101:  q1 q2 = 1 0  →  1 flip   →  a = 1'], why: 'Each CNOT flips a when its control is 1. Two flips undo each other.' },
+              { h: 'After the CNOTs', eq: ['0.985 (clean)|0⟩ − 0.174i (flipped)|1⟩'], why: 'The amplitudes never changed. Only the tag bit did.' }
             ],
             check: {
               q: 'Right after the CNOTs, before the ancilla is read, is the drift gone?',
