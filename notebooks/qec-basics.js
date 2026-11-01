@@ -101,6 +101,11 @@
             "means": "9 qubits: a phase-flip code built from three bit-flip blocks. Fixes any single-qubit error."
           },
           {
+            "term": "Block",
+            "means": "In the Shor code, three qubits that together stand in for one qubit of the outer phase-flip code: (|000⟩ + |111⟩)/√2 for +, (|000⟩ − |111⟩)/√2 for −.",
+            "more": "An X inside a block is caught by that block. A Z on any qubit of a block flips the sign of the whole block."
+          },
+          {
             "term": "Physical qubit",
             "means": "One real hardware qubit."
           },
@@ -723,7 +728,7 @@
           {
             title: 'Each code is blind to the other error',
             buildsOn: 'The X-type checks tab caught Z errors on the phase-flip code. Section 2 showed the bit-flip code misses Z. The mirror problem is next.',
-            leadsTo: 'Next, the fix: nest one code inside the other, so both kinds of check run at once.',
+            leadsTo: 'Next, the obvious fix, running both kinds of check on the same three qubits, and why it fails.',
             idea: [
               'X leaves |+⟩ alone and turns |−⟩ into −|−⟩. So X on one qubit turns α|+++⟩ + β|−−−⟩ into α|+++⟩ − β|−−−⟩.',
               'Every sign comparison still matches, so every X-type check says +1. Yet the sign of β flipped.',
@@ -750,13 +755,50 @@
             }
           },
           {
-            title: 'Building the Shor code',
-            buildsOn: 'The blind-spots tab showed each three-qubit code misses one error. The fix is to put one code inside the other.',
-            leadsTo: 'Next, the checks of this 9-qubit code, and which errors each family catches.',
+            title: 'One set of three cannot do both',
+            buildsOn: 'The blind-spots tab showed the bit-flip code misses Z and the phase-flip code misses X. The obvious try is to run both kinds of check on the same three qubits.',
+            leadsTo: 'Next, the way out: more qubits. Encode once, then encode each piece again.',
             idea: [
-              'Start from the phase-flip code, α|+++⟩ + β|−−−⟩. It guards against Z, but each of its three qubits can still suffer X.',
-              'So protect each of those three qubits with its own bit-flip triple: |+⟩ becomes (|000⟩ + |111⟩)/√2, |−⟩ becomes (|000⟩ − |111⟩)/√2.',
-              'Three triples of three: *9 physical qubits* for one logical qubit.'
+              'The bit-flip code stores in bits: 000 and 111. The phase-flip code stores in signs: +++ and −−−. One state cannot be both.',
+              'Try anyway: run the sign check X1X2 on the bit-flip code. X flips bits, so 000 is not a state X1X2 leaves alone. Its answer is random.',
+              'A random answer means a real readout, and a readout wipes things out. The check would damage the code it is meant to guard.',
+              'It is the same as a Z readout on |+⟩: flips one, reads the other. With three qubits you must pick bits or signs.'
+            ],
+            sketch: [
+              B(30, 40, 250, 130, { c: 'blue' }), T(155, 80, 'bit-flip code', { anchor: 'middle', size: 26, c: 'blue' }),
+              T(155, 120, '000 / 111', { anchor: 'middle', size: 30 }), T(155, 156, 'firm bits', { anchor: 'middle', size: 22 }),
+              B(360, 40, 250, 130, { c: 'red' }), T(485, 80, 'phase-flip code', { anchor: 'middle', size: 26, c: 'red' }),
+              T(485, 120, '+++ / −−−', { anchor: 'middle', size: 30 }), T(485, 156, 'firm signs', { anchor: 'middle', size: 22 }),
+              T(320, 118, '≠', { anchor: 'middle', size: 40 }),
+              T(40, 222, 'sign check on 000:', { size: 24 }), T(290, 222, 'X1X2 gives 110, random answer', { size: 24, c: 'red' }),
+              H(60, 252, 520, 44, { c: 'yellow' }),
+              T(320, 284, '3 qubits: bits or signs, not both', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'Three qubits can hold bits firmly or signs firmly, never both.',
+            widget: { type: 'steps', steps: [
+              { say: 'Start with the bit-flip code.', show: 'α|000⟩ + β|111⟩' },
+              { say: 'A sign check X1X2 applies X to q1 and q2. See what that does to each pattern.', show: 'X1X2:  000 → 110 · 111 → 001' },
+              { say: 'The patterns changed, so the code is not a state X1X2 leaves alone.', show: 'no fixed answer: +1 or −1 at random' },
+              { say: 'Reading a random answer collapses the state into a mix the code never had.', show: 'α(|000⟩ ± |110⟩) + β(|111⟩ ± |001⟩)' },
+              { say: 'Half the weight now sits on 110 and 001, outside the code. The check itself made an error.', show: 'check = damage' },
+              { say: 'The same happens the other way round: a bit check Z1Z2 on +++ gives a random answer too.', show: 'with 3 qubits: pick bits or signs' }
+            ] },
+            check: {
+              q: 'Why not run the bit checks and the sign checks on the same three qubits?',
+              options: ['Each kind gives random answers on the other code and scrambles it', 'There are not enough ancillas', 'The checks take too long', 'Sign checks cannot be built'],
+              answer: 0,
+              why: 'The bit-flip code is not a state that X1X2 leaves alone, so reading X1X2 collapses it. Flips one, reads the other.'
+            }
+          },
+          {
+            title: 'Building the Shor code',
+            buildsOn: 'The last tab showed three qubits can guard bits or signs, not both. The way out is more qubits: encode once, then encode each piece again.',
+            leadsTo: 'Next, what an X error does to these nine qubits, and which checks see it.',
+            idea: [
+              'Layer 1: encode with the phase-flip code, α|+++⟩ + β|−−−⟩. It guards signs. Its three qubits can still suffer bit flips.',
+              'Layer 2: guard each of those three qubits against bit flips with its own bit-flip code. Each qubit becomes a *block* of three.',
+              'The bit-flip code sends 0 → 000 and 1 → 111. So |+⟩ = (|0⟩ + |1⟩)/√2 becomes (|000⟩ + |111⟩)/√2, and |−⟩ becomes (|000⟩ − |111⟩)/√2.',
+              'Like a letter in a waterproof bag inside a padded box: each layer handles one danger. 3 blocks of 3 = *9 physical qubits*.'
             ],
             sketch: [
               T(320, 44, 'α|+++⟩ + β|−−−⟩', { anchor: 'middle', size: 30 }),
@@ -777,6 +819,13 @@
               { say: 'Put three of these side by side.', show: 'α (000+111)(000+111)(000+111) + β (000−111)(000−111)(000−111)' },
               { say: 'Count the qubits.', show: '3 blocks × 3 qubits = 9 physical qubits, 1 logical qubit' }
             ] },
+            math: [
+              { h: 'Layer 1: the phase-flip code', eq: ['α|0⟩ + β|1⟩  →  α|+++⟩ + β|−−−⟩'], why: 'Built in Tab 1 of this section: two CNOTs, then H on all three.' },
+              { h: 'Layer 2: the bit-flip rule', eq: ['|0⟩  →  |000⟩', '|1⟩  →  |111⟩'], why: 'Applied to each of the three qubits from layer 1, so each becomes a block.' },
+              { h: 'Apply it to |+⟩', eq: ['|+⟩ = (|0⟩ + |1⟩)/√2', '    → (|000⟩ + |111⟩)/√2'], why: 'A gate acts on each term on its own. The 1/√2 rides along.' },
+              { h: 'Apply it to |−⟩', eq: ['|−⟩ = (|0⟩ − |1⟩)/√2', '    → (|000⟩ − |111⟩)/√2'], why: 'The minus rides along too. It now sits on the whole block, not on one qubit.' },
+              { h: 'The full nine-qubit state', eq: ['α (000+111)(000+111)(000+111)', '+ β (000−111)(000−111)(000−111)'], why: 'Each bracket is one block of three qubits. The factors 1/√2 are left out to keep it short.' }
+            ],
             check: {
               q: 'In the Shor code, what replaces each |+⟩ of the phase-flip code?',
               options: ['(|000⟩ + |111⟩)/√2', '|+++⟩', '|000⟩', '(|000⟩ − |111⟩)/√2'],
@@ -785,13 +834,91 @@
             }
           },
           {
+            title: 'An X error stays inside its block',
+            buildsOn: 'The building tab made nine qubits in three blocks, each block a bit-flip code. Now put an X error on one of them.',
+            leadsTo: 'Next, the other error: a Z on one qubit, and why it shows up as a sign flip of its whole block.',
+            idea: [
+              'Say X hits qubit 5, the middle of block 2. Block 2 is (|000⟩ ± |111⟩)/√2, and X on its middle makes it (|010⟩ ± |101⟩)/√2.',
+              'That is exactly the error of Section 2. The bit checks inside block 2, Z4Z5 and Z5Z6, both fire and name qubit 5.',
+              'Blocks 1 and 3 are untouched, so their checks stay quiet. There are six bit checks in all, two per block.',
+              'The ± of block 2 is untouched too, so the sign layer never notices. The X is caught and fixed inside its block.'
+            ],
+            sketch: [
+              B(30, 50, 170, 80), B(235, 50, 170, 80, { c: 'red' }), B(440, 50, 170, 80),
+              O(70, 90, 14), O(115, 90, 14), O(160, 90, 14),
+              O(275, 90, 14), O(320, 90, 14, { c: 'red' }), O(365, 90, 14),
+              O(480, 90, 14), O(525, 90, 14), O(570, 90, 14),
+              T(320, 38, 'X on qubit 5', { anchor: 'middle', size: 24, c: 'red' }),
+              T(115, 162, 'block 1: quiet', { anchor: 'middle', size: 22 }),
+              T(320, 162, 'Z4Z5, Z5Z6 fire', { anchor: 'middle', size: 22, c: 'red' }),
+              T(525, 162, 'block 3: quiet', { anchor: 'middle', size: 22 }),
+              T(320, 212, '(000 ± 111)  →  (010 ± 101)', { anchor: 'middle', size: 24, c: 'blue' }),
+              H(110, 240, 420, 44, { c: 'yellow' }),
+              T(320, 272, 'caught inside its own block', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'An X error is caught by the bit checks inside its own block.',
+            widget: { type: 'steps', steps: [
+              { say: 'Block 2 before the error, on qubits 4, 5, 6.', show: '(|000⟩ ± |111⟩)/√2' },
+              { say: 'X on qubit 5 flips the middle bit in both patterns.', show: '(|010⟩ ± |101⟩)/√2' },
+              { say: 'Z4Z5 compares qubits 4 and 5. In 010 and in 101 they differ.', show: 'Z4Z5 = −1' },
+              { say: 'Z5Z6 compares qubits 5 and 6. They differ too.', show: 'Z5Z6 = −1' },
+              { say: 'Both checks around qubit 5 fire, so qubit 5 is the odd one out.', show: 'fix: X on qubit 5' },
+              { say: 'The ± between the two patterns never changed. The sign layer has nothing to see.', show: 'block sign untouched' }
+            ] },
+            check: {
+              q: 'X hits qubit 7, the first qubit of block 3. Which checks fire?',
+              options: ['Only Z7Z8', 'Z7Z8 and Z8Z9', 'Z4Z5', 'All six bit checks'],
+              answer: 0,
+              why: 'Qubit 7 sits at the edge of block 3, so only the check that touches it, Z7Z8, fires. Z8Z9 compares two untouched qubits.'
+            }
+          },
+          {
+            title: 'A Z error flips the sign of its block',
+            buildsOn: 'The X-error tab stayed inside one block. A Z error is different: it does not flip a bit, it flips a sign.',
+            leadsTo: 'Next, the sign checks across blocks that catch this, and the full list of checks of the code.',
+            idea: [
+              'Z on qubit 5 puts a minus on every pattern where qubit 5 is 1. In block 2, 000 keeps its sign and 111 picks up a minus.',
+              'So (|000⟩ + |111⟩)/√2 becomes (|000⟩ − |111⟩)/√2. Block 2 went from + to −.',
+              'Z on qubit 4 or 6 does the same, since 111 has a 1 everywhere. One Z anywhere in a block flips the sign of the whole block.',
+              'Seen from layer 1, block 2 is one qubit that suffered a Z. That is exactly the error the phase-flip code catches.'
+            ],
+            sketch: [
+              T(150, 46, 'block 2: +', { anchor: 'middle', size: 24, c: 'green' }),
+              B(40, 60, 220, 70, { c: 'green' }), T(150, 104, '000 + 111', { anchor: 'middle', size: 30 }),
+              A(270, 95, 370, 95, { c: 'red' }),
+              T(320, 156, 'Z on 4, 5 or 6', { anchor: 'middle', size: 20, c: 'red' }),
+              T(490, 46, 'block 2: −', { anchor: 'middle', size: 24, c: 'red' }),
+              B(380, 60, 220, 70, { c: 'red' }), T(490, 104, '000 − 111', { anchor: 'middle', size: 30 }),
+              T(40, 200, '111 has a 1 in every place,', { size: 24 }),
+              T(40, 232, 'so any Z gives it a minus', { size: 24 }),
+              H(80, 252, 480, 44, { c: 'yellow' }),
+              T(320, 284, 'one Z flips the whole block sign', { anchor: 'middle', size: 26 })
+            ],
+            takeaway: 'One Z anywhere in a block flips that block from + to −.',
+            widget: { type: 'steps', steps: [
+              { say: 'Block 2 in its + form.', show: '(|000⟩ + |111⟩)/√2' },
+              { say: 'Z on qubit 5: 000 has a 0 there, so no sign. 111 has a 1 there, so a minus.', show: '(|000⟩ − |111⟩)/√2' },
+              { say: 'Try qubit 4 instead. 111 has a 1 there too: the same result.', show: 'Z4, Z5, Z6 all give (|000⟩ − |111⟩)/√2' },
+              { say: 'Start from the − form instead. Now the two minus signs cancel.', show: '(|000⟩ − |111⟩)/√2  →  (|000⟩ + |111⟩)/√2' },
+              { say: 'So a Z on any qubit of a block swaps that block between + and −.', show: 'block + ↔ block −' },
+              { say: 'The bit checks inside see nothing: no bit moved.', show: 'Z4Z5 = Z5Z6 = +1' }
+            ] },
+            check: {
+              q: 'Z hits qubit 6. What happens to block 2?',
+              options: ['Its sign flips: + becomes −', 'Only qubit 6 changes, the block is fine', 'It becomes (|001⟩ + |110⟩)/√2', 'Nothing, Z is harmless here'],
+              answer: 0,
+              why: '111 has a 1 at qubit 6, so it picks up a minus. One Z anywhere in a block flips the sign of the whole block.'
+            }
+          },
+          {
             title: 'The Shor code catches every single error',
-            buildsOn: 'The building tab nested the bit-flip code inside the phase-flip code. Now we list its checks and what each one catches.',
+            buildsOn: 'The last two tabs: an X stays inside its block, and a Z flips the sign of a whole block. Now the checks that see each.',
             leadsTo: 'Section 4 steps back from this one code and names the pieces every code shares.',
             idea: [
-              'Inside each triple: the Z-type checks of Section 2, two per triple. Six in all. They catch X errors.',
-              'Across triples: compare the sign of triple 1 with triple 2, and 2 with 3. Each such X-type check touches 6 qubits. They catch Z errors.',
-              'Any single-qubit error is corrected. Y is X and Z together, so it is covered too.'
+              'Inside each block: two bit checks, as in Section 2. Six in all. They catch X errors.',
+              'Across blocks: compare the sign of block 1 with block 2, and block 2 with block 3. This is the phase-flip code, one level up.',
+              'The sign of a block is read by X on all three of its qubits. So one sign comparison is X on six qubits, like X1X2X3X4X5X6.',
+              'Every single-qubit error is caught: X by the checks inside, Z by the checks across, and Y by both, since Y is X and Z together.'
             ],
             sketch: [
               B(30, 50, 170, 80), B(230, 50, 170, 80), B(430, 50, 170, 80),
@@ -807,6 +934,12 @@
             ],
             takeaway: 'Nested codes: bit-flip inside, phase-flip across. 9 qubits.',
             widget: null,
+            math: [
+              { h: 'Reading the sign of one block', eq: ['XXX (000 + 111) = 111 + 000  →  +1', 'XXX (000 − 111) = 111 − 000  →  −1'], why: 'X on all three swaps 000 and 111. With +, nothing changes. With −, the whole block picks up a minus.' },
+              { h: 'Comparing two blocks', eq: ['X1X2X3 · X4X5X6 = X1X2X3X4X5X6', 'same sign → +1,   different → −1'], why: 'Multiply the two block readings. It is X1X2 from Tab 2, with blocks in place of qubits.' },
+              { h: 'Z on qubit 5', eq: ['block 2:  + → −', 'X1…X6 = −1,   X4…X9 = −1'], why: 'Both comparisons that touch block 2 fire. Block 2 is the odd one out: apply Z to any one of its qubits.' },
+              { h: 'All eight checks', eq: ['inside:  Z1Z2 Z2Z3   Z4Z5 Z5Z6   Z7Z8 Z8Z9', 'across:  X1…X6   X4…X9'], why: '6 bit checks and 2 sign checks, for 9 qubits.' }
+            ],
             check: {
               q: 'In the 9-qubit code, which checks catch X errors?',
               options: [
