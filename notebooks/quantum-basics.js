@@ -84,11 +84,11 @@
         "items": [
           {
             "term": "Z readout",
-            "means": "The normal readout: 0 or 1, with chances |α|² and |β|²."
+            "means": "The normal readout: 0 or 1, with chances |α|² and |β|². It wipes out the sign information."
           },
           {
             "term": "X readout",
-            "means": "+ or −. Asks whether the state leans to |+⟩ or |−⟩. Same as H, then the Z readout."
+            "means": "+ or −. Asks whether the state leans to |+⟩ or |−⟩. Same as H, then the Z readout. It wipes out the bit information."
           },
           {
             "term": "Y readout",
@@ -108,15 +108,20 @@
         "group": "Gates",
         "items": [
           {
+            "term": "Flips one, reads the other",
+            "means": "Z flips signs and reads bits. X flips bits and reads signs. A readout can only give a fixed answer on states it leaves alone.",
+            "more": "So a check is named for what it reads, not what it catches: Z1Z2 reads bits and catches X errors."
+          },
+          {
             "term": "X",
             "aka": ["X gate"],
-            "means": "Swaps α and β. |0⟩ ↔ |1⟩. A bit flip.",
+            "means": "Swaps α and β. |0⟩ ↔ |1⟩. A bit flip. As a readout, X reads the sign instead.",
             "more": "Half turn about the x axis of the Bloch sphere."
           },
           {
             "term": "Z",
             "aka": ["Z gate"],
-            "means": "Flips the sign of β. |+⟩ ↔ |−⟩. A phase flip: the 0/1 readout cannot see it.",
+            "means": "Flips the sign of β. |+⟩ ↔ |−⟩. A phase flip: the 0/1 readout cannot see it. As a readout, Z reads the bit instead.",
             "more": "Half turn about the z axis."
           },
           {
@@ -464,7 +469,8 @@
             idea: [
               '*X* swaps α and β. *Z* flips the sign of β. *H* mixes them.',
               'Gates keep |α|² + |β|² = 1. They never break the weights.',
-              'Gates can be undone. H twice gives back the start.'
+              'Gates can be undone. H twice gives back the start.',
+              'So X flips the bit, 0 ↔ 1. Z leaves the bit alone and flips a sign. The next tab shows which readout sees which.'
             ],
             sketch: [
               T(40, 66, '(α, β)', { size: 30 }),
@@ -501,7 +507,8 @@
             leadsTo: 'Next, the Bloch sphere puts all three readouts on one picture, one axis each.',
             idea: [
               '*Z* asks 0 or 1. *X* asks + or −. *Y* asks +i or −i.',
-              'Each readout is blind to something the others see.',
+              'Each letter has two jobs. *Flips one, reads the other*: as a gate Z flips the sign, as a readout it reads the bit. X is the mirror.',
+              'A readout wipes out what the other one sees. Read |+⟩ with Z: you get 0 or 1, and its sign is now a coin toss.',
               'Z cannot see the sign between α and β. X can. QEC will need both kinds of check.'
             ],
             sketch: [
@@ -523,6 +530,13 @@
             ],
             takeaway: 'Z, X, Y are three different questions about one qubit.',
             widget: { type: 'qubit', sliders: ['theta', 'phi'], readouts: true, shots: true, start: { theta: 90, phi: 0 } },
+            math: [
+              { h: 'Z on 0 and 1: a label, no change', eq: ['Z|0⟩ = +1 · |0⟩', 'Z|1⟩ = −1 · |1⟩'], why: 'Z keeps 0 as 0 and 1 as 1. Only a ±1 label appears, and that label is the Z readout: +1 for 0, −1 for 1.' },
+              { h: 'Z on + and −: a real change', eq: ['Z|+⟩ = |−⟩', 'Z|−⟩ = |+⟩'], why: 'Here Z changes the state. So as a gate, Z flips the sign.' },
+              { h: 'X is the mirror', eq: ['X|+⟩ = +1 · |+⟩      X|−⟩ = −1 · |−⟩', 'X|0⟩ = |1⟩           X|1⟩ = |0⟩'], why: 'X keeps + and −, so it reads them. X changes 0 and 1, so as a gate it flips the bit.' },
+              { h: 'The rule', eq: ['Z:  flips signs,  reads bits', 'X:  flips bits,   reads signs'], why: 'A readout can only give a fixed answer on the states it leaves alone.' },
+              { h: 'A readout wipes out the other', eq: ['|+⟩ = (|0⟩ + |1⟩)/√2', 'Z readout gives 0 (50%): now |0⟩', '|0⟩ = (|+⟩ + |−⟩)/√2: sign is 50/50'], why: 'The sign was not flipped. It was erased. This is why QEC never reads a data qubit directly.' }
+            ],
             check: {
               q: '|+⟩ = (|0⟩ + |1⟩)/√2. Which readout gives a certain answer?',
               options: ['Z', 'X', 'Y', 'All three'],
@@ -575,7 +589,8 @@
             idea: [
               '*X, Y, Z* are half turns (180°) about the x, y, z axes.',
               '*H* is a half turn about the line between x and z.',
-              'A turn keeps the point on the sphere, so weights always stay valid.'
+              'A turn keeps the point on the sphere, so weights always stay valid.',
+              'A half turn about x keeps the x poles (+, −) and swaps the z poles (0, 1). So X flips the bit and reads the sign.'
             ],
             sketch: [
               O(150, 160, 95),
@@ -1229,7 +1244,8 @@
             idea: [
               '*Parity* of two bits: 0 (even) if they match, 1 (odd) if they differ. 00 and 11 give 0; 01 and 10 give 1.',
               'In α|000⟩ + β|111⟩ every pair matches in both patterns, so the parity is 0 for sure. It says nothing about α or β.',
-              'After a flip it changes: in 010 and in 101, q1 and q2 differ. Their parity is 1, so the error shows.'
+              'After a flip it changes: in 010 and in 101, q1 and q2 differ. Their parity is 1, so the error shows.',
+              'It is a question about bits, so it sees bit flips. It never asks what q1 or q2 is, so it wipes nothing out.'
             ],
             sketch: [
               T(80, 50, 'q1 q2', { anchor: 'middle', size: 26 }), T(240, 50, 'parity', { anchor: 'middle', size: 26 }),

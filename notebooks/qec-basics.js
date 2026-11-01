@@ -30,11 +30,11 @@
           },
           {
             "term": "X error",
-            "means": "Bit flip. Swaps α and β, so |0⟩ ↔ |1⟩."
+            "means": "Bit flip. Swaps α and β, so |0⟩ ↔ |1⟩. Caught by Z-type checks, which read bits."
           },
           {
             "term": "Z error",
-            "means": "Phase flip. Flips the sign of β, so |+⟩ ↔ |−⟩. Invisible to the 0/1 readout."
+            "means": "Phase flip. Flips the sign of β, so |+⟩ ↔ |−⟩. Invisible to the 0/1 readout. Caught by X-type checks, which read signs."
           },
           {
             "term": "Blend",
@@ -124,12 +124,17 @@
         "group": "Checks",
         "items": [
           {
+            "term": "Flips one, reads the other",
+            "means": "Z flips signs and reads bits. X flips bits and reads signs. A readout can only give a fixed answer on states it leaves alone.",
+            "more": "So a check is named for what it reads, not what it catches: Z1Z2 reads bits and catches X errors."
+          },
+          {
             "term": "Z-type check",
-            "means": "Do these qubits agree in the 0/1 view? Catches X errors."
+            "means": "Reads bits: do these qubits agree in the 0/1 view? Catches X errors. Named for what it reads, not what it catches."
           },
           {
             "term": "X-type check",
-            "means": "Do they agree in the +/− view? Catches Z errors. Same as H on each, then a parity check."
+            "means": "Reads signs: do they agree in the +/− view? Catches Z errors. Same as H on each, then a parity check."
           },
           {
             "term": "Z1Z2",
@@ -241,8 +246,8 @@
             leadsTo: 'Next, why these two are enough: any small error is a blend of them.',
             idea: [
               '*X error* (bit flip), the one Quantum basics handled: swaps α and β, so |0⟩ ↔ |1⟩.',
-              '*Z error* (phase flip) flips the sign of β. A Z readout cannot see it.',
-              'Both at once is *Y*, up to a factor i. X, Y, Z and "no error" are the Pauli errors.',
+              '*Z error* (phase flip) flips the sign of β, so |+⟩ ↔ |−⟩. A Z readout reads bits, so it cannot see it.',
+              'Both at once is *Y*, up to a factor i. Watch the letters: an X error is caught by Z checks, a Z error by X checks.',
               'Real noise is rarely a full flip; it drifts. These four are the building blocks a drift is made of. Next tab.'
             ],
             sketch: [
@@ -319,7 +324,7 @@
             idea: [
               'Z leaves |0⟩ alone and turns |1⟩ into −|1⟩. So Z marks 0 with a + sign and 1 with a − sign.',
               '*Z1Z2* means Z on q1 and Z on q2. On a pattern the two signs multiply: 00 gives +, 11 gives (−)(−) = +, 01 and 10 give −.',
-              'So Z1Z2 = +1 means q1 and q2 match (parity 0). Z1Z2 = −1 means they differ (parity 1). Same check, new name.',
+              'So Z1Z2 = +1: q1 and q2 match. −1: they differ. It is named for what it reads, bits. What it catches is X errors.',
               'The syndrome table becomes: (+1, +1) no flip, (−1, +1) q1, (−1, −1) q2, (+1, −1) q3.'
             ],
             sketch: [
@@ -340,6 +345,10 @@
               { say: 'The sign is the answer of the check.', show: '+1 = match = parity 0 · −1 = differ = parity 1' },
               { say: 'On the code state both patterns give +1, so the whole state gives +1.', show: 'Z1Z2 (α|000⟩ + β|111⟩) = +1 · (α|000⟩ + β|111⟩)' }
             ] },
+            math: [
+              { h: 'An X error: the check fires', eq: ['X on q2:   000 → 010', 'Z1Z2 on 010:  (+)(−) = −1'], why: 'X changed a bit, and Z1Z2 reads bits, so it sees the change.' },
+              { h: 'A Z error: the check is silent', eq: ['Z on q2:   000 → +000,   111 → −111', 'Z1Z2 on both:  still +1'], why: 'Z changed only a sign. No bit moved, so a bit question cannot notice.' }
+            ],
             check: {
               q: 'What does the check Z2Z3 give on the pattern |010⟩?',
               options: ['−1, q2 and q3 differ', '+1, they match', '0', '−1, q1 and q2 differ'],
@@ -608,7 +617,7 @@
             leadsTo: 'Section 3 fixes this with the mirror-image code that catches Z errors, then joins both.',
             idea: [
               'Z on q1 turns α|000⟩ + β|111⟩ into α|000⟩ − β|111⟩.',
-              'Parity checks only see 0s and 1s. Both patterns keep their parity, so every check says "fine".',
+              'Z1Z2 and Z2Z3 read bits. A Z error changes no bit, only a sign, so every check still says "fine".',
               'The sign of β changed, so the stored qubit is damaged and nobody noticed.',
               'A small phase drift is a little Z, so it slips past too. Section 3 builds the checks that catch it.'
             ],
@@ -684,7 +693,7 @@
             idea: [
               'An X-type check asks: do q1 and q2 have matching signs (+ or −)? It is written X1X2. +1 means match, −1 means differ.',
               'To measure it: apply H to every qubit, take the parity, then apply H again.',
-              'Z errors fire X-type checks. X errors fire Z-type checks. Two families, one for each error.'
+              'Flips one, reads the other: X1X2 reads signs, so it catches Z errors. Z1Z2 reads bits, so it catches X errors.'
             ],
             sketch: [
               T(40, 60, 'Z-type check', { size: 28, c: 'blue' }), T(40, 96, 'reads 0 / 1 parity', { size: 24 }), T(40, 130, 'catches X errors', { size: 26, c: 'red' }),
@@ -698,6 +707,12 @@
             ],
             takeaway: 'X-type checks catch Z errors. Z-type checks catch X errors.',
             widget: { type: 'multi', n: 3, presets: ['plog'], start: 'plog', slider: 'plog', ops: ['Z1', 'Z2', 'Z3'], xparity: [[1, 2], [2, 3]], syndrome: 'x', codeSpace: 'x', reset: true },
+            math: [
+              { h: 'A Z error on q2', eq: ['start:     α|+++⟩ + β|−−−⟩', 'Z on q2:   α|+−+⟩ + β|−+−⟩'], why: 'Z swaps + and − on q2, in both patterns.' },
+              { h: 'Both sign checks fire', eq: ['X1X2:  +− gives −1,  −+ gives −1  →  −1', 'X2X3:  −+ gives −1,  +− gives −1  →  −1'], why: 'Same answer in both patterns, so nothing collapses between α and β.' },
+              { h: 'Fix', eq: ['(−1, −1)  →  q2 is the odd one out', 'Z on q2:   back to α|+++⟩ + β|−−−⟩'], why: 'The same table as the bit-flip code, with + and − in place of 0 and 1.' },
+              { h: 'How it is measured', eq: ['H on each qubit:  + → 0,  − → 1', 'bit parity into an ancilla, as before', 'H on each qubit again'], why: 'Hardware reads only bits, so H turns the sign question into a bit question and back.' }
+            ],
             check: {
               q: 'Which kind of check fires when a Z error hits a qubit?',
               options: ['Z-type', 'X-type', 'Both', 'Neither'],
@@ -819,7 +834,7 @@
             leadsTo: 'Next, the pattern of answers that a set of stabilizers gives: the syndrome.',
             idea: [
               'A *stabilizer* is a check whose answer is +1 on every valid code state.',
-              'Bit-flip code: Z1Z2 and Z2Z3. Phase-flip code: X1X2 and X2X3.',
+              'Bit-flip code: Z1Z2, Z2Z3 (read bits, catch X). Phase-flip code: X1X2, X2X3 (read signs, catch Z).',
               'Measuring a stabilizer reveals errors but not α and β, because all code states give the same answer.'
             ],
             sketch: [
@@ -983,7 +998,7 @@
             leadsTo: 'Next, what happens on this grid when errors strike: which checks light up.',
             idea: [
               '*Data qubits* hold the information. *Ancilla qubits* measure the checks.',
-              'Each ancilla checks the 2 or 4 data qubits next to it. Z-type catch X errors, X-type catch Z errors.',
+              'Each ancilla checks the 2 or 4 data qubits next to it. Z-checks read bits, catch X. X-checks read signs, catch Z.',
               'A four-qubit Z-check is +1 when an even number of its four qubits are 1. X-checks do the same for signs.',
               'Distance 3 uses 9 data and 8 ancilla qubits. Distance d uses d² data and d²−1 ancillas.'
             ],

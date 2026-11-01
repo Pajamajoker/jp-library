@@ -1503,7 +1503,7 @@ function glossIndex(nb){
   const pat=keys.map(k=>{const w=/^[A-Za-z0-9]/.test(k),e=/[A-Za-z]$/.test(k);return (w?'(?<![A-Za-z0-9])':'')+esc(k)+(e?'(?:s|es)?(?![A-Za-z0-9])':'');}).join('|');
   return nb._gidx={re:new RegExp(pat,'gi'),map};
 }
-const GSKIP='svg,canvas,button,input,textarea,select,label,a,pre,code,h1,h2,h3,.w,.gterm,.chip,.crumbs,.cs-panel,.gtip,.mini';
+const GSKIP='svg,canvas,button,input,textarea,select,label,a,pre,code,h1,h2,h3,.w,.gterm,.chip,.crumbs,.cs-panel,.gtip,.mini,.meq';
 function annotate(root,nb){
   const gi=nb&&glossIndex(nb);if(!gi)return;
   const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeValue.trim()&&!n.parentElement.closest(GSKIP)?1:2});
