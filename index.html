@@ -1099,18 +1099,26 @@ W.multi=function(o){
     if(/^RZ/.test(op))return'A small phase drift on q'+op.slice(2)+'. The bars did not move. Read the syndrome: the checks will snap it to "no error" or "one full Z".';
     return'Z on q'+op.slice(1)+': + and − swapped on that qubit. The bars did not move, but the X-type checks read signs. Read them.';}
   function xsyn(s1,s2){const t='Syndrome ('+pm(s1)+', '+pm(s2)+')';
-    if(!fix)return t+': both pairs match. '+(drift?'The drift snapped to "no error". Nothing to fix.':'No error found.');
+    if(!fix)return t+': both pairs match. '+(drift&&same()>.999?'The drift snapped to "no error". Nothing to fix.':'No error found.'+(same()>.999?'':' But this is not the state you stored: these checks cannot see this error.'));
     const two=zs.filter(Boolean).length>=2;
     return t+': q'+fix+' is the odd one out. '+(two?'But two errors happened, so this blames the wrong qubit. Apply the fix and see.':drift?'The drift snapped to one full Z on q'+fix+'. Press "Apply the fix".':'Press "Apply the fix" to apply Z on q'+fix+'.');}
+  /* compare with the state that was stored, ignoring a global phase */
+  const same=()=>{const ref=PRE[st].f(theta);let re=0,im=0;ref.forEach((r,i)=>{re+=r[0]*psi[i][0]+r[1]*psi[i][1];im+=r[0]*psi[i][1]-r[1]*psi[i][0];});return re*re+im*im;};
+  function codeW(){if(n!==3||!o.codeSpace)return null;
+    if(o.codeSpace==='x'&&view===0){let u=[0,0],w=[0,0];psi.forEach((z,i)=>{let c=0,x=i;while(x){c+=x&1;x>>=1;}const sg=c%2?-1:1;u=[u[0]+z[0],u[1]+z[1]];w=[w[0]+sg*z[0],w[1]+sg*z[1]];});return(Cx.abs2(u)+Cx.abs2(w))/8;}
+    return Cx.abs2(psi[0])+Cx.abs2(psi[7]);}
+  function verdict(){if(same()>.999)return'✓ Correct: this is exactly the state you stored.';const cw=codeW();
+    if(cw!=null&&cw>.999)return'✗ Wrong: back inside the code, but not the state you stored. The fix completed the wrong codeword: a logical error.';
+    return'✗ Not fixed: the state is not the one you stored.';}
   const lock=()=>{if(o.guide==='phase')errBtns.forEach(b=>{b.disabled=view===1;b.title=view===1?'Go back to the 0/1 view first':'';});};
   parts.push(rowBtns('Read one qubit (collapses the state)',(o.measure||[]).map(k=>B('Read q'+k,()=>{const r=measure(k);say('q'+k+' read as '+r+'. The state collapsed to match.');draw();}))));
   parts.push(rowBtns('Parity checks (read a relation)',(o.parity||[]).map(([i,j])=>B('Check q'+i+', q'+j,()=>{const r=parity(i,j);say('Parity of q'+i+', q'+j+' = '+r+' ('+(r?'odd, they differ':'even, they match')+'). The state was projected, then renormalised.');draw();}))));
   let fixBtn=null;
   const xs=o.syndrome==='x';
   if(o.xparity&&o.xparity.length)parts.push(rowBtns('X-type checks (parity after H on every qubit)',o.xparity.map(([i,j])=>B('X-check q'+i+', q'+j,()=>{const r=xpar(i,j);say(o.guide==='xcheck'?'X'+i+'X'+j+' = '+pm(r)+': q'+i+' and q'+j+(r?' have different signs.':' have the same sign.'):'X-check q'+i+', q'+j+' = '+r+' ('+(r?'odd, signs differ':'even, signs match')+').');draw();}))));
-  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp((xs?'Z':'X')+fix);say(o.guide==='xcheck'?(zs[1]&&zs[2]&&zs[3]?'Applied Z on q'+fix+'. Inside the code again, but α and β are swapped: two errors beat this code.':'Applied Z on q'+fix+'. Back to α|+++⟩ + β|−−−⟩ exactly.'):'Applied '+(xs?'Z':'X')+' on q'+fix+'.');fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
+  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp((xs?'Z':'X')+fix);say('Applied '+(xs?'Z':'X')+' on q'+fix+'. '+verdict());fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
     parts.push(rowBtns(xs?'Syndrome from X-type checks':'Syndrome',[B('Read syndrome',()=>{const f=xs?xpar:parity,s1=f(1,2),s2=f(2,3),k=s1+''+s2;fix={'00':0,'10':1,'11':2,'01':3}[k];
-      say(o.guide==='xcheck'?xsyn(s1,s2):'Syndrome ('+s1+','+s2+'): '+(fix?'apply '+(xs?'Z':'X')+' to q'+fix+'.':'no error found.'));fixBtn.disabled=!fix;draw();}),fixBtn]));}
+      say(o.guide==='xcheck'?xsyn(s1,s2):'Syndrome ('+s1+','+s2+'): '+(fix?'apply '+(xs?'Z':'X')+' to q'+fix+'.':'no error found.'+(same()>.999?'':' But this is not the state you stored: these checks cannot see this error.')));fixBtn.disabled=!fix;draw();}),fixBtn]));}
   if(o.reset)parts.push(rowBtns('',[B('Reset',()=>{load(st);say('Reset.');fix=0;if(fixBtn)fixBtn.disabled=true;draw();})]));
   let fix=0;
   root.append(amps,info);if(test)root.append(test);root.append(...parts.filter(Boolean),msg);
@@ -1134,8 +1142,8 @@ W.multi=function(o){
     psi.forEach((z,i)=>{const p=Cx.abs2(z),r=rows[i];r.fill.style.width=pct(p);r.v.textContent=fAmp(z)+'  '+(p<1e-9?'':Math.round(p*100)+'%');r.r.classList.toggle('zero',p<1e-9);});
     let t='Total weight '+(Math.round(tot*1000)/1000);
     lock();
-    if(o.codeSpace==='x'&&n===3&&view===0){let u=[0,0],w=[0,0];psi.forEach((z,i)=>{let c=0,x=i;while(x){c+=x&1;x>>=1;}const sg=c%2?-1:1;u=[u[0]+z[0],u[1]+z[1]];w=[w[0]+sg*z[0],w[1]+sg*z[1]];});t+='   inside the code (|+++⟩, |−−−⟩): '+pct((Cx.abs2(u)+Cx.abs2(w))/8);}
-    else if(o.codeSpace&&n===3){const c=Cx.abs2(psi[0])+Cx.abs2(psi[7]);t+='   inside the code (000, 111): '+pct(c);}
+    const cw=codeW();if(cw!=null)t+='   inside the code '+(o.codeSpace==='x'&&view===0?'(|+++⟩, |−−−⟩)':'(000, 111)')+': '+pct(cw);
+    if(o.syndrome)t+='   same as the stored state: '+(same()>.999?'yes ✓':'no ✗');
     info.textContent=t;
     if(test){const d1=Cx.mul(psi[0],psi[3]),d2=Cx.mul(psi[1],psi[2]),eq=Math.hypot(d1[0]-d2[0],d1[1]-d2[1])<1e-6;
       test.textContent='';test.append(h('div',null,'a₀₀·a₁₁ = '+fAmp(d1)),h('div',null,'a₀₁·a₁₀ = '+fAmp(d2)),h('div',{class:'verdict '+(eq?'yes':'no')},eq?'Equal: independent. Each qubit has its own (α, β).':'Different: entangled. No (α, β) per qubit exists.'));}
