@@ -664,7 +664,7 @@
               T(36, 254, 'same code, other basis', { size: 30 })
             ],
             takeaway: 'The phase-flip code is the bit-flip code seen through H.',
-            widget: { type: 'multi', n: 3, presets: ['plog', 'log'], start: 'plog', slider: 'plog', ops: ['Z1', 'Z2', 'H1', 'H2', 'H3'], codeSpace: 'x', reset: true },
+            widget: { type: 'multi', n: 3, presets: ['plog', 'log'], start: 'plog', slider: 'plog', errors: ['Z1', 'Z2', 'Z3', 'RZ2'], ops: ['HALL'], opsLabel: 'Change the view', guide: 'phase', codeSpace: 'x', reset: true },
             check: {
               q: 'In the phase-flip code, a Z error on one qubit does what?',
               options: [
