@@ -812,13 +812,7 @@
               T(320, 280, '3 × 3 = 9 qubits', { anchor: 'middle', size: 30 })
             ],
             takeaway: 'Shor code: a phase-flip code whose qubits are bit-flip triples.',
-            widget: { type: 'steps', steps: [
-              { say: 'Outer layer: the phase-flip code on three qubits.', show: 'α|+++⟩ + β|−−−⟩' },
-              { say: 'Each |+⟩ is (|0⟩ + |1⟩)/√2. Protect its 0 and 1 by repetition.', show: '|+⟩  →  (|000⟩ + |111⟩)/√2' },
-              { say: 'Same for |−⟩, keeping its minus sign.', show: '|−⟩  →  (|000⟩ − |111⟩)/√2' },
-              { say: 'Put three of these side by side.', show: 'α (000+111)(000+111)(000+111) + β (000−111)(000−111)(000−111)' },
-              { say: 'Count the qubits.', show: '3 blocks × 3 qubits = 9 physical qubits, 1 logical qubit' }
-            ] },
+            widget: { type: 'shor', mode: 'build' },
             math: [
               { h: 'Layer 1: the phase-flip code', eq: ['α|0⟩ + β|1⟩  →  α|+++⟩ + β|−−−⟩'], why: 'Built in Tab 1 of this section: two CNOTs, then H on all three.' },
               { h: 'Layer 2: the bit-flip rule', eq: ['|0⟩  →  |000⟩', '|1⟩  →  |111⟩'], why: 'Applied to each of the three qubits from layer 1, so each becomes a block.' },
@@ -857,14 +851,7 @@
               T(320, 272, 'caught inside its own block', { anchor: 'middle', size: 26 })
             ],
             takeaway: 'An X error is caught by the bit checks inside its own block.',
-            widget: { type: 'steps', steps: [
-              { say: 'Block 2 before the error, on qubits 4, 5, 6.', show: '(|000⟩ ± |111⟩)/√2' },
-              { say: 'X on qubit 5 flips the middle bit in both patterns.', show: '(|010⟩ ± |101⟩)/√2' },
-              { say: 'Z4Z5 compares qubits 4 and 5. In 010 and in 101 they differ.', show: 'Z4Z5 = −1' },
-              { say: 'Z5Z6 compares qubits 5 and 6. They differ too.', show: 'Z5Z6 = −1' },
-              { say: 'Both checks around qubit 5 fire, so qubit 5 is the odd one out.', show: 'fix: X on qubit 5' },
-              { say: 'The ± between the two patterns never changed. The sign layer has nothing to see.', show: 'block sign untouched' }
-            ] },
+            widget: { type: 'shor', mode: 'x' },
             check: {
               q: 'X hits qubit 7, the first qubit of block 3. Which checks fire?',
               options: ['Only Z7Z8', 'Z7Z8 and Z8Z9', 'Z4Z5', 'All six bit checks'],
@@ -895,14 +882,7 @@
               T(320, 284, 'one Z flips the whole block sign', { anchor: 'middle', size: 26 })
             ],
             takeaway: 'One Z anywhere in a block flips that block from + to −.',
-            widget: { type: 'steps', steps: [
-              { say: 'Block 2 in its + form.', show: '(|000⟩ + |111⟩)/√2' },
-              { say: 'Z on qubit 5: 000 has a 0 there, so no sign. 111 has a 1 there, so a minus.', show: '(|000⟩ − |111⟩)/√2' },
-              { say: 'Try qubit 4 instead. 111 has a 1 there too: the same result.', show: 'Z4, Z5, Z6 all give (|000⟩ − |111⟩)/√2' },
-              { say: 'Start from the − form instead. Now the two minus signs cancel.', show: '(|000⟩ − |111⟩)/√2  →  (|000⟩ + |111⟩)/√2' },
-              { say: 'So a Z on any qubit of a block swaps that block between + and −.', show: 'block + ↔ block −' },
-              { say: 'The bit checks inside see nothing: no bit moved.', show: 'Z4Z5 = Z5Z6 = +1' }
-            ] },
+            widget: { type: 'shor', mode: 'z' },
             check: {
               q: 'Z hits qubit 6. What happens to block 2?',
               options: ['Its sign flips: + becomes −', 'Only qubit 6 changes, the block is fine', 'It becomes (|001⟩ + |110⟩)/√2', 'Nothing, Z is harmless here'],
@@ -933,7 +913,7 @@
               T(320, 300, '9 qubits, any single error', { anchor: 'middle', size: 30 })
             ],
             takeaway: 'Nested codes: bit-flip inside, phase-flip across. 9 qubits.',
-            widget: null,
+            widget: { type: 'shor', mode: 'checks' },
             math: [
               { h: 'Reading the sign of one block', eq: ['XXX (000 + 111) = 111 + 000  →  +1', 'XXX (000 − 111) = 111 − 000  →  −1'], why: 'X on all three swaps 000 and 111. With +, nothing changes. With −, the whole block picks up a minus.' },
               { h: 'Comparing two blocks', eq: ['X1X2X3 · X4X5X6 = X1X2X3X4X5X6', 'same sign → +1,   different → −1'], why: 'Multiply the two block readings. It is X1X2 from Tab 2, with blocks in place of qubits.' },

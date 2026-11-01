@@ -466,6 +466,8 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .snap-dots span.on{background:var(--accent);border-color:transparent;color:#fff}
 .snap-say{min-height:5.4em;margin:0 0 10px}.snap-say p{margin:0 0 6px;font-size:15.5px;line-height:1.5}
 .snap-sk{margin-bottom:10px}.snap-tally{margin-top:8px}
+.snap-sk .pop{animation:skpop .45s ease both}@keyframes skpop{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.snap-sk .pop{animation:none}}
 </style>
 
 <div id="app"></div>
@@ -597,6 +599,8 @@ Rules
   { type: 'steps', steps: [ { say: 'sentence', show: 'one line of math' }, ... ] }   reveal a derivation one line at a time
   { type: 'snap', a: 0.6, b: 0.8, drift: 20 }   hand-drawn story of one check on the bit-flip code: stored state, drift on q2,
       ancilla tags, reading the ancilla (nature spins a wheel), the snap and the fix. Use it where measurement-as-correction is taught.
+  { type: 'shor', mode: 'build' | 'x' | 'z' | 'checks' }   hand-drawn Shor code. build: step through one qubit becoming 3 blocks of 3.
+      x / z: tap qubits to place X or Z errors and read the bit checks. checks: X, Z or Y errors, all 8 checks, the fix and a verdict.
   null   no widget
 
 If you need a widget that does not exist, use 'steps' and say so in a one-line comment at the top of the file so the library owner can add it.
@@ -754,7 +758,7 @@ const NB=window.NB={list:[],loadErrors:[],
     D:(x,y,o)=>Object.assign({t:'dot',x,y},o)
   }};
 const PART_TYPES=['text','box','arrow','line','curve','ellipse','hl','dot'];
-const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap'];
+const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap','shor'];
 function validate(nb){
   const E=[];const bad=/[—–]/;
   const need=(c,m)=>{if(!c)E.push(m);};
@@ -1295,6 +1299,161 @@ W.snap=function(o){
   draw();text();controls();
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
   return root;
+};
+
+/* shor: hand-drawn pictures of the 9-qubit Shor code.
+   mode 'build': step by step, one qubit becomes 3 blocks of 3.
+   mode 'x' / 'z': tap qubits to put X or Z errors and see what each layer notices.
+   mode 'checks': all 8 checks, the fix, and whether it worked. */
+W.shor=function(o){
+  o=Object.assign({mode:'build'},o||{});
+  const M=o.mode,root=h('div',{class:'w snapw'});
+  const say=h('div',{class:'snap-say'});
+  const svg=sv('svg',{viewBox:'0 0 640 420',role:'img','aria-label':'Hand-drawn picture of the Shor code'});
+  const pad=h('div',{class:'sketch snap-sk'},svg);
+  const B=(t,fn,cls)=>h('button',{class:'btn'+(cls?' '+cls:''),type:'button',onclick:fn},t);
+  const P=(d,col,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:colr(col),'stroke-width':w||2.4,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op==null?1:op});if(dash)e.setAttribute('stroke-dasharray','7 6');return e;};
+  const rbox=(key,x,y,w,hh,col,op,dash)=>{const r=rng(hash(key)),pts=[[x,y],[x+w,y],[x+w,y+hh],[x,y+hh],[x+1,y-1]];
+    return [P(polyD(polyPts(r,pts,1.3,true)),col,2.4,op,dash),P(polyD(polyPts(r,pts,1.6,true)),col,1.1,(op==null?1:op)*.5,dash)];};
+  const rline=(key,pts,col,w,op)=>P(polyD(polyPts(rng(hash(key)),pts,1.2,true)),col,w,op);
+  const ring=(key,cx,cy,r,col,w,op)=>P(smoothD(ellPts(rng(hash(key)),cx,cy,r,r)),col,w,op);
+  const oval=(key,cx,cy,rx,ry,col,w,op)=>P(smoothD(ellPts(rng(hash(key)),cx,cy,rx,ry)),col,w,op);
+  const txt=(x,y,s,size,col,op,anchor)=>sv('text',{x,y,'font-size':size,fill:colr(col),opacity:op==null?1:op,'text-anchor':anchor||'middle'},s);
+  const arrow=(key,x1,y1,x2,y2,col)=>{const a=Math.atan2(y2-y1,x2-x1),L=11;
+    return [rline(key,[[x1,y1],[x2,y2]],col,2.2),rline(key+'h',[[x2-L*Math.cos(a-.5),y2-L*Math.sin(a-.5)],[x2,y2],[x2-L*Math.cos(a+.5),y2-L*Math.sin(a+.5)]],col,2.2)];};
+  const hi=(x,y,w,hh)=>sv('rect',{x,y,width:w,height:hh,rx:6,fill:colr('yellow'),opacity:.35});
+  /* parts that were not on screen last time fade in */
+  let seen=new Set(),now=new Set();
+  const G=key=>{const g=sv('g',{});if(!seen.has(key))g.setAttribute('class','pop');now.add(key);svg.append(g);return(...els)=>{els.flat().forEach(e=>e&&g.append(e));return g;};};
+  const start=()=>{svg.textContent='';now=new Set();};
+  const end=()=>{seen=now;};
+  const sayP=lines=>{say.textContent='';lines.forEach(s=>say.append(h('p',null,s)));};
+
+  if(M==='build')return build();
+  return play();
+
+  /* ---------------- build: one qubit into 9 ---------------- */
+  function build(){
+    const TITLES=['1 Your qubit','2 Layer 1','3 The gap','4 Layer 2 rule','5 + and −','6 Blocks','7 Nine qubits'];
+    const dots=h('div',{class:'snap-dots'},TITLES.map(t=>h('span',null,t)));
+    let k=0;
+    const back=B('← Back',()=>go(k-1)),next=B('Next →',()=>go(k+1),'pri'),again=B('Start over',()=>go(0));
+    const SAY=[
+      ['Start with the one qubit you want to protect: α|0⟩ + β|1⟩.','It faces two dangers: bit flips (X) and sign flips (Z). A code on three qubits can guard only one of them.'],
+      ['Layer 1: spread it with the phase-flip code over three qubits. Call them A, B and C.','The qubit is now stored in signs: α|+++⟩ + β|−−−⟩. A sign flip on A, B or C can be caught.'],
+      ['But A, B and C are ordinary qubits. Each can still suffer a bit flip, and layer 1 is blind to those.','So give each of A, B and C its own protection against bit flips. That is layer 2.'],
+      ['Layer 2 is the bit-flip code from Section 2. Its rule: 0 becomes 000, 1 becomes 111.','We want to apply it to A, B and C. But they hold + and −, not 0 and 1. What does the rule do to those?'],
+      ['|+⟩ is |0⟩ + |1⟩ (over √2). The rule acts on each term on its own: |0⟩ → |000⟩ and |1⟩ → |111⟩.','So |+⟩ becomes |000⟩ + |111⟩. For |−⟩ the minus rides along: |000⟩ − |111⟩.'],
+      ['Now replace A, B and C by three qubits each. Each becomes a block: 000 + 111 where it held +, 000 − 111 where it held −.','Written out, α goes with + in all three blocks and β with − in all three.'],
+      ['That is the Shor code: 9 physical qubits for 1 logical qubit.','Inside each block the bits are guarded by bit checks. The sign of each block is guarded by layer 1. The next tabs show each error.']];
+    function draw(){start();
+      const top=G('top');top(ring('top',320,56,24,'ink',2.4,k>=5?.5:1),txt(320,64,'ψ',24,'ink',k>=5?.5:1),txt(356,63,'α|0⟩ + β|1⟩',22,'ink',k>=5?.5:1,'start'));
+      if(k>=1&&k<5){const g=G('l1'),X=[120,320,520];
+        g(txt(620,30,'layer 1: phase-flip code',18,'blue',1,'end'));
+        X.forEach((x,i)=>g(arrow('a'+i,320+(x-320)*.12,84,x+(320-x)*.1,138,'blue'),ring('abc'+i,x,168,26,'blue'),txt(x,176,'ABC'[i],22,'blue')));
+        g(txt(320,228,'α|+++⟩ + β|−−−⟩',24,'blue'));}
+      if(k===2){const g=G('gap');[120,320,520].forEach((x,i)=>g(txt(x+40,150,'X?',20,'red')));
+        g(txt(320,268,'it guards signs, but A, B and C can still get a bit flip',19,'red'));}
+      if(k===3){const g=G('rule');g(rbox('rb',40,252,560,150,'green',.7),txt(320,282,'layer 2: the bit-flip rule',20,'green'));
+        [['0','000',330],['1','111',378]].forEach(([a,b,y],i)=>g(ring('r'+i,170,y-8,16,'ink'),txt(170,y,a,20,'ink'),arrow('ra'+i,196,y-8,262,y-8,'green'),txt(280,y+1,b,28,'green',1,'start')));
+        g(txt(470,346,'each of A, B, C',18,'ink',.85),txt(470,372,'becomes three qubits',18,'ink',.85));}
+      if(k===4){const g=G('pm');g(rbox('pb',30,252,580,158,'green',.7));
+        const row=(x0,sg,col,key)=>{g(txt(x0,296,sg==='+'?'|+⟩ =':'|−⟩ =',22,'ink',1,'start'),txt(x0+95,296,'|0⟩',22,'ink'),txt(x0+140,296,sg,24,col),txt(x0+185,296,'|1⟩',22,'ink'),
+          arrow(key+'1',x0+95,306,x0+95,334,'green'),arrow(key+'2',x0+185,306,x0+185,334,'green'),
+          txt(x0+95,360,'|000⟩',22,'green'),txt(x0+140,360,sg,24,col),txt(x0+185,360,'|111⟩',22,'green'));};
+        row(50,'+','ink','p');row(340,'−','red','m');
+        g(txt(320,398,'0 → 000 and 1 → 111, term by term. The sign and the 1/√2 ride along.',17,'ink',.8));}
+      if(k>=5){const g=G('blocks');
+        [30,235,440].forEach((bx,b)=>{g(arrow('ba'+b,320+(bx+85-320)*.12,84,bx+85+(320-bx-85)*.08,122,'ink'),rbox('blk'+b,bx,132,170,74,'ink'),txt(bx+85,230,'block '+(b+1)+' (was '+'ABC'[b]+')',17,'blue'));
+          [0,1,2].forEach(j=>{const x=bx+40+45*j;g(ring('q'+b+j,x,166,15,'ink',2.2),txt(x,172,String(3*b+j+1),16,'ink'));});
+          g(txt(bx+85,196,'000 ± 111',18,'blue'));});
+        g(txt(320,268,'α (000+111)(000+111)(000+111)',21,'green'),txt(320,298,'+ β (000−111)(000−111)(000−111)',21,'red'));}
+      if(k===6){const g=G('nine');g(hi(110,320,420,46),txt(320,351,'3 blocks × 3 = 9 qubits for 1 qubit',22,'ink'),
+        txt(320,398,'bits inside a block: bit checks · sign of a block: layer 1',17,'ink',.85));}
+      end();
+      sayP(SAY[k]);[...dots.children].forEach((d,i)=>{d.className=i===k?'on':i<k?'done':'';});
+      back.disabled=k===0;next.hidden=k>=SAY.length-1;}
+    function go(n){k=Math.max(0,Math.min(SAY.length-1,n));draw();}
+    root.append(dots,say,pad,h('div',{class:'btns'},back,next,again));
+    draw();(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
+    return root;
+  }
+
+  /* ---------------- x / z / checks: tap qubits, read checks, fix ---------------- */
+  function play(){
+    const x=Array(10).fill(0),z=Array(10).fill(0);
+    let tool=M==='z'?'Z':'X',read=false,fixed=false,msg='';
+    const BX=[30,235,440],QX=q=>BX[(q-1)/3|0]+40+45*((q-1)%3),QY=185;
+    const tools=M==='checks'?['X','Z','Y'].map(t=>B(t+' error',()=>{tool=t;draw();})):[];
+    const readB=B(M==='checks'?'Read all 8 checks':'Read the bit checks',()=>{read=true;msg=report();draw();},'pri');
+    const fixB=B('Apply the fix',()=>{applyFix();fixed=true;msg=verdict();tidy();draw();},'pri');
+    const clr=B('Clear',()=>{x.fill(0);z.fill(0);read=false;fixed=false;msg='';draw();});
+    const inner=b=>{const i=3*b+1;return[x[i]^x[i+1],x[i+1]^x[i+2]];};
+    const sgn=b=>{const i=3*b+1;return z[i]^z[i+1]^z[i+2];};
+    const outer=()=>[sgn(0)^sgn(1),sgn(1)^sgn(2)];
+    const pick=(s1,s2)=>({'10':0,'11':1,'01':2})[s1+''+s2];
+    const anyErr=()=>x.some(Boolean)||z.some(Boolean);
+    function report(){const out=[];
+      [0,1,2].forEach(b=>{const [s1,s2]=inner(b),i=3*b+1,p=pick(s1,s2);
+        if(p!=null)out.push('Block '+(b+1)+': '+[s1?'Z'+i+'Z'+(i+1):'',s2?'Z'+(i+1)+'Z'+(i+2):''].filter(Boolean).join(' and ')+' fire, so X on qubit '+(i+p)+'.');});
+      if(M==='checks'){const [a1,a2]=outer(),p=pick(a1,a2);
+        if(p!=null)out.push('Sign checks: '+[a1?'X1…X6':'',a2?'X4…X9':''].filter(Boolean).join(' and ')+' fire, so block '+(p+1)+' flipped sign. Z on any of its qubits.');}
+      if(!out.length)return M==='z'&&z.some(Boolean)?'All bit checks are quiet: no bit moved. Yet a block sign flipped. Only layer 1 can see that.':'All checks are quiet: nothing to fix.';
+      return out.join(' ');}
+    function applyFix(){[0,1,2].forEach(b=>{const p=pick(...inner(b));if(p!=null)x[3*b+1+p]^=1;});
+      if(M==='checks'){const p=pick(...outer());if(p!=null)z[3*p+1]^=1;}}
+    /* two Zs in one block do nothing, so show only the sign that is left */
+    function tidy(){[0,1,2].forEach(b=>{const i=3*b+1,s=sgn(b);z[i]=s;z[i+1]=0;z[i+2]=0;});}
+    function verdict(){
+      const xxx=[0,1,2].filter(b=>x[3*b+1]&&x[3*b+2]&&x[3*b+3]).length,s=[0,1,2].map(sgn);
+      const xl=xxx%2===1,zl=s.every(Boolean),zLeft=s.some(Boolean)&&!zl;
+      if(!xl&&!zl&&!zLeft)return'✓ Correct: the nine qubits hold exactly the state you stored.';
+      if(xl)return'✗ Wrong: a block ended with all three bits flipped. Two X errors in one block beat its bit checks: a logical error.';
+      if(zl)return'✗ Wrong: all three block signs ended flipped, which turns +++ into −−−. Two blocks hit by Z beat the sign checks: a logical error.';
+      return'✗ Not fixed: a block sign is still flipped.';}
+    function tap(q){fixed=false;
+      if(tool==='X'||tool==='Y')x[q]^=1;if(tool==='Z'||tool==='Y')z[q]^=1;read=false;msg=tapMsg(q);draw();}
+    function tapMsg(q){const b=(q-1)/3|0;
+      if(M==='z')return z[q]?'Z on qubit '+q+': 111 has a 1 there, so it picks up a minus. Block '+(b+1)+' turns ± into ∓: its sign flipped.'+(sgn(b)?'':' Two Zs in this block: the signs cancel again.'):'Z removed from qubit '+q+'.';
+      if(M==='x')return x[q]?'X on qubit '+q+': its bit flips in both patterns of block '+(b+1)+'. Now read the bit checks.':'X removed from qubit '+q+'.';
+      return tool+' toggled on qubit '+q+'. Place more errors or read all 8 checks.';}
+    function blockText(b){const i=3*b+1,bits=[x[i],x[i+1],x[i+2]].join(''),inv=bits.replace(/./g,c=>c==='1'?'0':'1');
+      return'('+bits+' '+(sgn(b)?'∓':'±')+' '+inv+')';}
+    function draw(){start();
+      const lit=read,[o1,o2]=outer();
+      /* layer-1 view (z mode) or across checks (checks mode) */
+      if(M==='z'){const g=G('l1');g(txt(20,40,'seen from layer 1:',17,'blue',1,'start'));
+        [0,1,2].forEach(b=>{const cx=BX[b]+85,f=sgn(b);g(ring('L'+b,cx,62,18,'blue',2.2),txt(cx,69,f?'Z':'ABC'[b],f?20:18,f?'red':'blue'));});}
+      if(M==='checks'){const g=G('across');[[0,1,'X1…X6',o1],[1,2,'X4…X9',o2]].forEach(([a,c,l,on],n)=>{
+        const x1=BX[a]+85,x2=BX[c]+85,col=lit&&on?'red':'blue',op=lit?(on?1:.45):.7,ym=n?88:72;
+        g(P(smoothD([[x1,128],[x1+20,ym+14],[(x1+x2)/2,ym],[x2-20,ym+14],[x2,128]]),col,2.4,op),txt((x1+x2)/2,ym-8,l,16,col,op));});}
+      if(M==='x')G('hint')(txt(320,48,'tap a qubit to put an X on it',18,'ink',.7));
+      /* blocks and qubits */
+      const g=G('grid');
+      BX.forEach((bx,b)=>{g(rbox('blk'+b,bx,140,170,90,sgn(b)?'blue':'ink',1,false),txt(bx+6,132,'block '+(b+1),15,'ink',.7,'start'));
+        g(txt(bx+85,306,blockText(b),20,sgn(b)?'blue':[0,1,2].some(j=>x[3*b+1+j])?'red':'ink'),
+          txt(bx+85,328,sgn(b)?'sign flipped':'sign kept',15,sgn(b)?'blue':'ink',sgn(b)?1:.55));});
+      for(let q=1;q<=9;q++){const cx=QX(q),e=x[q]&&z[q]?'Y':x[q]?'X':z[q]?'Z':'',col=e==='X'?'red':e==='Z'?'blue':e==='Y'?'pink':'ink';
+        g(ring('q'+q,cx,QY,16,col,e?3:2.2),txt(cx,QY+7,e,20,col),txt(cx,QY+36,String(q),14,'ink',.6));
+        const hit=sv('circle',{cx,cy:QY,r:21,fill:'transparent',style:'cursor:pointer'});hit.addEventListener('click',()=>tap(q));g(hit);}
+      /* bit checks under each block */
+      BX.forEach((bx,b)=>{const [s1,s2]=inner(b);[[0,s1],[1,s2]].forEach(([j,on])=>{const q=3*b+1+j,cx=(QX(q)+QX(q+1))/2,col=lit&&on?'red':'ink',op=lit?(on?1:.45):.6;
+        const cy=j?272:248;g(oval('c'+q,cx,cy,24,11,col,lit&&on?2.6:1.6,op),txt(cx,cy+5,'Z'+q+'Z'+(q+1),13,col,op));});});
+      if(msg){const m=G('msg'+msg.length+msg.charCodeAt(0));m(hi(16,344,608,70));
+        const words=msg.split(' '),lines=[''];words.forEach(w=>{if((lines[lines.length-1]+' '+w).length>78)lines.push(w);else lines[lines.length-1]+=(lines[lines.length-1]?' ':'')+w;});
+        lines.slice(0,3).forEach((l,i)=>m(txt(320,366+i*21,l,16,'ink')));}
+      end();
+      tools.forEach((b,i)=>b.className='btn'+(tool===['X','Z','Y'][i]?' pri':''));
+      readB.disabled=!anyErr()||read&&!fixed;fixB.hidden=M==='z';fixB.disabled=!read||fixed;
+      sayP(intro());}
+    function intro(){
+      if(M==='x')return['Each block is a bit-flip code. Tap any qubit to put an X on it, then read the bit checks under the blocks.','Try one X, then try two X errors in the same block.'];
+      if(M==='z')return['Tap any qubit to put a Z on it. Watch the block text, the sign line, and the layer-1 row at the top.','Then read the bit checks: they cannot see it, because no bit moved.'];
+      return['Pick X, Z or Y, then tap qubits to place errors. Read all 8 checks: six bit checks under the blocks, two sign checks across them.','Then apply the fix and see if it worked. Try one error of each kind, then two.'];}
+    root.append(say,pad,h('div',{class:'btns'},...tools,readB,fixB,clr));
+    draw();(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
+    return root;
+  }
 };
 
 /* surface code patch, distance 3 (rotated layout): 9 data qubits, 8 checks */
