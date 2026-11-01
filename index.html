@@ -588,6 +588,7 @@ Rules
       ops: 'H1' 'X2' 'Z3' 'RX2' (tiny 20 degree tilt) 'RZ2' (tiny 20 degree phase drift) 'HALL' (H on every qubit) 'CNOT12' (control 1, target 2)
       errors: same op names, shown in their own "Errors (noise)" row; opsLabel: title for the ops row (default 'Gates and errors')
       guide: 'phase' (talks the reader through the phase-flip code: errors hide in signs, H on all reveals them as flips)
+             or 'xcheck' (talks the reader through X-type checks on the phase-flip code: error, sign checks, syndrome, fix)
       measure: [1,2] (read single qubits), parity: [[1,2],[2,3]], xparity: [[1,2],[2,3]] (X-type checks), syndrome: true (Z-type) or 'x' (X-type),
       independence: true (n=2 product test), codeSpace: true (or 'x' for the |+++>,|---> code), reset: true
   { type: 'surface' }   distance-3 surface code patch, click data qubits to place errors and see which checks light
@@ -1060,8 +1061,8 @@ const PRE={
 };
 W.multi=function(o){
   o=Object.assign({n:2,presets:[],start:null,ops:[],measure:[],parity:[],syndrome:false,independence:false,slider:null,codeSpace:false,reset:false},o||{});
-  const n=o.n,N=1<<n;let theta=60,psi,st=o.start||(o.presets[0]),view=0,zs=[0,0,0,0];
-  const load=id=>{st=id;psi=PRE[id].f(theta);view=id==='log'?1:0;zs=[0,0,0,0];};load(st);
+  const n=o.n,N=1<<n;let theta=60,psi,st=o.start||(o.presets[0]),view=0,zs=[0,0,0,0],drift=false;
+  const load=id=>{st=id;psi=PRE[id].f(theta);view=id==='log'?1:0;zs=[0,0,0,0];drift=false;};load(st);
   const lab=i=>i.toString(2).padStart(n,'0');
   const root=h('div',{class:'w'});
   const amps=h('div',{class:'amps'});
@@ -1073,13 +1074,14 @@ W.multi=function(o){
   const parts=[];
   const rowBtns=(title,btns)=>btns.length?h('div',{class:'col',style:'gap:6px'},h('div',{class:'mini'},title),h('div',{class:'btns'},btns)):null;
   const B=(t,fn,cls)=>h('button',{class:'btn sm'+(cls?' '+cls:''),type:'button',onclick:fn},t);
-  const loadMsg=id=>o.guide==='phase'?(id==='log'?'The bit-flip code, α|000⟩ + β|111⟩. Press "H on all three" to turn it into the phase-flip code.':'The phase-flip code in the 0/1 view. Only two bar heights: even patterns get (α + β)/√8, odd ones (α − β)/√8. Now add an error.'):'Loaded '+PRE[id].l+': '+PRE[id].d;
+  const loadMsg=id=>o.guide==='xcheck'?'The phase-flip code, α|+++⟩ + β|−−−⟩. Add an error below, then read the X-type checks or the whole syndrome.':o.guide==='phase'?(id==='log'?'The bit-flip code, α|000⟩ + β|111⟩. Press "H on all three" to turn it into the phase-flip code.':'The phase-flip code in the 0/1 view. Only two bar heights: even patterns get (α + β)/√8, odd ones (α − β)/√8. Now add an error.'):'Loaded '+PRE[id].l+': '+PRE[id].d;
   if(o.presets.length)parts.push(rowBtns('Start from',o.presets.map(id=>B(PRE[id].l,()=>{load(id);say(loadMsg(id));draw();}))));
   if(o.slider)parts.push(h('div',{class:'col'},slider((o.slider==='log'||o.slider==='plog')?'α, β of the logical qubit (θ)':'α, β of qubit 1 (θ)',0,180,1,theta,'°',v=>{theta=v;load(o.slider);say('State set to '+PRE[o.slider].l+' with θ = '+v+'°.');draw();}).el));
   const opName=op=>{let m;if(op==='HALL')return'H on all three';if(m=op.match(/^(H|X|Z)(\d)$/))return op[0]+' on q'+m[2];if(m=op.match(/^RX(\d)$/))return'tilt q'+m[1]+' by 20°';if(m=op.match(/^RZ(\d)$/))return'phase drift on q'+m[1]+' (20°)';if(m=op.match(/^CNOT(\d)(\d)$/))return'CNOT q'+m[1]+'→q'+m[2];return op;};
-  const errBtns=(o.errors||[]).map(op=>B(opName(op),()=>{doOp(op);say(o.guide==='phase'?guide(op):opName(op)+' applied.');draw();}));
+  const talk=op=>o.guide==='phase'?guide(op):o.guide==='xcheck'?xguide(op):opName(op)+' applied.';
+  const errBtns=(o.errors||[]).map(op=>B(opName(op),()=>{doOp(op);say(talk(op));draw();}));
   parts.push(rowBtns('Errors (noise)',errBtns));
-  parts.push(rowBtns(o.opsLabel||'Gates and errors',o.ops.map(op=>B(opName(op),()=>{doOp(op);say(o.guide==='phase'?guide(op):opName(op)+' applied.');draw();}))));
+  parts.push(rowBtns(o.opsLabel||'Gates and errors',o.ops.map(op=>B(opName(op),()=>{doOp(op);say(talk(op));draw();}))));
   /* phase-flip guide: name what the last action did, in the view the reader is looking at */
   const PATS={0:['000','111'],1:['100','011'],2:['010','101'],3:['001','110']},GRP={0:[0,7],1:[4,3],2:[2,5],3:[1,6]};
   function guide(op){
@@ -1091,15 +1093,24 @@ W.multi=function(o){
       return'Through H: '+on.map(g=>(g?'flip on q'+g:'clean code')+' '+pct(w[g])).join(', ')+'. The drift became a small leak into one flip, like the tilt in Section 2.';}
     if(/^RZ/.test(op))return'A small phase drift on q'+op.slice(2)+'. The chances did not move at all, only the signs. Press "H on all three" to see where it went.';
     return'Z on q'+op.slice(1)+'. The chances did not move, only some signs flipped. A 0/1 reading cannot see this. Press "H on all three".';}
+  /* X-type checks guide: error, then sign checks, then fix */
+  const pm=r=>r?'−1':'+1';
+  function xguide(op){
+    if(/^RZ/.test(op))return'A small phase drift on q'+op.slice(2)+'. The bars did not move. Read the syndrome: the checks will snap it to "no error" or "one full Z".';
+    return'Z on q'+op.slice(1)+': + and − swapped on that qubit. The bars did not move, but the X-type checks read signs. Read them.';}
+  function xsyn(s1,s2){const t='Syndrome ('+pm(s1)+', '+pm(s2)+')';
+    if(!fix)return t+': both pairs match. '+(drift?'The drift snapped to "no error". Nothing to fix.':'No error found.');
+    const two=zs.filter(Boolean).length>=2;
+    return t+': q'+fix+' is the odd one out. '+(two?'But two errors happened, so this blames the wrong qubit. Apply the fix and see.':drift?'The drift snapped to one full Z on q'+fix+'. Press "Apply the fix".':'Press "Apply the fix" to apply Z on q'+fix+'.');}
   const lock=()=>{if(o.guide==='phase')errBtns.forEach(b=>{b.disabled=view===1;b.title=view===1?'Go back to the 0/1 view first':'';});};
   parts.push(rowBtns('Read one qubit (collapses the state)',(o.measure||[]).map(k=>B('Read q'+k,()=>{const r=measure(k);say('q'+k+' read as '+r+'. The state collapsed to match.');draw();}))));
   parts.push(rowBtns('Parity checks (read a relation)',(o.parity||[]).map(([i,j])=>B('Check q'+i+', q'+j,()=>{const r=parity(i,j);say('Parity of q'+i+', q'+j+' = '+r+' ('+(r?'odd, they differ':'even, they match')+'). The state was projected, then renormalised.');draw();}))));
   let fixBtn=null;
   const xs=o.syndrome==='x';
-  if(o.xparity&&o.xparity.length)parts.push(rowBtns('X-type checks (parity after H on every qubit)',o.xparity.map(([i,j])=>B('X-check q'+i+', q'+j,()=>{const r=xpar(i,j);say('X-check q'+i+', q'+j+' = '+r+' ('+(r?'odd, signs differ':'even, signs match')+').');draw();}))));
-  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp((xs?'Z':'X')+fix);say('Applied '+(xs?'Z':'X')+' on q'+fix+'.');fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
+  if(o.xparity&&o.xparity.length)parts.push(rowBtns('X-type checks (parity after H on every qubit)',o.xparity.map(([i,j])=>B('X-check q'+i+', q'+j,()=>{const r=xpar(i,j);say(o.guide==='xcheck'?'X'+i+'X'+j+' = '+pm(r)+': q'+i+' and q'+j+(r?' have different signs.':' have the same sign.'):'X-check q'+i+', q'+j+' = '+r+' ('+(r?'odd, signs differ':'even, signs match')+').');draw();}))));
+  if(o.syndrome){fixBtn=B('Apply the fix',()=>{if(fix){doOp((xs?'Z':'X')+fix);say(o.guide==='xcheck'?(zs[1]&&zs[2]&&zs[3]?'Applied Z on q'+fix+'. Inside the code again, but α and β are swapped: two errors beat this code.':'Applied Z on q'+fix+'. Back to α|+++⟩ + β|−−−⟩ exactly.'):'Applied '+(xs?'Z':'X')+' on q'+fix+'.');fix=0;fixBtn.disabled=true;draw();}},'pri');fixBtn.disabled=true;
     parts.push(rowBtns(xs?'Syndrome from X-type checks':'Syndrome',[B('Read syndrome',()=>{const f=xs?xpar:parity,s1=f(1,2),s2=f(2,3),k=s1+''+s2;fix={'00':0,'10':1,'11':2,'01':3}[k];
-      say('Syndrome ('+s1+','+s2+'): '+(fix?'apply '+(xs?'Z':'X')+' to q'+fix+'.':'no error found.'));fixBtn.disabled=!fix;draw();}),fixBtn]));}
+      say(o.guide==='xcheck'?xsyn(s1,s2):'Syndrome ('+s1+','+s2+'): '+(fix?'apply '+(xs?'Z':'X')+' to q'+fix+'.':'no error found.'));fixBtn.disabled=!fix;draw();}),fixBtn]));}
   if(o.reset)parts.push(rowBtns('',[B('Reset',()=>{load(st);say('Reset.');fix=0;if(fixBtn)fixBtn.disabled=true;draw();})]));
   let fix=0;
   root.append(amps,info);if(test)root.append(test);root.append(...parts.filter(Boolean),msg);
@@ -1107,7 +1118,7 @@ W.multi=function(o){
     if(m=op.match(/^Z(\d)$/))zs[+m[1]]^=1;
     if(m=op.match(/^(H|X|Z)(\d)$/))return g1(GATE[m[1]],+m[2]);
     if(m=op.match(/^RX(\d)$/)){const c=Math.cos(10*RAD),s=Math.sin(10*RAD);return g1([[[c,0],[0,-s]],[[0,-s],[c,0]]],+m[1]);}
-    if(m=op.match(/^RZ(\d)$/)){const c=Math.cos(10*RAD),s=Math.sin(10*RAD);return g1([[[c,-s],[0,0]],[[0,0],[c,s]]],+m[1]);}
+    if(m=op.match(/^RZ(\d)$/)){drift=true;const c=Math.cos(10*RAD),s=Math.sin(10*RAD);return g1([[[c,-s],[0,0]],[[0,0],[c,s]]],+m[1]);}
     if(op==='HALL'){for(let k=1;k<=n;k++)g1(GATE.H,k);view^=1;return;}
     if(m=op.match(/^CNOT(\d)(\d)$/)){const mc=1<<(n-m[1]),mt=1<<(n-m[2]);psi=psi.map((z,i)=>(i&mc)?psi[i^mt]:z);}}
   function g1(M,k){const m=1<<(n-k),out=psi.map(z=>z.slice());
@@ -1123,13 +1134,13 @@ W.multi=function(o){
     psi.forEach((z,i)=>{const p=Cx.abs2(z),r=rows[i];r.fill.style.width=pct(p);r.v.textContent=fAmp(z)+'  '+(p<1e-9?'':Math.round(p*100)+'%');r.r.classList.toggle('zero',p<1e-9);});
     let t='Total weight '+(Math.round(tot*1000)/1000);
     lock();
-    if(o.codeSpace==='x'&&n===3&&view===0){let u=0,w=0;psi.forEach((z,i)=>{let c=0,x=i;while(x){c+=x&1;x>>=1;}u+=z[0];w+=z[0]*(c%2?-1:1);});t+='   inside the code (|+++⟩, |−−−⟩): '+pct((u*u+w*w)/8);}
+    if(o.codeSpace==='x'&&n===3&&view===0){let u=[0,0],w=[0,0];psi.forEach((z,i)=>{let c=0,x=i;while(x){c+=x&1;x>>=1;}const sg=c%2?-1:1;u=[u[0]+z[0],u[1]+z[1]];w=[w[0]+sg*z[0],w[1]+sg*z[1]];});t+='   inside the code (|+++⟩, |−−−⟩): '+pct((Cx.abs2(u)+Cx.abs2(w))/8);}
     else if(o.codeSpace&&n===3){const c=Cx.abs2(psi[0])+Cx.abs2(psi[7]);t+='   inside the code (000, 111): '+pct(c);}
     info.textContent=t;
     if(test){const d1=Cx.mul(psi[0],psi[3]),d2=Cx.mul(psi[1],psi[2]),eq=Math.hypot(d1[0]-d2[0],d1[1]-d2[1])<1e-6;
       test.textContent='';test.append(h('div',null,'a₀₀·a₁₁ = '+fAmp(d1)),h('div',null,'a₀₁·a₁₀ = '+fAmp(d2)),h('div',{class:'verdict '+(eq?'yes':'no')},eq?'Equal: independent. Each qubit has its own (α, β).':'Different: entangled. No (α, β) per qubit exists.'));}
   }
-  if(o.guide==='phase')say(loadMsg(st));
+  if(o.guide)say(loadMsg(st));
   draw();
   root._test={doOp,draw,get psi(){return psi;},measure,parity};
   return root;

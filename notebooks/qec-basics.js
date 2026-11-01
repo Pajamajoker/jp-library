@@ -706,7 +706,7 @@
               T(36, 298, 'X-check = H, parity, H', { size: 30 })
             ],
             takeaway: 'X-type checks catch Z errors. Z-type checks catch X errors.',
-            widget: { type: 'multi', n: 3, presets: ['plog'], start: 'plog', slider: 'plog', ops: ['Z1', 'Z2', 'Z3'], xparity: [[1, 2], [2, 3]], syndrome: 'x', codeSpace: 'x', reset: true },
+            widget: { type: 'multi', n: 3, presets: ['plog'], start: 'plog', slider: 'plog', errors: ['Z1', 'Z2', 'Z3', 'RZ2'], ops: [], guide: 'xcheck', xparity: [[1, 2], [2, 3]], syndrome: 'x', codeSpace: 'x', reset: true },
             math: [
               { h: 'A Z error on q2', eq: ['start:     α|+++⟩ + β|−−−⟩', 'Z on q2:   α|+−+⟩ + β|−+−⟩'], why: 'Z swaps + and − on q2, in both patterns.' },
               { h: 'Both sign checks fire', eq: ['X1X2:  +− gives −1,  −+ gives −1  →  −1', 'X2X3:  −+ gives −1,  +− gives −1  →  −1'], why: 'Same answer in both patterns, so nothing collapses between α and β.' },
