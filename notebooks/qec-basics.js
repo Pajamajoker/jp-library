@@ -352,10 +352,10 @@
             buildsOn: 'Section 1 wrote a small tilt as mostly "no error" plus a little X. The naming tab gave the checks their ±1 answers. Now tilt one qubit of a real code state.',
             leadsTo: 'Next, the four new amplitudes sorted into two piles, and what survives in each.',
             idea: [
-              'Code state α|000⟩ + β|111⟩ with α = 0.6, β = 0.8. Noise tilts only q2 by 20°. What happens to each amplitude?',
-              'Section 1 split a 20° tilt into 0.985 × (no error) − 0.174i × (X). A gate on q2 acts on each pattern on its own.',
-              'So every pattern splits in two: 0.985 of it stays put, and −0.174i of it moves to the same pattern with bit 2 flipped.',
-              '000 → 0.985·|000⟩ − 0.174i·|010⟩. 111 → 0.985·|111⟩ − 0.174i·|101⟩. Then multiply each by its α or β.'
+              'Noise gives q2 a small unwanted turn of 20°. A full 180° turn would be an X flip, so this is a small piece of an X.',
+              'The turn acts on each pattern of the code on its own. Most of each pattern stays put. A little moves to the pattern with bit 2 flipped.',
+              'So 000 keeps most of itself and leaks a little into 010. 111 keeps most of itself and leaks a little into 101.',
+              'Every amplitude is scaled the same way: ×0.985 where it stays, ×0.174 where it leaks. Squared, that is 97% stays, 3% leaks.'
             ],
             sketch: [
               T(320, 36, 'tilt on q2: each pattern splits', { anchor: 'middle', size: 24, c: 'red' }),
@@ -380,6 +380,14 @@
               { say: 'Four patterns now hold weight, where there were two.', show: '000: 0.591 · 111: 0.788 · 010: −0.104i · 101: −0.139i' },
               { say: 'Nothing lands on 001, 011, 100 or 110. Reaching them would need bit 1 or bit 3 to change.', show: 'a tilt on q2 only reaches the bit-2 flip of each pattern' }
             ] },
+            math: [
+              { h: 'The turn as a formula', eq: ['turn(δ) = cos(δ/2) · nothing  −  i · sin(δ/2) · X'], why: 'δ = 0 gives nothing. δ = 180° gives a full X. The i keeps all the chances adding up to 1.' },
+              { h: 'Why 20° becomes 10°', eq: ['cos 10° = 0.985', 'sin 10° = 0.174'], why: '|0⟩ and |1⟩ are 180° apart on the sphere, but only 90° apart as amplitudes. Sphere angles are doubled.' },
+              { h: 'On one qubit', eq: ['|0⟩  →  0.985|0⟩ − 0.174i|1⟩', '|1⟩  →  0.985|1⟩ − 0.174i|0⟩'], why: 'X just swaps 0 and 1, so both get the same two numbers. This is why α and β will leak alike.' },
+              { h: 'On each pattern, bit 2 only', eq: ['|000⟩  →  0.985|000⟩ − 0.174i|010⟩', '|111⟩  →  0.985|111⟩ − 0.174i|101⟩'], why: 'Bits 1 and 3 ride along. These are rules for each pattern: fractions, not amounts yet.' },
+              { h: 'Weight each rule by its amplitude', eq: ['0.6 × (0.985|000⟩ − 0.174i|010⟩)', '+ 0.8 × (0.985|111⟩ − 0.174i|101⟩)'], why: 'A gate on a sum acts on each term, and the number in front comes along. Like a 1.5% tax: on ₹600 you keep 0.985 × 600.' },
+              { h: 'Result', eq: ['000: 0.591      010: −0.104i', '111: 0.788      101: −0.139i'], why: 'Chance = size squared: 34.9% + 62.1% + 1.1% + 1.9% = 100%. The −i turns a number but does not change its size.' }
+            ],
             check: {
               q: 'The tilt hits q2 only. Which pattern can the 111 part leak into?',
               options: ['Only 101', '000', '101 and 110', 'All seven others'],
@@ -392,10 +400,10 @@
             buildsOn: 'The last tab left four amplitudes: 0.591 and 0.788 on the codewords, −0.104i and −0.139i on 010 and 101.',
             leadsTo: 'Next, the step before any measurement: the CNOTs tag the clean pile and the flipped pile on the ancilla.',
             idea: [
-              'Group the four patterns. *Clean pile*: 000 and 111, the codewords. *Flipped pile*: 010 and 101, in the error zone.',
-              'Pull out the common factor. Clean pile: 0.985 × (0.6, 0.8). Flipped pile: −0.174i × (0.6, 0.8). The pair 0.6 : 0.8 is in both.',
-              'Why the same pair: the tilt used the same two numbers on every pattern. Like a flat 1.5% tax on two accounts: the ratio stays.',
-              'So the state did change: 3% of the weight sits in the error zone. What survived is the ratio α : β, which is our information.'
+              'Sort the four patterns into two piles. *Clean pile*: 000 and 111. *Flipped pile*: 010 and 101, in the error zone.',
+              'Both piles hold the same 0.6 : 0.8. Only their sizes differ: the clean pile has 97% of the weight, the flipped pile 3%.',
+              'Why: the turn treated 000 and 111 alike, so α and β shrank by the same factor. Like a flat tax on two accounts: the ratio stays.',
+              'So the state did change, but what we stored, the ratio α : β, did not. The 3% is still there and must be cleaned up.'
             ],
             sketch: [
               T(320, 36, 'q2 tilted by 20°', { anchor: 'middle', size: 26, c: 'red' }),
@@ -421,6 +429,12 @@
               { say: 'Its odds move from 36 : 64 to 37 : 63, and nothing tells you what to undo. The code kept the ratio instead.', show: 'no code: α, β damaged · code: ratio kept, 3% leaked' },
               { say: 'The 3% is not removed yet. The next two tabs show how it goes away.', show: 'changed, but repairable' }
             ] },
+            math: [
+              { h: 'Pull out the common factor', eq: ['clean:    0.591,   0.788   =  0.985 × (0.6, 0.8)', 'flipped: −0.104i, −0.139i  = −0.174i × (0.6, 0.8)'], why: 'Each pile is a scaled copy of the stored pair.' },
+              { h: 'Check the ratio', eq: ['0.591 ÷ 0.788 = 0.75', '0.104 ÷ 0.139 = 0.75', '0.6   ÷ 0.8   = 0.75'] },
+              { h: 'Pile weights', eq: ['clean:   0.985² = 0.970  →  97%', 'flipped: 0.174² = 0.030  →   3%'], why: 'The two weights add up to 100%.' },
+              { h: 'Without the code', eq: ['α  →  0.985 × 0.6 − 0.174i × 0.8', 'β  →  0.985 × 0.8 − 0.174i × 0.6'], why: 'On a bare qubit the turn mixes α into β. The odds go from 36 : 64 to 37 : 63, and nothing says what to undo.' }
+            ],
             check: {
               q: 'After the 20° tilt on q2, what is the ratio of the 010 and 101 amplitudes?',
               options: ['0.6 : 0.8, the same as α : β', '0.985 : 0.174', '0.8 : 0.6', '1 : 1'],
@@ -435,7 +449,7 @@
             idea: [
               'Take the check on q1 and q2. Its ancilla starts at |0⟩ and is flipped once for each 1 among q1, q2. It ends at their parity.',
               'Clean pile: q1 and q2 match, so its ancilla is 0. Flipped pile: they differ, so its ancilla is 1.',
-              'The state is now *0.985 × (clean pile)|0⟩ − 0.174i × (flipped pile)|1⟩*. Each pile carries a tag.',
+              'Now the clean pile sits with ancilla 0 and the flipped pile with ancilla 1. Each pile carries a tag.',
               'The CNOTs correct nothing. Both piles are still there. They are only labelled.'
             ],
             sketch: [
@@ -457,6 +471,12 @@
               { say: 'After the CNOTs:', show: '0.985 × (clean)|0⟩  −  0.174i × (flipped)|1⟩' },
               { say: 'The drift is still fully there. It is now labelled by the ancilla.', show: 'tagged, not fixed' }
             ] },
+            math: [
+              { h: 'Add the ancilla', eq: ['000,0   111,0   010,0   101,0'], why: 'Every pattern gets an ancilla bit a, starting at 0. The amplitudes do not change.' },
+              { h: 'CX from q1 to a', eq: ['000,0   111,1   010,0   101,1'], why: 'a flips in the patterns where q1 = 1.' },
+              { h: 'CX from q2 to a', eq: ['000,0   111,0   010,1   101,1'], why: 'a flips where q2 = 1. Now a = q1 ⊕ q2 in every pattern.' },
+              { h: 'Group by the tag', eq: ['(0.591|000⟩ + 0.788|111⟩) |0⟩', '+ (−0.104i|010⟩ − 0.139i|101⟩) |1⟩'], why: 'Clean pile tagged 0, flipped pile tagged 1. Both are still there.' }
+            ],
             check: {
               q: 'Right after the CNOTs, before the ancilla is read, is the drift gone?',
               options: ['No, both piles are still there, now tagged', 'Yes, the CNOTs removed it', 'Yes, but only on q2', 'No, and the CNOTs made it bigger'],
@@ -471,7 +491,7 @@
             idea: [
               'Reading the ancilla gives 0 or 1. Nobody picks: nature does, with the pile sizes as odds. 0.985² ≈ 97% for 0, 0.174² ≈ 3% for 1.',
               'Like a die: told "it is even", 1, 3 and 5 are out, and 2, 4, 6 grow from 1/6 to 1/3 each. Same ratio, scaled up.',
-              'Read 0: the flipped pile is no longer true. The clean pile fills 100%: 0.591 ÷ 0.985 = 0.6 and 0.788 ÷ 0.985 = 0.8. Exact.',
+              'Read 0: the flipped pile is gone. The clean pile is scaled back up to 100%, and its numbers are exactly 0.6 and 0.8 again.',
               'Read 1: only the flipped pile is left, exactly α|010⟩ + β|101⟩. Below, step through it and spin the wheel a few times.'
             ],
             sketch: [
@@ -487,6 +507,12 @@
             ],
             takeaway: 'Reading the ancilla makes nature keep one pile. No drift is left.',
             widget: { type: 'snap', a: 0.6, b: 0.8, drift: 20 },
+            math: [
+              { h: 'The odds', eq: ['P(0) = 0.591² + 0.788² = 0.970', 'P(1) = 0.104² + 0.139² = 0.030'], why: 'Add up the chances of the patterns that carry each tag.' },
+              { h: 'Read 0: keep the clean pile', eq: ['0.591|000⟩ + 0.788|111⟩', 'its size: √0.970 = 0.985'] },
+              { h: 'Scale it back up', eq: ['0.591 ÷ 0.985 = 0.6', '0.788 ÷ 0.985 = 0.8'], why: 'Rescaling makes the chances add up to 1 again. The ratio never changes.' },
+              { h: 'Read 1: keep the flipped pile', eq: ['−0.104i|010⟩ − 0.139i|101⟩', '÷ 0.174  →  −i (0.6|010⟩ + 0.8|101⟩)'], why: 'The −i now sits on every term, so it changes nothing you can measure. Drop it.' }
+            ],
             check: {
               q: 'The ancilla reads 0. What is the data now?',
               options: ['Exactly α|000⟩ + β|111⟩', 'Still slightly drifted', 'α|010⟩ + β|101⟩', 'Unknown until the data is read'],
@@ -500,7 +526,7 @@
             leadsTo: 'Next, how many full flips this code can survive. That limit is called the distance.',
             idea: [
               'Ancilla 0: we do *nothing*. The measurement already removed the drift. No gate is applied.',
-              'Ancilla 1: with the second check, the syndrome names q2. Apply one X to q2. This is the only physical correction.',
+              'Ancilla 1: q1 and q2 differ. The second check says q2 and q3 differ too, so q2 is the odd one out. Apply one X to q2.',
               'So fixing full flips is enough for every small drift. This is the *discretisation of errors*.',
               'A "no" means no flip that this check can see. It cannot rule out a Z error or two flips. Both come next.'
             ],
@@ -520,6 +546,12 @@
             ],
             takeaway: 'Read 0: do nothing. Read 1: one X. Drift never survives a check.',
             widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['RX2', 'X2'], syndrome: true, codeSpace: true, reset: true },
+            math: [
+              { h: 'Both checks together', eq: ['a1 = q1 ⊕ q2      a2 = q2 ⊕ q3', '010 or 101  →  a1 = 1, a2 = 1'], why: 'q2 disagrees with both neighbours, so both checks fire. Only q2 gives that pair.' },
+              { h: 'The syndrome table', eq: ['00 → nothing      10 → X on q1', '11 → X on q2      01 → X on q3'], why: 'Each single flip gives its own pair of answers.' },
+              { h: 'Apply X on q2', eq: ['0.6|010⟩ + 0.8|101⟩', '→  0.6|000⟩ + 0.8|111⟩'], why: 'X flips bit 2 in every pattern: 010 → 000 and 101 → 111. α and β come back exact.' },
+              { h: 'Why full flips are enough', eq: ['20° drift  →  read  →  none (97%) or one X (3%)'], why: 'Reading turned a drift into one of two cases, and both are fixed exactly. That is the *discretisation of errors*.' }
+            ],
             check: {
               q: 'A small partial error hits one qubit. The syndrome is read. What is the qubit now?',
               options: [
@@ -555,6 +587,11 @@
             ],
             takeaway: 'Distance d fixes up to (d−1)/2 flips.',
             widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['X1', 'X2', 'X3'], syndrome: true, codeSpace: true, reset: true },
+            math: [
+              { h: 'Distance 3', eq: ['000  →  100  →  110  →  111'], why: 'Three flips turn one codeword into the other. No smaller number does.' },
+              { h: 'Two flips fool the vote', eq: ['flip q1 and q2:   000  →  110', 'syndrome 01  →  blames q3', 'X on q3:   110  →  111'], why: 'The fix completes the wrong codeword. α and β end up swapped, and no check notices.' },
+              { h: 'How rare that is', eq: ['pairs: q1q2, q1q3, q2q3  →  3 × p × p', 'p = 1%:  3 × 0.0001 = 0.03%'], why: 'One flip has a chance of about 3p = 3%, and the code fixes it. Only the rare two-flip case gets through.' }
+            ],
             check: {
               q: 'A code has distance 5. How many flips can it surely fix?',
               options: ['1', '2', '3', '5'],
@@ -583,6 +620,11 @@
             ],
             takeaway: 'Bit-flip checks cannot see a phase flip.',
             widget: { type: 'multi', n: 3, presets: ['log'], start: 'log', slider: 'log', ops: ['Z1', 'Z2', 'Z3'], syndrome: true, codeSpace: true, reset: true },
+            math: [
+              { h: 'Z on q1, pattern by pattern', eq: ['000: bit 1 = 0  →  +|000⟩', '111: bit 1 = 1  →  −|111⟩'], why: 'Z puts a minus sign on the patterns where its bit is 1.' },
+              { h: 'The checks see nothing', eq: ['000 and 111 keep every bit', 'a1 = 0, a2 = 0  →  "fine"'], why: 'No bit changed, only a sign. Parity checks only look at bits.' },
+              { h: 'A small z-turn', eq: ['000:  0.6 × (0.985 − 0.174i)', '111:  0.8 × (0.985 + 0.174i)'], why: 'No new patterns, so no leak and no tag. α and β are turned opposite ways, which damages them directly.' }
+            ],
             check: {
               q: 'You apply Z to one qubit of α|000⟩ + β|111⟩ and read the bit-flip syndrome. What shows?',
               options: ['(1,0)', '(0,1)', '(1,1)', '(0,0)'],

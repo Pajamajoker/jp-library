@@ -180,6 +180,18 @@ select{font:inherit;font-size:13.5px;padding:5px 8px;border-radius:7px;border:1p
 .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
 .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .why{font-size:14.5px;color:var(--muted)}
+.math{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.math>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;font-family:var(--f-mono);font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.math>summary::-webkit-details-marker{display:none}
+.math>summary:hover{color:var(--ink)}
+.math .mt::before{content:'▸';display:inline-block;margin-right:10px;transition:transform .2s}
+.math[open] .mt::before{transform:rotate(90deg)}
+.msteps{list-style:none;margin:0;padding:0 16px 16px;display:flex;flex-direction:column;gap:14px}
+.msteps li{border-left:2px solid var(--line);padding:2px 0 2px 14px}
+.msteps .mh{display:flex;gap:10px;align-items:center;font-weight:600;font-size:15px}
+.msteps .mn{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;font-weight:500;background:var(--soft);flex:none}
+.msteps .meq{font-family:var(--f-mono);font-size:14px;line-height:1.75;margin:8px 0 6px;padding:8px 12px;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:pre}
+.msteps .mwhy{margin:0;font-size:14px;color:var(--muted)}
 
 .nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding-top:6px}
 .bridge{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -495,12 +507,25 @@ Tab = one small step. Tabs run from the smallest piece up to the whole concept. 
   takeaway   one line, at most 80 characters. The thing to remember.
   widget     one interactive visual (see 5), or null
   check      one multiple choice question: { q, options (3 or 4), answer (index), why }
+  math       OPTIONAL. Worked math, hidden behind a "Show the math" toggle (see 3c).
 
 CONNECTION RULE (most important)
 Every tab must say how it connects to its neighbours. buildsOn and leadsTo are mandatory, must be specific (name the idea, not "the previous tab"), and each must be at least 25 characters. The first tab of a section builds on the previous section's bridge. The last tab of a section leads into the section's bridge.
 
 WHERE THEY SHOW
 buildsOn and leadsTo are shown at the END of each tab, under "Where this fits", after the check question. The reader meets the title and the idea lines first. So the idea lines must stand on their own: never open them with "as the last tab showed" or lean on buildsOn to explain them.
+
+----------------------------------------------------------------
+3c. THE MATH PANEL (optional field: math)
+The idea lines say WHAT happens and WHY, in words, with at most one or two numbers. Full calculations go in math, which stays folded until the reader opens it.
+  math: [
+    { h: 'On one qubit', eq: ['|0⟩ → 0.985|0⟩ − 0.174i|1⟩', '|1⟩ → 0.985|1⟩ − 0.174i|0⟩'], why: 'X swaps 0 and 1, so both get the same two numbers.' },
+    ...
+  ]
+  h    step title, at most 60 characters.
+  eq   1 to 4 lines of plain Unicode math, each at most 60 characters. Shown in monospace, so spaces line things up.
+  why  optional, one sentence, at most 140 characters: why this step is allowed or what to notice.
+1 to 7 steps. One move per step, no skipped lines. Each step reads on its own: a reader may open the panel only to check one line.
 
 ----------------------------------------------------------------
 3. WRITING RULES
@@ -672,7 +697,7 @@ The library owner then adds 'notebooks/<id>.js' to the list in notebooks/index.j
 [ ] Every sketch has 6 to 18 parts, inside 640 x 320, with 3 or more text labels, drawn in teaching order.
 [ ] Every tab has a takeaway of at most 80 characters, a widget (or null) and a check with a valid answer index.
 [ ] No em dashes, no en dashes, no LaTeX, no code blocks in any string.
-[ ] Math is readable plain Unicode.
+[ ] Math is readable plain Unicode. Long calculations sit in a tab's math panel, not in its idea lines.
 [ ] Every claim is true. Anything about a paper was checked against the paper.
 </script>
 
@@ -753,6 +778,10 @@ function validate(nb){
       need(t.widget===null||(t.widget&&WIDGETS.includes(t.widget.type)),q+' widget type');
       const c=t.check;
       need(c&&c.q&&Array.isArray(c.options)&&c.options.length>=3&&c.answer>=0&&c.answer<(c.options||[]).length&&c.why,q+' check incomplete');
+      if(t.math!=null){need(Array.isArray(t.math)&&t.math.length>=1&&t.math.length<=7,q+' math needs 1 to 7 steps');
+        (Array.isArray(t.math)?t.math:[]).forEach(m=>{need(m&&m.h&&m.h.length<=60,q+' math step title 1 to 60 chars');
+          need(m&&Array.isArray(m.eq)&&m.eq.length>=1&&m.eq.length<=4&&m.eq.every(e=>e.length<=60),q+' math step eq: 1 to 4 lines, each at most 60 chars');
+          need(!m||!m.why||m.why.length<=140,q+' math why over 140 chars');});}
       if(bad.test(JSON.stringify(t)))E.push(q+' contains an em or en dash');
     });
   });
@@ -1520,6 +1549,7 @@ function viewSection(nb,si,ti){
     h('ul',{class:'idea'},tab.idea.map(l=>h('li',{html:rich(l)}))),
     sk,
     w?h('div',null,h('div',{class:'blockhead'},h('h3',null,'Try it')),w):null,
+    mathBlock(tab.math),
     chk,
     h('section',{class:'fits'},h('div',{class:'blockhead'},h('h3',null,'Where this fits')),
       h('div',{class:'conn'+(isLast?' one':'')},
@@ -1547,6 +1577,16 @@ function railScroll(key,rail,chain){
     box.scrollBy({[vert?'top':'left']:d,behavior:reduce()?'auto':'smooth'});
     setTimeout(()=>{railPos[key]=[vert,box[prop]];},400);});
   box.addEventListener('scroll',()=>{railPos[key]=[vert,box[prop]];},{passive:true});
+}
+/* optional, collapsed worked math under a tab: [{ h, eq: [lines], why }] */
+function mathBlock(m){
+  if(!Array.isArray(m)||!m.length)return null;
+  return h('details',{class:'math'},
+    h('summary',null,h('span',{class:'mt'},'Show the math'),h('span',null,m.length+' steps')),
+    h('ol',{class:'msteps'},m.map((s,i)=>h('li',null,
+      h('div',{class:'mh'},h('span',{class:'mn'},i+1),h('span',{html:rich(s.h)})),
+      h('div',{class:'meq'},(s.eq||[]).join('\n')),
+      s.why?h('p',{class:'mwhy',html:rich(s.why)}):null))));
 }
 function checkBlock(c){
   let locked=false;const why=h('div',{class:'why',hidden:true},c.why);
