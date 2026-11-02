@@ -889,8 +889,8 @@
                   eq: ['α|000 000 000⟩ + β|100 100 100⟩'],
                   say: 'A second CNOT does the same for q7. On q1, q4, q7 this is the bit-flip code. The other six qubits are still 0.' },
                 { t: 'H on q1, q4, q7', h: 210, parts: rows9(['+00+00+00', '−00−00−00'], { hot: [[0, 0], [0, 3], [0, 6], [1, 0], [1, 3], [1, 6]], note: 'layer 1 done: α|+++⟩ + β|−−−⟩ on q1, q4, q7' }),
-                  eq: ['H|0⟩ = |+⟩      H|1⟩ = |−⟩', 'α|+00 +00 +00⟩ + β|−00 −00 −00⟩'],
-                  say: 'H turns each 0 into + and each 1 into −. q1, q4, q7 now hold the phase-flip code. That is layer 1.' },
+                  eq: ['H|0⟩ = |+⟩      H|1⟩ = |−⟩', 'all nine:          α|+00 +00 +00⟩ + β|−00 −00 −00⟩', 'q1, q4, q7 only:   α|+++⟩ + β|−−−⟩'],
+                  say: 'H turns each 0 into + and each 1 into −. q1, q4, q7 now hold the phase-flip code: that is layer 1. Both lines below are the same state. A single block is *not* α|+00⟩ + β|−00⟩: the β pattern has − in all three blocks at once, so the blocks are entangled.' },
                 { t: 'Block 1 in bits', h: 225, parts: rows(['000', '100'], { qs: ['q1', 'q2', 'q3'], note: '+ or − on q1 means 0 and 1 together' }),
                   eq: ['|+⟩ = (|0⟩ + |1⟩)/√2      |−⟩ = (|0⟩ − |1⟩)/√2', 'block 1 = (|000⟩ ± |100⟩)/√2'],
                   say: 'Look inside block 1 before layer 2. q1 is + or −, which in bits is 0 and 1 together. q2 and q3 are 0. So the block is 000 ± 100: + in the α part, − in the β part.' },
@@ -905,7 +905,9 @@
                 { title: 'The Shor encoder', wires: ['q1=ψ', 'q2=|0⟩', 'q3=|0⟩', 'q4=|0⟩', 'q5=|0⟩', 'q6=|0⟩', 'q7=|0⟩', 'q8=|0⟩', 'q9=|0⟩'],
                   cols: ['| layer 1', 'CX q1 q4', 'CX q1 q7', 'H q1, H q4, H q7', '| layer 2', 'CX q1 q2, CX q4 q5, CX q7 q8', 'CX q1 q3, CX q4 q6, CX q7 q9'],
                   notes: ['Read left to right, one line per qubit. A dot is a control. ⊕ is the target, flipped only where the control is 1.',
-                    'Layer 1: two CNOTs give α|000⟩ + β|111⟩ on q1, q4, q7. Three H gates turn it into α|+++⟩ + β|−−−⟩.',
+                    'Layer 1: two CNOTs give α|000⟩ + β|111⟩ on q1, q4, q7. Three H gates turn it into α|+++⟩ + β|−−−⟩ on q1, q4, q7.',
+                    'Written for all nine qubits, block by block, that is *α|+00 +00 +00⟩ + β|−00 −00 −00⟩*. The other six are still 0.',
+                    'One block alone is not α|+00⟩ + β|−00⟩. The β pattern has − in all three blocks at once, so the blocks are entangled: each block is + or − only together with the other two.',
                     'Layer 2: in each block, two CNOTs copy the first qubit into the other two. Gates in the same column act at the same time.'] }
               ],
               l3: [
