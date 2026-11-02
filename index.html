@@ -1408,12 +1408,13 @@ W.shor=function(o){
   /* ---------------- x / z / checks: tap qubits, read checks, fix ---------------- */
   function play(){
     const x=Array(10).fill(0),z=Array(10).fill(0);
-    let tool=M==='z'?'Z':'X',read=false,fixed=false,msg='';
+    let tool=M==='z'?'Z':'X',read=false,fixed=false,msg='',expl=null,fixes=[];
     const BX=[30,235,440],QX=q=>BX[(q-1)/3|0]+40+45*((q-1)%3),QY=185;
     const tools=M==='checks'?['X','Z','Y'].map(t=>B(t+' error',()=>{tool=t;draw();})):[];
-    const readB=B(M==='checks'?'Read all 8 checks':'Read the bit checks',()=>{read=true;msg=report();draw();},'pri');
-    const fixB=B('Apply the fix',()=>{applyFix();fixed=true;msg=verdict();tidy();draw();},'pri');
-    const clr=B('Clear',()=>{x.fill(0);z.fill(0);read=false;fixed=false;msg='';draw();});
+    const readB=B(M==='checks'?'Read all 8 checks':'Read the bit checks',()=>{read=true;msg=report();expl=M==='checks'?signExplain():null;draw();},'pri');
+    const fixB=B('Apply the fix',()=>{applyFix();fixed=true;const zf=fixes.find(f=>f[1]==='Z');
+      msg=(zf?'Z on qubit '+zf[0]+' flips block '+((zf[0]-1)/3+1)+' sign back. ':'')+verdict();tidy();draw();},'pri');
+    const clr=B('Clear',()=>{x.fill(0);z.fill(0);read=false;fixed=false;msg='';expl=null;fixes=[];draw();});
     const inner=b=>{const i=3*b+1;return[x[i]^x[i+1],x[i+1]^x[i+2]];};
     const sgn=b=>{const i=3*b+1;return z[i]^z[i+1]^z[i+2];};
     const outer=()=>[sgn(0)^sgn(1),sgn(1)^sgn(2)];
@@ -1426,8 +1427,19 @@ W.shor=function(o){
         if(p!=null)out.push('Sign checks: '+[a1?'X1…X6':'',a2?'X4…X9':''].filter(Boolean).join(' and ')+' fire, so block '+(p+1)+' flipped sign. Z on any of its qubits.');}
       if(!out.length)return M==='z'&&z.some(Boolean)?'All bit checks are quiet: no bit moved. Yet a block sign flipped. Only layer 1 can see that.':'All checks are quiet: nothing to fix.';
       return out.join(' ');}
-    function applyFix(){[0,1,2].forEach(b=>{const p=pick(...inner(b));if(p!=null)x[3*b+1+p]^=1;});
-      if(M==='checks'){const p=pick(...outer());if(p!=null)z[3*p+1]^=1;}}
+    function applyFix(){fixes=[];[0,1,2].forEach(b=>{const p=pick(...inner(b));if(p!=null){x[3*b+1+p]^=1;fixes.push([3*b+1+p,'X']);}});
+      if(M==='checks'){const p=pick(...outer());if(p!=null){z[3*p+1]^=1;fixes.push([3*p+1,'Z']);}}}
+    /* how the two sign checks read block signs, and how their answers point to one block */
+    function signExplain(){const s=[0,1,2].map(sgn),[a1,a2]=outer(),p=pick(a1,a2),n=s.filter(Boolean).length;
+      if(!n)return null;
+      const L=['How a sign check works: X on all three qubits of a block swaps 000 and 111. So 000 + 111 stays as it is, but 000 − 111 becomes minus itself. XXX reads the sign of the block without reading any bit.',
+        'X1…X6 does this to blocks 1 and 2 together. It learns only one thing: are their signs the same (quiet) or different (fires)? X4…X9 does the same for blocks 2 and 3.',
+        'The answers point to one block. quiet, quiet: none. fires, quiet: block 1. fires, fires: block 2. quiet, fires: block 3.'];
+      if(p==null)L.push('Here both are quiet: all three blocks have the same sign. They all flipped, and comparing blocks cannot tell that apart from no flip.');
+      else L.push('Here: X1…X6 '+(a1?'fires':'is quiet')+', X4…X9 '+(a2?'fires':'is quiet')+'. So block '+(p+1)+' is the odd one: '+
+        ['it differs from block 2, while blocks 2 and 3 agree','it differs from block 1 and from block 3','it differs from block 2, while blocks 1 and 2 agree'][p]+
+        '. Fix: a Z on any one of its qubits flips its sign back. We use qubit '+(3*p+1)+'.'+(n===2?' (Two blocks really flipped, so the vote picks the wrong one.)':''));
+      return L;}
     /* two Zs in one block do nothing, so show only the sign that is left */
     function tidy(){[0,1,2].forEach(b=>{const i=3*b+1,s=sgn(b);z[i]=s;z[i+1]=0;z[i+2]=0;});}
     function verdict(){
@@ -1437,7 +1449,7 @@ W.shor=function(o){
       if(xl)return'✗ Wrong: a block ended with all three bits flipped. Two X errors in one block beat its bit checks: a logical error.';
       if(zl)return'✗ Wrong: all three block signs ended flipped, which turns +++ into −−−. Two blocks hit by Z beat the sign checks: a logical error.';
       return'✗ Not fixed: a block sign is still flipped.';}
-    function tap(q){fixed=false;
+    function tap(q){fixed=false;expl=null;fixes=[];
       if(tool==='X'||tool==='Y')x[q]^=1;if(tool==='Z'||tool==='Y')z[q]^=1;read=false;msg=tapMsg(q);draw();}
     function tapMsg(q){const b=(q-1)/3|0;
       if(M==='z')return z[q]?'Z on qubit '+q+': 111 has a 1 there, so it picks up a minus. Block '+(b+1)+' turns ± into ∓: its sign flipped.'+(sgn(b)?'':' Two Zs in this block: the signs cancel again.'):'Z removed from qubit '+q+'.';
@@ -1452,7 +1464,8 @@ W.shor=function(o){
         [0,1,2].forEach(b=>{const cx=BX[b]+85,f=sgn(b);g(ring('L'+b,cx,62,18,'blue',2.2),txt(cx,69,f?'Z':'ABC'[b],f?20:18,f?'red':'blue'));});}
       if(M==='checks'){const g=G('across');[[0,1,'X1…X6',o1],[1,2,'X4…X9',o2]].forEach(([a,c,l,on],n)=>{
         const x1=BX[a]+85,x2=BX[c]+85,col=lit&&on?'red':'blue',op=lit?(on?1:.45):.7,ym=n?88:72;
-        g(P(smoothD([[x1,128],[x1+20,ym+14],[(x1+x2)/2,ym],[x2-20,ym+14],[x2,128]]),col,2.4,op),txt((x1+x2)/2,ym-8,l,16,col,op));});}
+        g(P(smoothD([[x1,128],[x1+20,ym+14],[(x1+x2)/2,ym],[x2-20,ym+14],[x2,128]]),col,2.4,op),
+          txt((x1+x2)/2,ym-8,l+(lit?(on?': blocks '+(a+1)+','+(c+1)+' differ':': blocks '+(a+1)+','+(c+1)+' same'):''),16,col,op));});}
       if(M==='x')G('hint')(txt(320,48,'tap a qubit to put an X on it',18,'ink',.7));
       /* blocks and qubits */
       const g=G('grid');
@@ -1461,6 +1474,7 @@ W.shor=function(o){
           txt(bx+85,328,sgn(b)?'sign flipped':'sign kept',15,sgn(b)?'blue':'ink',sgn(b)?1:.55));});
       for(let q=1;q<=9;q++){const cx=QX(q),e=x[q]&&z[q]?'Y':x[q]?'X':z[q]?'Z':'',col=e==='X'?'red':e==='Z'?'blue':e==='Y'?'pink':'ink';
         g(ring('q'+q,cx,QY,16,col,e?3:2.2),txt(cx,QY+7,e,20,col),txt(cx,QY+36,String(q),14,'ink',.6));
+        fixes.filter(f=>f[0]===q).forEach(f=>g(ring('fx'+q+f[1],cx,QY,22,'green',2.6),txt(cx,QY-27,'fix '+f[1],13,'green')));
         const hit=sv('circle',{cx,cy:QY,r:21,fill:'transparent',style:'cursor:pointer'});hit.addEventListener('click',()=>tap(q));g(hit);}
       /* bit checks under each block */
       BX.forEach((bx,b)=>{const [s1,s2]=inner(b);[[0,s1],[1,s2]].forEach(([j,on])=>{const q=3*b+1+j,cx=(QX(q)+QX(q+1))/2,col=lit&&on?'red':'ink',op=lit?(on?1:.45):.6;
@@ -1471,7 +1485,7 @@ W.shor=function(o){
       end();
       tools.forEach((b,i)=>b.className='btn'+(tool===['X','Z','Y'][i]?' pri':''));
       readB.disabled=!anyErr()||read&&!fixed;fixB.hidden=M==='z';fixB.disabled=!read||fixed;
-      sayP(intro());}
+      sayP(expl||intro());}
     function intro(){
       if(M==='x')return['Each block is a bit-flip code. Tap any qubit to put an X on it, then read the bit checks under the blocks.','Try one X, then try two X errors in the same block.'];
       if(M==='z')return['Tap any qubit to put a Z on it. Watch the block text, the sign line, and the layer-1 row at the top.','Then read the bit checks: they cannot see it, because no bit moved.'];
