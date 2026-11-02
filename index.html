@@ -1336,6 +1336,7 @@ W.shor=function(o){
   const M=o.mode,root=h('div',{class:'w snapw'});
   const say=h('div',{class:'snap-say'});
   const svg=sv('svg',{viewBox:'0 0 640 420',role:'img','aria-label':'Hand-drawn picture of the Shor code'});
+  const svg2=sv('svg',{viewBox:'0 0 640 216',role:'img','aria-label':'How the two sign checks give +1 or −1'}),pad2=h('div',{class:'sketch snap-sk'},svg2);
   const pad=h('div',{class:'sketch snap-sk'},svg);
   const B=(t,fn,cls)=>h('button',{class:'btn'+(cls?' '+cls:''),type:'button',onclick:fn},t);
   const P=(d,col,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:colr(col),'stroke-width':w||2.4,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op==null?1:op});if(dash)e.setAttribute('stroke-dasharray','7 6');return e;};
@@ -1432,8 +1433,9 @@ W.shor=function(o){
     /* how the two sign checks read block signs, and how their answers point to one block */
     function signExplain(){const s=[0,1,2].map(sgn),[a1,a2]=outer(),p=pick(a1,a2),n=s.filter(Boolean).length;
       if(!n)return null;
-      const L=['How a sign check works: X on all three qubits of a block swaps 000 and 111. So 000 + 111 stays as it is, but 000 − 111 becomes minus itself. XXX reads the sign of the block without reading any bit.',
-        'X1…X6 does this to blocks 1 and 2 together. It learns only one thing: are their signs the same (quiet) or different (fires)? X4…X9 does the same for blocks 2 and 3.',
+      const L=['Step 1. XXX on a block swaps 000 and 111. A [+] block, 000 + 111, comes back unchanged: +1. A [−] block, 000 − 111, comes back as minus itself: −1. So XXX reads the sign of a block, the way Z reads a bit.',
+        'Step 2. X1…X6 = (XXX on block 1) × (XXX on block 2). Same signs: +1, quiet. Different signs: −1, fires. It is Z1Z2, but for blocks. X4…X9 does blocks 2 and 3.',
+        'Step 3. The table under the sketch does this for the α part and the β part of the state. Both rows give the same answer, so the check learns nothing about α and β.',
         'The answers point to one block. quiet, quiet: none. fires, quiet: block 1. fires, fires: block 2. quiet, fires: block 3.'];
       if(p==null)L.push('Here both are quiet: all three blocks have the same sign. They all flipped, and comparing blocks cannot tell that apart from no flip.');
       else L.push('Here: X1…X6 '+(a1?'fires':'is quiet')+', X4…X9 '+(a2?'fires':'is quiet')+'. So block '+(p+1)+' is the odd one: '+
@@ -1479,6 +1481,7 @@ W.shor=function(o){
       /* bit checks under each block */
       BX.forEach((bx,b)=>{const [s1,s2]=inner(b);[[0,s1],[1,s2]].forEach(([j,on])=>{const q=3*b+1+j,cx=(QX(q)+QX(q+1))/2,col=lit&&on?'red':'ink',op=lit?(on?1:.45):.6;
         const cy=j?272:248;g(oval('c'+q,cx,cy,24,11,col,lit&&on?2.6:1.6,op),txt(cx,cy+5,'Z'+q+'Z'+(q+1),13,col,op));});});
+      drawSigns();
       if(msg){const m=G('msg'+msg.length+msg.charCodeAt(0));m(hi(16,344,608,70));
         const words=msg.split(' '),lines=[''];words.forEach(w=>{if((lines[lines.length-1]+' '+w).length>78)lines.push(w);else lines[lines.length-1]+=(lines[lines.length-1]?' ':'')+w;});
         lines.slice(0,3).forEach((l,i)=>m(txt(320,366+i*21,l,16,'ink')));}
@@ -1486,11 +1489,27 @@ W.shor=function(o){
       tools.forEach((b,i)=>b.className='btn'+(tool===['X','Z','Y'][i]?' pri':''));
       readB.disabled=!anyErr()||read&&!fixed;fixB.hidden=M==='z';fixB.disabled=!read||fixed;
       sayP(expl||intro());}
+    /* checks mode, after reading: the +1 / −1 table for the two sign checks, in its own sketch */
+    function drawSigns(){svg2.textContent='';pad2.hidden=!(M==='checks'&&read);if(pad2.hidden)return;
+      const g2=sv('g',{});svg2.append(g2);const p=(...els)=>els.flat().forEach(e=>e&&g2.append(e));
+      const al=[0,1,2].map(b=>sgn(b)?-1:1),f=v=>v>0?'+1':'−1',cv=v=>v>0?'ink':'red';
+      p(txt(24,30,'XXX on a block:',17,'blue',1,'start'),
+        txt(180,30,'[+]   000 + 111  →  111 + 000   unchanged:  +1',17,'ink',1,'start'),
+        txt(180,56,'[−]   000 − 111  →  111 − 000   minus itself:  −1',17,'ink',1,'start'));
+      const CX=[180,250,320],CK=[[0,1,'X1…X6 = b1 × b2',450],[1,2,'X4…X9 = b2 × b3',570]],yh=96;
+      p(txt(70,yh,'XXX gives',15,'blue'));CX.forEach((x,b)=>p(txt(x,yh,'block '+(b+1),15,'blue')));CK.forEach(([,,l,x])=>p(txt(x,yh,l,15,'blue')));
+      p(rline('xph',[[24,yh+10],[616,yh+10]],'blue',1.2,.5));
+      [['α part',al],['β part',al.map(v=>-v)]].forEach(([lab,v],r)=>{const y=yh+38+r*30;p(txt(70,y,lab,18,'ink'));
+        CX.forEach((x,b)=>p(txt(x,y,f(v[b]),19,cv(v[b]))));
+        CK.forEach(([a,c,,x])=>p(txt(x,y,'('+f(v[a])+')('+f(v[c])+') = '+f(v[a]*v[c]),17,cv(v[a]*v[c]))));});
+      p(rline('xpr',[[380,yh+80],[616,yh+80]],'blue',1.2,.5));
+      const yr=yh+106;p(txt(250,yr,'both rows agree: α and β stay hidden',15,'ink',.8));
+      CK.forEach(([a,c,,x])=>{const on=al[a]*al[c]<0;p(txt(x,yr,on?'−1: fires':'+1: quiet',18,on?'red':'ink',on?1:.6));});}
     function intro(){
       if(M==='x')return['Each block is a bit-flip code. Tap any qubit to put an X on it, then read the bit checks under the blocks.','Try one X, then try two X errors in the same block.'];
       if(M==='z')return['Tap any qubit to put a Z on it. Watch the block text, the sign line, and the layer-1 row at the top.','Then read the bit checks: they cannot see it, because no bit moved.'];
       return['Pick X, Z or Y, then tap qubits to place errors. Read all 8 checks: six bit checks under the blocks, two sign checks across them.','Then apply the fix and see if it worked. Try one error of each kind, then two.'];}
-    root.append(say,pad,h('div',{class:'btns'},...tools,readB,fixB,clr));
+    root.append(say,pad,pad2,h('div',{class:'btns'},...tools,readB,fixB,clr));
     draw();(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
     return root;
   }
