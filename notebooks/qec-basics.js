@@ -864,6 +864,11 @@
               'The bit-flip code sends 0 → 000 and 1 → 111. So |+⟩ = (|0⟩ + |1⟩)/√2 becomes (|000⟩ + |111⟩)/√2, and |−⟩ becomes (|000⟩ − |111⟩)/√2.',
               'Like a letter in a waterproof bag inside a padded box: each layer handles one danger. 3 blocks of 3 = *9 physical qubits*.'
             ],
+            keys: [
+              { tone: 'main', h: 'One logical qubit, spread over all 9', t: 'The Shor code spreads one logical qubit over *all 9 physical qubits*. No single qubit holds it. Two layers guard it: an inner layer for bit flips and an outer layer for sign flips.' },
+              { tone: 'x', h: 'Inner layer: bit flips (X), fixed inside each block', t: 'Inside each block, the bit checks *Z1Z2, Z2Z3* (and the same in blocks 2 and 3) find an X and flip it back. After this each block is a clean 000 ± 111 again, so it acts as *one qubit* holding one sign.' },
+              { tone: 'z', h: 'Outer layer: sign flips (Z), fixed across blocks', t: 'A Z anywhere in a block flips the sign of that block. The sign checks *X1…X6* (block 1 vs 2) and *X4…X9* (block 2 vs 3) compare blocks, find the odd one, and flip its sign back.' }
+            ],
             sketch: [
               T(320, 44, 'α|+++⟩ + β|−−−⟩', { anchor: 'middle', size: 30 }),
               A(220, 64, 115, 110), A(320, 64, 320, 110), A(420, 64, 525, 110),
@@ -939,6 +944,9 @@
               'Blocks 1 and 3 are untouched, so their checks stay quiet. There are six bit checks in all, two per block.',
               'The ± of block 2 is untouched too, so the sign layer never notices. The X is caught and fixed inside its block.'
             ],
+            keys: [
+              { tone: 'x', h: 'Inner layer: bit flips (X), fixed inside each block', t: 'Inside each block, the bit checks *Z1Z2, Z2Z3* (and the same in blocks 2 and 3) find an X and flip it back. After this each block is a clean 000 ± 111 again, so it acts as *one qubit* holding one sign.' }
+            ],
             sketch: [
               B(30, 50, 170, 80), B(235, 50, 170, 80, { c: 'red' }), B(440, 50, 170, 80),
               O(70, 90, 14), O(115, 90, 14), O(160, 90, 14),
@@ -1012,6 +1020,10 @@
               'So (|000⟩ + |111⟩)/√2 becomes (|000⟩ − |111⟩)/√2. Block 2 went from + to −.',
               'Z on qubit 4 or 6 does the same, since 111 has a 1 everywhere. One Z anywhere in a block flips the sign of the whole block.',
               'Seen from layer 1, block 2 is one qubit that suffered a Z. That is exactly the error the phase-flip code catches.'
+            ],
+            keys: [
+              { tone: 'z', h: 'Outer layer: sign flips (Z), fixed across blocks', t: 'A Z anywhere in a block flips the sign of that block. The sign checks *X1…X6* (block 1 vs 2) and *X4…X9* (block 2 vs 3) compare blocks, find the odd one, and flip its sign back.' },
+              { tone: 'fix', h: 'The phase fix: a Z on any qubit of that block', t: 'To undo a flipped block sign, apply Z to *any one* of its qubits. Error on qubit 5, fix on qubit 4: each Z flips the same block sign, so the two *cancel*. The block is exactly as it was.' }
             ],
             sketch: [
               T(150, 46, 'block 2: +', { anchor: 'middle', size: 24, c: 'green' }),
@@ -1090,6 +1102,12 @@
               'Across blocks: compare the sign of block 1 with block 2, and block 2 with block 3. This is the phase-flip code, one level up.',
               'The sign of a block is read by X on all three of its qubits. So one sign comparison is X on six qubits, like X1X2X3X4X5X6.',
               'Every single-qubit error is caught: X by the checks inside, Z by the checks across, and Y by both, since Y is X and Z together.'
+            ],
+            keys: [
+              { tone: 'main', h: 'One logical qubit, spread over all 9', t: 'The Shor code spreads one logical qubit over *all 9 physical qubits*. No single qubit holds it. Two layers guard it: an inner layer for bit flips and an outer layer for sign flips.' },
+              { tone: 'x', h: 'Inner layer: bit flips (X), fixed inside each block', t: 'Inside each block, the bit checks *Z1Z2, Z2Z3* (and the same in blocks 2 and 3) find an X and flip it back. After this each block is a clean 000 ± 111 again, so it acts as *one qubit* holding one sign.' },
+              { tone: 'z', h: 'Outer layer: sign flips (Z), fixed across blocks', t: 'A Z anywhere in a block flips the sign of that block. The sign checks *X1…X6* (block 1 vs 2) and *X4…X9* (block 2 vs 3) compare blocks, find the odd one, and flip its sign back.' },
+              { tone: 'fix', h: 'The phase fix: a Z on any qubit of that block', t: 'To undo a flipped block sign, apply Z to *any one* of its qubits. Error on qubit 5, fix on qubit 4: each Z flips the same block sign, so the two *cancel*. The block is exactly as it was.' }
             ],
             sketch: [
               B(30, 50, 170, 80), B(230, 50, 170, 80), B(430, 50, 170, 80),

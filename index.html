@@ -180,6 +180,14 @@ select{font:inherit;font-size:13.5px;padding:5px 8px;border-radius:7px;border:1p
 .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
 .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .why{font-size:14.5px;color:var(--muted)}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.key{--kc:var(--accent);border:1px solid color-mix(in srgb,var(--kc) 45%,transparent);border-left:5px solid var(--kc);border-radius:10px;padding:12px 16px;background:color-mix(in srgb,var(--kc) 10%,transparent)}
+.key.main,.key.fix{grid-column:1/-1}
+.key.x{--kc:var(--sk-red)}.key.z{--kc:var(--sk-blue)}.key.main{--kc:var(--amber)}.key.fix{--kc:var(--sk-green)}
+.key h4{margin:0 0 6px;font-size:15px;color:var(--kc);letter-spacing:.01em}
+.key p{margin:0;font-size:16px;line-height:1.5}
+.key b{color:var(--kc);font-weight:650}
+@media (max-width:720px){.keys{grid-template-columns:1fr}}
 .math{background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .math>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;font-family:var(--f-mono);font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .math>summary::-webkit-details-marker{display:none}
@@ -519,6 +527,9 @@ Tab = one small step. Tabs run from the smallest piece up to the whole concept. 
   check      one multiple choice question: { q, options (3 or 4), answer (index), why }
   deeper     OPTIONAL. Three folded levels under "Go deeper" (see 3d).
   math       OPTIONAL. Worked math, hidden behind a "Show the math" toggle (see 3c).
+  keys       OPTIONAL. 1 to 4 coloured boxes right under the idea lines, for facts that must not be missed:
+             [{ tone: 'main' | 'x' | 'z' | 'fix', h: 'title, up to 70 chars', t: 'text, up to 260 chars, *bold* ok' }]
+             x (red) is for bit flips, z (blue) for sign flips, matching the sketches. main and fix span the full width.
 
 CONNECTION RULE (most important)
 Every tab must say how it connects to its neighbours. buildsOn and leadsTo are mandatory, must be specific (name the idea, not "the previous tab"), and each must be at least 25 characters. The first tab of a section builds on the previous section's bridge. The last tab of a section leads into the section's bridge.
@@ -812,6 +823,8 @@ function validate(nb){
         (Array.isArray(t.math)?t.math:[]).forEach(m=>{need(m&&m.h&&m.h.length<=60,q+' math step title 1 to 60 chars');
           need(m&&Array.isArray(m.eq)&&m.eq.length>=1&&m.eq.length<=4&&m.eq.every(e=>e.length<=60),q+' math step eq: 1 to 4 lines, each at most 60 chars');
           need(!m||!m.why||m.why.length<=140,q+' math why over 140 chars');});}
+      if(t.keys!=null){need(Array.isArray(t.keys)&&t.keys.length>=1&&t.keys.length<=4,q+' keys: 1 to 4 boxes');
+        (Array.isArray(t.keys)?t.keys:[]).forEach(k=>need(k&&['main','x','z','fix'].includes(k.tone)&&k.h&&k.h.length<=70&&k.t&&k.t.length<=260,q+' key box needs tone main/x/z/fix, h up to 70, t up to 260 chars'));}
       if(t.deeper!=null){const dp=t.deeper;need(dp.l1||dp.l2||dp.l3,q+' deeper is empty');
         (dp.l1||[]).forEach((f,i)=>need(f&&f.t&&f.say&&Array.isArray(f.parts),q+' deeper l1 frame '+(i+1)+' needs t, parts, say'));
         [...(dp.l2||[]),...(dp.l3||[])].forEach((cc,i)=>need(cc&&Array.isArray(cc.wires)&&Array.isArray(cc.cols),q+' deeper circuit '+(i+1)+' needs wires and cols'));}
@@ -1811,6 +1824,7 @@ function viewSection(nb,si,ti){
   body.append(h('article',{class:'tab'},
     h('h2',null,'Tab '+(ti+1)+'. '+tab.title),
     h('ul',{class:'idea'},tab.idea.map(l=>h('li',{html:rich(l)}))),
+    tab.keys?h('div',{class:'keys'},tab.keys.map(k=>h('div',{class:'key '+k.tone},h('h4',null,k.h),h('p',{html:rich(k.t)})))):null,
     sk,
     w?h('div',null,h('div',{class:'blockhead'},h('h3',null,'Try it')),w):null,
     mathBlock(tab.math),
