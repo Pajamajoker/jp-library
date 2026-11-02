@@ -1,6 +1,70 @@
 (function () {
   const { T, B, A, L, K, O, E, H, D } = NB.sk;
 
+  /* ---------- pictures for the Shor code "go deeper" levels ---------- */
+  const SB = [40, 240, 440];
+  const sqx = q => SB[(q - 1) / 3 | 0] + 32 + 48 * ((q - 1) % 3);
+  /* nine qubits in three blocks. o.lab(q): text in the ring, o.col(q): its colour, o.y: top of the blocks,
+     o.checks: draw the 8 checks, o.z: lit bit checks (first qubit of the pair), o.x: lit sign checks (1, 2) */
+  function nine(o) {
+    o = o || {}; const y = o.y || 70, p = [];
+    SB.forEach((x, b) => p.push(B(x, y, 160, 60, { c: (o.blk && o.blk[b]) || 'ink' }), T(x + 6, y - 8, 'block ' + (b + 1), { size: 14 })));
+    for (let q = 1; q <= 9; q++) {
+      const c = (o.col && o.col(q)) || 'ink';
+      p.push(O(sqx(q), y + 30, 17, { c }), T(sqx(q), y + 37, o.lab ? o.lab(q) : String(q), { anchor: 'middle', size: 18, c }));
+    }
+    if (o.checks) {
+      [1, 2, 4, 5, 7, 8].forEach((q, i) => {
+        const on = (o.z || []).includes(q), cx = (sqx(q) + sqx(q + 1)) / 2, cy = y + 86 + (i % 2) * 24, c = on ? 'red' : 'ink';
+        p.push(E(cx, cy, 25, 11, { c }), T(cx, cy + 5, 'Z' + q + 'Z' + (q + 1), { anchor: 'middle', size: 12, c }));
+      });
+      [[0, 1], [1, 2]].forEach(([a, b], i) => {
+        const on = (o.x || []).includes(i + 1), x1 = SB[a] + 80, x2 = SB[b] + 80, ym = y - 44 + i * 14, c = on ? 'red' : 'blue';
+        p.push(K([[x1, y - 2], [x1 + 20, ym + 12], [(x1 + x2) / 2, ym], [x2 - 20, ym + 12], [x2, y - 2]], { c }),
+          T((x1 + x2) / 2, ym - 6, i ? 'X4…X9' : 'X1…X6', { anchor: 'middle', size: 13, c }));
+      });
+    }
+    return p;
+  }
+  /* the patterns of nine qubits, one row each, grouped by block. o.amp: row labels, o.hot: [row, col] cells drawn red */
+  function rows9(pats, o) {
+    o = o || {}; const p = [], X = j => 150 + 40 * j + 26 * ((j / 3) | 0);
+    for (let j = 0; j < 9; j++) p.push(T(X(j), 30, 'q' + (j + 1), { anchor: 'middle', size: 13 }));
+    pats.forEach((s, r) => {
+      const y = 74 + 62 * r;
+      p.push(T(110, y + 7, (o.amp || ['α', 'β'])[r], { anchor: 'end', size: 22, c: r ? 'red' : 'green' }));
+      [...s].forEach((d, j) => {
+        const c = (o.hot || []).some(([rr, cc]) => rr === r && cc === j) ? 'red' : 'ink';
+        p.push(O(X(j), y, 15, { c }), T(X(j), y + 6, d, { anchor: 'middle', size: 17, c }));
+      });
+    });
+    if (o.note) p.push(T(320, 74 + 62 * pats.length + 6, o.note, { anchor: 'middle', size: 17, c: 'green' }));
+    return p;
+  }
+  /* the patterns of one block, one row each, with optional ancilla bits. o.hot / o.ahot: [row, col] cells drawn red */
+  function rows(pats, o) {
+    o = o || {}; const p = [], qs = o.qs || ['q4', 'q5', 'q6'];
+    qs.forEach((n, j) => p.push(T(200 + 56 * j, 30, n, { anchor: 'middle', size: 15 })));
+    if (o.anc) (o.an || ['a1', 'a2']).forEach((n, j) => p.push(T(440 + 56 * j, 30, n, { anchor: 'middle', size: 15, c: 'blue' })));
+    pats.forEach((s, r) => {
+      const y = 72 + 64 * r;
+      p.push(T(130, y + 7, (o.amp || ['+1/√2', '±1/√2'])[r], { anchor: 'end', size: 18, c: (o.ampc && o.ampc[r]) || 'ink' }));
+      [...s].forEach((d, j) => {
+        const c = (o.hot || []).some(([rr, cc]) => rr === r && cc === j) ? 'red' : 'ink';
+        p.push(O(200 + 56 * j, y, 19, { c }), T(200 + 56 * j, y + 7, d, { anchor: 'middle', size: 20, c }));
+      });
+      if (o.anc) {
+        p.push(T(370, y + 7, '⊗', { anchor: 'middle', size: 20 }));
+        [...o.anc[r]].forEach((d, j) => {
+          const c = (o.ahot || []).some(([rr, cc]) => rr === r && cc === j) ? 'red' : 'blue';
+          p.push(O(440 + 56 * j, y, 19, { c }), T(440 + 56 * j, y + 7, d, { anchor: 'middle', size: 20, c }));
+        });
+      }
+    });
+    if (o.note) p.push(T(320, 72 + 64 * pats.length + 8, o.note, { anchor: 'middle', size: 17, c: o.notec || 'green' }));
+    return p;
+  }
+
   NB.register({
     id: 'qec-basics',
     title: 'QEC basics',
@@ -813,13 +877,49 @@
             ],
             takeaway: 'Shor code: a phase-flip code whose qubits are bit-flip triples.',
             widget: { type: 'shor', mode: 'build' },
-            math: [
-              { h: 'Layer 1: the phase-flip code', eq: ['α|0⟩ + β|1⟩  →  α|+++⟩ + β|−−−⟩'], why: 'Built in Tab 1 of this section: two CNOTs, then H on all three.' },
-              { h: 'Layer 2: the bit-flip rule', eq: ['|0⟩  →  |000⟩', '|1⟩  →  |111⟩'], why: 'Applied to each of the three qubits from layer 1, so each becomes a block.' },
-              { h: 'Apply it to |+⟩', eq: ['|+⟩ = (|0⟩ + |1⟩)/√2', '    → (|000⟩ + |111⟩)/√2'], why: 'A gate acts on each term on its own. The 1/√2 rides along.' },
-              { h: 'Apply it to |−⟩', eq: ['|−⟩ = (|0⟩ − |1⟩)/√2', '    → (|000⟩ − |111⟩)/√2'], why: 'The minus rides along too. It now sits on the whole block, not on one qubit.' },
-              { h: 'The full nine-qubit state', eq: ['α (000+111)(000+111)(000+111)', '+ β (000−111)(000−111)(000−111)'], why: 'Each bracket is one block of three qubits. The factors 1/√2 are left out to keep it short.' }
-            ],
+            deeper: {
+              l1: [
+                { t: 'Start', h: 210, parts: rows9(['000000000', '100000000'], { note: 'only q1 differs between the two patterns' }),
+                  eq: ['(α|0⟩ + β|1⟩) on q1,  |0⟩ on the other eight', '= α|000 000 000⟩ + β|100 000 000⟩'],
+                  say: 'All nine qubits start at 0 except q1, which holds the qubit to protect. Two patterns carry all the weight: α on 000 000 000 and β on 100 000 000.' },
+                { t: 'CNOT q1 → q4', h: 210, parts: rows9(['000000000', '100100000'], { hot: [[1, 3]], note: 'q4 flips only where q1 = 1' }),
+                  eq: ['CX q1→q4:   000 000 000  →  000 000 000', '            100 000 000  →  100 100 000'],
+                  say: 'A CNOT flips its target only in the patterns where its control is 1. α and β do not move. Only the labels change.' },
+                { t: 'CNOT q1 → q7', h: 210, parts: rows9(['000000000', '100100100'], { hot: [[1, 6]], note: 'q1, q4, q7 now agree: α|000⟩ + β|111⟩ on them' }),
+                  eq: ['α|000 000 000⟩ + β|100 100 100⟩'],
+                  say: 'A second CNOT does the same for q7. On q1, q4, q7 this is the bit-flip code. The other six qubits are still 0.' },
+                { t: 'H on q1, q4, q7', h: 210, parts: rows9(['+00+00+00', '−00−00−00'], { hot: [[0, 0], [0, 3], [0, 6], [1, 0], [1, 3], [1, 6]], note: 'layer 1 done: α|+++⟩ + β|−−−⟩ on q1, q4, q7' }),
+                  eq: ['H|0⟩ = |+⟩      H|1⟩ = |−⟩', 'α|+00 +00 +00⟩ + β|−00 −00 −00⟩'],
+                  say: 'H turns each 0 into + and each 1 into −. q1, q4, q7 now hold the phase-flip code. That is layer 1.' },
+                { t: 'Block 1 in bits', h: 225, parts: rows(['000', '100'], { qs: ['q1', 'q2', 'q3'], note: '+ or − on q1 means 0 and 1 together' }),
+                  eq: ['|+⟩ = (|0⟩ + |1⟩)/√2      |−⟩ = (|0⟩ − |1⟩)/√2', 'block 1 = (|000⟩ ± |100⟩)/√2'],
+                  say: 'Look inside block 1 before layer 2. q1 is + or −, which in bits is 0 and 1 together. q2 and q3 are 0. So the block is 000 ± 100: + in the α part, − in the β part.' },
+                { t: 'Layer 2 in block 1', h: 225, parts: rows(['000', '111'], { qs: ['q1', 'q2', 'q3'], hot: [[1, 1], [1, 2]], note: 'CX q1→q2 and CX q1→q3 copy q1' }),
+                  eq: ['CX q1→q2, CX q1→q3:   000 → 000,   100 → 110 → 111', '(|000⟩ ± |100⟩)/√2   →   (|000⟩ ± |111⟩)/√2'],
+                  say: 'Two CNOTs copy q1 into q2 and q3, pattern by pattern. 000 stays, 100 becomes 111. The ± stays on the second pattern: + gives 000 + 111, − gives 000 − 111.' },
+                { t: 'All three blocks', h: 210, parts: [...nine({ y: 40 }), T(320, 158, 'α (000+111)(000+111)(000+111)', { anchor: 'middle', size: 20, c: 'green' }), T(320, 190, '+ β (000−111)(000−111)(000−111)', { anchor: 'middle', size: 20, c: 'red' })],
+                  eq: ['block 2: CX q4→q5, CX q4→q6     block 3: CX q7→q8, CX q7→q9', '|ψ⟩ = [ α (000+111)³ + β (000−111)³ ] / 2√2'],
+                  say: 'The same two CNOTs inside blocks 2 and 3 finish the job. The three factors 1/√2 combine into 1/(2√2).' }
+              ],
+              l2: [
+                { title: 'The Shor encoder', wires: ['q1=ψ', 'q2=|0⟩', 'q3=|0⟩', 'q4=|0⟩', 'q5=|0⟩', 'q6=|0⟩', 'q7=|0⟩', 'q8=|0⟩', 'q9=|0⟩'],
+                  cols: ['| layer 1', 'CX q1 q4', 'CX q1 q7', 'H q1, H q4, H q7', '| layer 2', 'CX q1 q2, CX q4 q5, CX q7 q8', 'CX q1 q3, CX q4 q6, CX q7 q9'],
+                  notes: ['Read left to right, one line per qubit. A dot is a control. ⊕ is the target, flipped only where the control is 1.',
+                    'Layer 1: two CNOTs give α|000⟩ + β|111⟩ on q1, q4, q7. Three H gates turn it into α|+++⟩ + β|−−−⟩.',
+                    'Layer 2: in each block, two CNOTs copy the first qubit into the other two. Gates in the same column act at the same time.'] }
+              ],
+              l3: [
+                { title: 'On CZ-native hardware (block 1 shown)', wires: ['q1', 'q2=|0⟩', 'q3=|0⟩'],
+                  cols: ['H q2, H q3', 'CZ q1 q2', 'CZ q1 q3', 'H q2, H q3'],
+                  notes: ['Many superconducting chips offer CZ, not CNOT. A CNOT is H on the target, then CZ, then H again.',
+                    'Both CNOTs of block 1 are compiled at once: the H gates on q2 and q3 sit before and after the two CZs.'] },
+                { title: 'Preparing by measuring (what experiments do)', wires: ['q1=|0⟩', 'q2=|0⟩', 'q3=|0⟩', 'q4=|0⟩', 'q5=|0⟩', 'q6=|0⟩', 'q7=|0⟩', 'q8=|0⟩', 'q9=|0⟩'],
+                  cols: ['BOX q1 q9 measure / all 8 checks', '| fix', 'BOX q1 q9 apply / the fix'],
+                  notes: ['Encoding an unknown ψ is fragile: one faulty CNOT early on spreads errors to many qubits.',
+                    'So experiments start from a known state, measure the 8 checks with the circuits of the next tabs, and apply the fix. That leaves a known logical state, such as logical |0⟩ or |+⟩.',
+                    'Gates on the logical qubit are applied afterwards.'] }
+              ]
+            },
             check: {
               q: 'In the Shor code, what replaces each |+⟩ of the phase-flip code?',
               options: ['(|000⟩ + |111⟩)/√2', '|+++⟩', '|000⟩', '(|000⟩ − |111⟩)/√2'],
@@ -852,6 +952,48 @@
             ],
             takeaway: 'An X error is caught by the bit checks inside its own block.',
             widget: { type: 'shor', mode: 'x' },
+            deeper: {
+              l1: [
+                { t: 'Block 2', h: 225, parts: rows(['000', '111'], { note: '+ in the α part of the code, − in the β part' }),
+                  eq: ['block 2 = (|000⟩ ± |111⟩)/√2   on q4 q5 q6'],
+                  say: 'Only block 2 matters here. It has two patterns, 000 and 111. The ± is + in the α part of the code and − in the β part.' },
+                { t: 'X on q5', h: 225, parts: rows(['010', '101'], { hot: [[0, 1], [1, 1]], note: 'bit 5 flipped in both patterns, the ± untouched' }),
+                  eq: ['X5:   000 → 010,   111 → 101', '(|000⟩ ± |111⟩)/√2   →   (|010⟩ ± |101⟩)/√2'],
+                  say: 'X flips bit 5 in every pattern. The amplitudes and the ± do not change.' },
+                { t: 'Add two ancillas', h: 225, parts: rows(['010', '101'], { anc: ['00', '00'], hot: [[0, 1], [1, 1]], note: 'a1 will hold q4 ⊕ q5, a2 will hold q5 ⊕ q6' }),
+                  eq: ['(|010⟩ ± |101⟩)/√2  ⊗  |00⟩'],
+                  say: 'Two fresh ancillas start at 0. Joining them adds 00 to every pattern and changes no amplitude.' },
+                { t: 'a1 = q4 ⊕ q5', h: 225, parts: rows(['010', '101'], { anc: ['10', '10'], ahot: [[0, 0], [1, 0]], note: 'CX q4→a1, then CX q5→a1' }),
+                  eq: ['010:  q4 q5 = 0 1   →  one flip  →  a1 = 1', '101:  q4 q5 = 1 0   →  one flip  →  a1 = 1'],
+                  say: 'Each CNOT flips a1 where its control is 1. In both patterns exactly one of q4, q5 is 1, so a1 ends at 1.' },
+                { t: 'a2 = q5 ⊕ q6', h: 225, parts: rows(['010', '101'], { anc: ['11', '11'], ahot: [[0, 1], [1, 1]], note: 'CX q5→a2, then CX q6→a2' }),
+                  eq: ['010:  q5 q6 = 1 0   →  a2 = 1', '101:  q5 q6 = 0 1   →  a2 = 1'],
+                  say: 'The same for q5 and q6. a2 ends at 1 in both patterns.' },
+                { t: 'Read 11', h: 225, parts: rows(['010', '101'], { anc: ['11', '11'], note: 'the same tag in both patterns: nothing collapses' }),
+                  eq: ['(|010⟩ ± |101⟩)/√2  ⊗  |11⟩', 'syndrome 11   →   q5 is the odd one out'],
+                  say: 'Both patterns carry the same ancilla value, so reading 11 picks nothing between them. The ± survives. The answer 11 names q5.' },
+                { t: 'Fix', h: 225, parts: rows(['000', '111'], { hot: [[0, 1], [1, 1]], note: 'block 2 restored, ± intact' }),
+                  eq: ['X5:   010 → 000,   101 → 111', '(|000⟩ ± |111⟩)/√2'],
+                  say: 'One X on q5 flips bit 5 back in both patterns. Block 2 is exactly as before, and so is the whole code.' }
+              ],
+              l2: [
+                { title: 'Bit checks on block 2', wires: ['q4', 'q5', 'q6', 'a1=|0⟩', 'a2=|0⟩'],
+                  cols: ['Xe q5', '| check', 'CX q4 a1', 'CX q5 a1', 'CX q5 a2', 'CX q6 a2', 'M a1, M a2', '| fix', 'FIX X q5 11 a1 a2'],
+                  notes: ['The red X is the error, not a gate anyone applies.',
+                    'Four CNOTs copy the two parities into a1 and a2. Only the ancillas are measured. q4, q5, q6 never are.',
+                    'The two bits 11 decide the fix: X on q5. Blocks 1 and 3 run the same circuit, six bit checks in all.'] }
+              ],
+              l3: [
+                { title: 'CZ version of one check', wires: ['q4', 'q5', 'a1=|0⟩'],
+                  cols: ['H a1', 'CZ q4 a1', 'CZ q5 a1', 'H a1', 'M a1'],
+                  notes: ['A CNOT into the ancilla is H on the ancilla, CZ, H. For two CNOTs in a row the middle H gates cancel, leaving one H before and one after.',
+                    'This is how a bit check usually runs on chips whose native two-qubit gate is CZ.'] },
+                { title: 'One ancilla, used twice', wires: ['q4', 'q5', 'q6', 'a=|0⟩'],
+                  cols: ['CX q4 a', 'CX q5 a', 'M a', 'R a', 'CX q5 a', 'CX q6 a', 'M a'],
+                  notes: ['Measure the ancilla, reset it to 0, and reuse it for the next check. Fewer qubits, but each round takes longer.',
+                    'It needs fast mid-circuit measurement and reset, which many current chips support.'] }
+              ]
+            },
             check: {
               q: 'X hits qubit 7, the first qubit of block 3. Which checks fire?',
               options: ['Only Z7Z8', 'Z7Z8 and Z8Z9', 'Z4Z5', 'All six bit checks'],
@@ -883,6 +1025,53 @@
             ],
             takeaway: 'One Z anywhere in a block flips that block from + to −.',
             widget: { type: 'shor', mode: 'z' },
+            deeper: {
+              l1: [
+                { t: 'Block 2, + form', h: 175, parts: rows(['000', '111'], { amp: ['+1/√2', '+1/√2'] }),
+                  eq: ['block 2 = (|000⟩ + |111⟩)/√2'],
+                  say: 'Take block 2 in its + form, as in the α part of the code.' },
+                { t: 'Z on q5', h: 225, parts: rows(['000', '111'], { amp: ['+1/√2', '−1/√2'], ampc: ['ink', 'red'], hot: [[1, 1]], note: 'bit 5 is 1 only in 111, so only 111 gets the minus' }),
+                  eq: ['Z5|000⟩ = +|000⟩     (bit 5 is 0)', 'Z5|111⟩ = −|111⟩     (bit 5 is 1)', '(|000⟩ + |111⟩)/√2   →   (|000⟩ − |111⟩)/√2'],
+                  say: 'Z moves no bit. It puts a minus on each pattern where its bit is 1. Only 111 has a 1 at q5, so the block turns from + to −.' },
+                { t: 'Any qubit of the block', h: 225, parts: rows(['000', '111'], { amp: ['+1/√2', '−1/√2'], ampc: ['ink', 'red'], hot: [[1, 0], [1, 1], [1, 2]], note: '111 has a 1 everywhere: Z4, Z5 or Z6 give the same' }),
+                  eq: ['Z4, Z5 or Z6 on this block:   +  →  −'],
+                  say: '111 has a 1 in all three places, so a Z on q4, q5 or q6 gives exactly the same minus. Which qubit got hit does not matter.' },
+                { t: 'Two Zs cancel', h: 225, parts: rows(['000', '111'], { amp: ['+1/√2', '+1/√2'], note: 'Z4 Z5: 111 gets (−)(−) = +' }),
+                  eq: ['Z4Z5 |111⟩ = (−1)(−1) |111⟩ = +|111⟩', 'Z4Z5 (|000⟩ + |111⟩)/√2 = (|000⟩ + |111⟩)/√2'],
+                  say: 'Two Zs in one block cancel. So the fix may use any qubit of the block: error and fix together leave it unchanged.' },
+                { t: 'Bit checks are blind', h: 225, parts: rows(['000', '111'], { amp: ['+1/√2', '−1/√2'], ampc: ['ink', 'red'], anc: ['00', '00'], note: 'the CNOTs copy bits, and no bit moved' }),
+                  eq: ['000:   q4 ⊕ q5 = 0,   q5 ⊕ q6 = 0', '111:   q4 ⊕ q5 = 0,   q5 ⊕ q6 = 0'],
+                  say: 'The bit checks copy bits into the ancillas. The patterns are still 000 and 111, so both ancillas stay 0. The sign change is invisible to them.' },
+                { t: 'X4X5X6 reads the sign', h: 225, parts: rows(['111', '000'], { hot: [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2]], note: 'X on all three swaps the two patterns' }),
+                  eq: ['X4X5X6 (|000⟩ + |111⟩) = |111⟩ + |000⟩                →  +1', 'X4X5X6 (|000⟩ − |111⟩) = |111⟩ − |000⟩ = −(|000⟩ − |111⟩)  →  −1'],
+                  say: 'X on all three qubits swaps 000 and 111. With + nothing changes. With − the block picks up a minus. So X4X5X6 reads the sign of block 2. Measured alone it would wipe out the stored qubit, so the code only compares two blocks: next tab.' },
+                { t: 'Seen from layer 1', h: 150, parts: [O(150, 70, 26, { c: 'blue' }), T(150, 78, 'B', { anchor: 'middle', size: 24, c: 'blue' }), T(150, 126, 'qubit B of layer 1', { anchor: 'middle', size: 16 }),
+                    A(196, 70, 300, 70, { c: 'blue' }), T(248, 56, 'is', { anchor: 'middle', size: 16 }),
+                    B(320, 40, 280, 60, { c: 'blue' }), T(460, 78, 'block 2:  000 ± 111', { anchor: 'middle', size: 20 }), T(460, 126, 'q4  q5  q6', { anchor: 'middle', size: 16 })],
+                  eq: ['(|000⟩ + |111⟩)/√2   is   |+⟩ of B', '(|000⟩ − |111⟩)/√2   is   |−⟩ of B', 'Z on q4, q5 or q6   =   Z on B'],
+                  say: 'To layer 1, block 2 is the single qubit B. A Z anywhere in the block flips B between + and −. That is a Z on B, exactly what the phase-flip code catches.' }
+              ],
+              l2: [
+                { title: 'Bit checks after a Z error', wires: ['q4', 'q5', 'q6', 'a1=|0⟩', 'a2=|0⟩'],
+                  cols: ['Ze q5', 'CX q4 a1', 'CX q5 a1', 'CX q5 a2', 'CX q6 a2', 'M a1, M a2'],
+                  notes: ['The same circuit as the X-error tab. Here it reads 00: the CNOTs copy bits, and no bit changed.',
+                    'A Z on the control of a CNOT stays where it is. So the Z on q5 does not leak into the ancillas, and they never notice.'] },
+                { title: 'Reading one block sign (to see the idea)', wires: ['q4', 'q5', 'q6', 'a=|0⟩'],
+                  cols: ['Ze q5', 'H a', 'CX a q4', 'CX a q5', 'CX a q6', 'H a', 'M a'],
+                  notes: ['Now the ancilla is the control. H puts it in |+⟩, the CNOTs apply X4X5X6 in its 1 half only, and H plus a readout compares the two halves. The answer is the sign of block 2: −1 here.',
+                    'Measured alone this would destroy the stored qubit. The real code measures it only multiplied with another block, as in the next tab.'] }
+              ],
+              l3: [
+                { title: 'Basis-change version', wires: ['q4', 'q5', 'q6', 'a=|0⟩'],
+                  cols: ['H q4, H q5, H q6', 'CX q4 a', 'CX q5 a', 'CX q6 a', 'H q4, H q5, H q6', 'M a'],
+                  notes: ['H on the data turns signs into bits. A plain bit-parity check reads them, and H turns them back.',
+                    'Same answer as the ancilla-controlled version. This is the "apply H, check parity, apply H" of the X-type checks tab.'] },
+                { title: 'CZ version', wires: ['q4', 'q5', 'q6', 'a=|0⟩'],
+                  cols: ['H a', 'H q4, H q5, H q6', 'CZ a q4', 'CZ a q5', 'CZ a q6', 'H q4, H q5, H q6', 'H a', 'M a'],
+                  notes: ['Each CNOT from the ancilla onto a data qubit becomes H on that qubit, CZ, H. The H gates on the data gather before and after.',
+                    'This is the usual form on CZ-native chips.'] }
+              ]
+            },
             check: {
               q: 'Z hits qubit 6. What happens to block 2?',
               options: ['Its sign flips: + becomes −', 'Only qubit 6 changes, the block is fine', 'It becomes (|001⟩ + |110⟩)/√2', 'Nothing, Z is harmless here'],
@@ -914,12 +1103,47 @@
             ],
             takeaway: 'Nested codes: bit-flip inside, phase-flip across. 9 qubits.',
             widget: { type: 'shor', mode: 'checks' },
-            math: [
-              { h: 'Reading the sign of one block', eq: ['XXX (000 + 111) = 111 + 000  →  +1', 'XXX (000 − 111) = 111 − 000  →  −1'], why: 'X on all three swaps 000 and 111. With +, nothing changes. With −, the whole block picks up a minus.' },
-              { h: 'Comparing two blocks', eq: ['X1X2X3 · X4X5X6 = X1X2X3X4X5X6', 'same sign → +1,   different → −1'], why: 'Multiply the two block readings. It is X1X2 from Tab 2, with blocks in place of qubits.' },
-              { h: 'Z on qubit 5', eq: ['block 2:  + → −', 'X1…X6 = −1,   X4…X9 = −1'], why: 'Both comparisons that touch block 2 fire. Block 2 is the odd one out: apply Z to any one of its qubits.' },
-              { h: 'All eight checks', eq: ['inside:  Z1Z2 Z2Z3   Z4Z5 Z5Z6   Z7Z8 Z8Z9', 'across:  X1…X6   X4…X9'], why: '6 bit checks and 2 sign checks, for 9 qubits.' }
-            ],
+            deeper: {
+              l1: [
+                { t: 'The 8 checks', h: 215, parts: nine({ checks: true }),
+                  eq: ['bit checks:    Z1Z2  Z2Z3    Z4Z5  Z5Z6    Z7Z8  Z8Z9', 'sign checks:   X1X2X3X4X5X6    X4X5X6X7X8X9'],
+                  say: 'Six bit checks inside the blocks, two sign checks across them. On the clean code every one of them gives +1.' },
+                { t: 'Why a sign check spans six', h: 215, parts: nine({ checks: true, blk: ['blue', 'blue', 'ink'] }),
+                  eq: ['X1X2X3 reads the sign of block 1,   X4X5X6 the sign of block 2', 'X1X2X3 · X4X5X6 = X1X2X3X4X5X6', 'α part: (+)(+) = +1        β part: (−)(−) = +1'],
+                  say: 'Multiplying two block signs compares them. In the α part both blocks are +, in the β part both are −. The product is +1 either way, so reading it collapses nothing between α and β.' },
+                { t: 'Who notices what', h: 215, parts: nine({ checks: true, lab: q => q === 5 ? 'X' : String(q), col: q => q === 5 ? 'red' : 'ink', z: [4, 5] }),
+                  eq: ['X on qubit k:   flips the bit checks that contain k', 'Z on qubit k:   flips the sign checks that contain k', 'Y on qubit k:   both'],
+                  say: 'Flips one, reads the other. An X changes a bit, so the bit (Z) checks around it flip to −1. A Z changes a sign, so the sign (X) checks over its block flip.' },
+                { t: 'X8 and Z5 together', h: 215, parts: nine({ checks: true, lab: q => q === 8 ? 'X' : q === 5 ? 'Z' : String(q), col: q => q === 8 ? 'red' : q === 5 ? 'blue' : 'ink', z: [7, 8], x: [1, 2] }),
+                  eq: ['X8:   Z7Z8 = −1,  Z8Z9 = −1        →  X on q8', 'Z5:   X1…X6 = −1,  X4…X9 = −1      →  Z on any qubit of block 2'],
+                  say: 'Two errors of different kinds are both fixed in one round. The bit half and the sign half of the syndrome do not interfere.' },
+                { t: 'Two Zs fool it', h: 215, parts: nine({ checks: true, lab: q => q === 4 || q === 7 ? 'Z' : String(q), col: q => q === 4 || q === 7 ? 'blue' : 'ink', x: [1] }),
+                  eq: ['Z4, Z7:   X1…X6 = −1,   X4…X9 = +1', 'looks like block 1   →   fix: Z on block 1', 'all three blocks flipped:   α|+++⟩ + β|−−−⟩  →  α|−−−⟩ + β|+++⟩'],
+                  say: 'Blocks 2 and 3 both flipped, which looks exactly like block 1 alone. The fix flips block 1 too, and α and β end up swapped: a logical error.' },
+                { t: 'Distance 3', h: 215, parts: nine({ checks: true, lab: q => [1, 4, 7].includes(q) ? 'Z' : String(q), col: q => [1, 4, 7].includes(q) ? 'blue' : 'ink' }),
+                  eq: ['Z1 Z4 Z7:   every block flipped, every check +1', 'X1 X2 X3:   block 1 becomes 111 ± 000, every check +1'],
+                  say: 'Three errors can change the stored qubit with every check still at +1. No single error can, and any single error is caught. So the Shor code has distance 3.' }
+              ],
+              l2: [
+                { title: 'One full round of all 8 checks', wires: ['q1', 'q2', 'q3', 'a1=|0⟩', 'a2=|0⟩', 'q4', 'q5', 'q6', 'a3=|0⟩', 'a4=|0⟩', 'q7', 'q8', 'q9', 'a5=|0⟩', 'a6=|0⟩', 'b1=|0⟩', 'b2=|0⟩'],
+                  cols: ['| bit checks', 'CX q1 a1, CX q4 a3, CX q7 a5', 'CX q2 a1, CX q5 a3, CX q8 a5', 'CX q2 a2, CX q5 a4, CX q8 a6', 'CX q3 a2, CX q6 a4, CX q9 a6',
+                    'M a1, M a2, M a3, M a4, M a5, M a6', '| sign checks', 'H b1, H b2', 'CX b1 q1', 'CX b1 q2', 'CX b1 q3', 'CX b1 q4', 'CX b1 q5', 'CX b1 q6', 'CX b2 q4', 'CX b2 q5', 'CX b2 q6', 'CX b2 q7', 'CX b2 q8', 'CX b2 q9', 'H b1, H b2', 'M b1, M b2'],
+                  notes: ['Each block has its two bit-check ancillas just below it, so those CNOTs are short and the three blocks run in parallel: four columns for all six checks.',
+                    'b1 and b2 start in |+⟩ (the first H) and control CNOTs onto six data qubits each. That reads X1…X6 and X4…X9.',
+                    'All 8 ancillas are measured. The 8 answers are the syndrome, and a decoder turns them into the fix.'] }
+              ],
+              l3: [
+                { title: 'Bacon-Shor: the sign check from 2-qubit pieces', wires: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'g1=|0⟩', 'g2=|0⟩', 'g3=|0⟩'],
+                  cols: ['H g1, H g2, H g3', 'CX g1 q1', 'CX g1 q4', 'CX g2 q2', 'CX g2 q5', 'CX g3 q3', 'CX g3 q6', 'H g1, H g2, H g3', 'M g1, M g2, M g3'],
+                  notes: ['Measure X1X4, X2X5 and X3X6, then multiply: X1X4 · X2X5 · X3X6 = X1X2X3X4X5X6.',
+                    'Each ancilla touches only 2 qubits, which is easier to wire and spreads fewer errors. Each 2-qubit answer on its own comes out random. Only the product is fixed.',
+                    'It also leaves single bit checks like Z1Z2 random, so the bit side is handled with products too. This is the Bacon-Shor code, used in trapped-ion experiments.'] },
+                { title: 'A sign check on CZ hardware', wires: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'b1=|0⟩'],
+                  cols: ['H b1', 'H q1, H q2, H q3, H q4, H q5, H q6', 'CZ b1 q1', 'CZ b1 q2', 'CZ b1 q3', 'CZ b1 q4', 'CZ b1 q5', 'CZ b1 q6', 'H q1, H q2, H q3, H q4, H q5, H q6', 'H b1', 'M b1'],
+                  notes: ['Each CNOT from b1 becomes H on the data qubit, CZ, H. The H gates gather before and after.',
+                    'Same answer, X1…X6, built from the gate the chip actually has.'] }
+              ]
+            },
             check: {
               q: 'In the 9-qubit code, which checks catch X errors?',
               options: [

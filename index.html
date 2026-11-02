@@ -192,6 +192,14 @@ select{font:inherit;font-size:13.5px;padding:5px 8px;border-radius:7px;border:1p
 .msteps .mn{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;font-weight:500;background:var(--soft);flex:none}
 .msteps .meq{font-family:var(--f-mono);font-size:14px;line-height:1.75;margin:8px 0 6px;padding:8px 12px;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:pre}
 .msteps .mwhy{margin:0;font-size:14px;color:var(--muted)}
+.deepwrap{display:flex;flex-direction:column;gap:10px}
+.deep .deep-b{padding:0 16px 16px}
+.deep .meq{font-family:var(--f-mono);font-size:14px;line-height:1.75;margin:0 0 10px;padding:8px 12px;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:pre}
+.deep .circ{overflow-x:auto;padding:8px 6px}
+.deep .circ svg{display:block;max-width:none;max-height:none}
+.deep .cfill{fill:var(--sk-paper);stroke:none}
+.deep h4{margin:16px 0 8px;font-size:15px}.deep .deep-item:first-child h4{margin-top:4px}
+.deep-notes{margin:10px 0 0;padding-left:22px;font-size:14.5px;color:var(--muted)}.deep-notes li{margin:4px 0}
 
 .nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding-top:6px}
 .bridge{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -509,6 +517,7 @@ Tab = one small step. Tabs run from the smallest piece up to the whole concept. 
   takeaway   one line, at most 80 characters. The thing to remember.
   widget     one interactive visual (see 5), or null
   check      one multiple choice question: { q, options (3 or 4), answer (index), why }
+  deeper     OPTIONAL. Three folded levels under "Go deeper" (see 3d).
   math       OPTIONAL. Worked math, hidden behind a "Show the math" toggle (see 3c).
 
 CONNECTION RULE (most important)
@@ -528,6 +537,20 @@ The idea lines say WHAT happens and WHY, in words, with at most one or two numbe
   eq   1 to 4 lines of plain Unicode math, each at most 60 characters. Shown in monospace, so spaces line things up.
   why  optional, one sentence, at most 140 characters: why this step is allowed or what to notice.
 1 to 7 steps. One move per step, no skipped lines. Each step reads on its own: a reader may open the panel only to check one line.
+
+----------------------------------------------------------------
+3d. GO DEEPER (optional field: deeper)
+For tabs whose mechanism deserves it. Each level stays folded until the reader opens it.
+  deeper: {
+    l1: [ { t: 'short step title', h: 220, parts: [sketch parts, canvas 640 x h], eq: ['math line', ...], say: 'what happens and why' }, ... ],
+    l2: [ { title, wires: ['q1=ψ', 'a1=|0⟩'], cols: [...], notes: ['...'] } ],
+    l3: [ same as l2: equivalent circuits used in practice ]
+  }
+  Level 1: How it works, exactly. Track every pattern (and ancilla bit) through each step, one move per frame.
+  Level 2: The circuit. The exact gates, in order.
+  Level 3: Circuits used in practice. Equivalent forms: CZ compilation, ancilla reuse, smaller checks, and so on.
+  Circuit columns: '| label' (divider), 'H q1, H q4' (gates in parallel), 'CX c t', 'CZ a b', 'M a1', 'R a1' (reset),
+    'Xe q5' (an error, drawn red), 'FIX X q5 11 a1 a2' (classically controlled fix), 'BOX q1 q9 text / second line'.
 
 ----------------------------------------------------------------
 3. WRITING RULES
@@ -789,6 +812,9 @@ function validate(nb){
         (Array.isArray(t.math)?t.math:[]).forEach(m=>{need(m&&m.h&&m.h.length<=60,q+' math step title 1 to 60 chars');
           need(m&&Array.isArray(m.eq)&&m.eq.length>=1&&m.eq.length<=4&&m.eq.every(e=>e.length<=60),q+' math step eq: 1 to 4 lines, each at most 60 chars');
           need(!m||!m.why||m.why.length<=140,q+' math why over 140 chars');});}
+      if(t.deeper!=null){const dp=t.deeper;need(dp.l1||dp.l2||dp.l3,q+' deeper is empty');
+        (dp.l1||[]).forEach((f,i)=>need(f&&f.t&&f.say&&Array.isArray(f.parts),q+' deeper l1 frame '+(i+1)+' needs t, parts, say'));
+        [...(dp.l2||[]),...(dp.l3||[])].forEach((cc,i)=>need(cc&&Array.isArray(cc.wires)&&Array.isArray(cc.cols),q+' deeper circuit '+(i+1)+' needs wires and cols'));}
       if(bad.test(JSON.stringify(t)))E.push(q+' contains an em or en dash');
     });
   });
@@ -1755,6 +1781,7 @@ function viewSection(nb,si,ti){
     sk,
     w?h('div',null,h('div',{class:'blockhead'},h('h3',null,'Try it')),w):null,
     mathBlock(tab.math),
+    deeperBlock(tab.deeper,tid),
     chk,
     h('section',{class:'fits'},h('div',{class:'blockhead'},h('h3',null,'Where this fits')),
       h('div',{class:'conn'+(isLast?' one':'')},
@@ -1793,6 +1820,84 @@ function mathBlock(m){
       h('div',{class:'meq'},(s.eq||[]).join('\n')),
       s.why?h('p',{class:'mwhy',html:rich(s.why)}):null))));
 }
+/* ================= GO DEEPER: three optional, folded levels under a tab =================
+   deeper: { l1: [frames], l2: [circuits], l3: [circuits] }
+   frame:   { t: 'short title', h: canvas height, parts: [sketch parts], eq: ['math line'], say: 'what happens' }
+   circuit: { title, wires: ['q1=ψ', 'a1=|0⟩'], cols: ['| label', 'H q1, H q4', 'CX q1 q4', 'CZ a b', 'M a1', 'R a1',
+             'Xe q5' (error), 'FIX X q5 11 a1 a2', 'BOX q1 q9 text'], notes: ['...'] } */
+function drawParts(g,parts,seed){const r=rng(hash(seed));
+  const P=(d,col,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:col,'stroke-width':w,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op});if(dash)e.setAttribute('stroke-dasharray','7 6');g.append(e);};
+  parts.forEach(p=>{const col=colr(p.c);switch(p.t){
+    case'text':{const size=p.size||22,el=sv('text',{x:p.x,y:p.y,'font-size':size,fill:col,'text-anchor':p.anchor||'start'});
+      String(p.s).split('\n').forEach((ln,k)=>el.append(sv('tspan',{x:p.x,dy:k?size*1.05:0},ln)));g.append(el);break;}
+    case'box':{const pts=[[p.x,p.y],[p.x+p.w,p.y],[p.x+p.w,p.y+p.h],[p.x,p.y+p.h],[p.x+1,p.y-1]];
+      P(polyD(polyPts(r,pts,1.3,true)),col,2.4,1,p.dash);P(polyD(polyPts(r,pts,1.6,true)),col,1.1,.5,p.dash);break;}
+    case'line':P(polyD(polyPts(r,p.pts,1.2,true)),col,2.4,1,p.dash);break;
+    case'curve':P(smoothD(p.pts),col,2.4,1,p.dash);break;
+    case'ellipse':P(smoothD(ellPts(r,p.x,p.y,p.rx,p.ry)),col,p.w||2.4,1,p.dash);break;
+    case'arrow':{const dx=p.x2-p.x1,dy=p.y2-p.y1,Ln=Math.hypot(dx,dy)||1,ux=dx/Ln,uy=dy/Ln,hl=Math.min(14,Ln*.4),c1=Math.cos(.5),s1=Math.sin(.5);
+      const hx1=p.x2-hl*(ux*c1-uy*s1),hy1=p.y2-hl*(uy*c1+ux*s1),hx2=p.x2-hl*(ux*c1+uy*s1),hy2=p.y2-hl*(uy*c1-ux*s1);
+      P(polyD(seg(r,p.x1,p.y1,p.x2,p.y2,1.1,true))+'M'+f1(hx1)+' '+f1(hy1)+'L'+f1(p.x2)+' '+f1(p.y2)+'L'+f1(hx2)+' '+f1(hy2),col,2.4,1,p.dash);break;}
+    case'dot':g.append(sv('circle',{cx:p.x,cy:p.y,r:p.r||5,fill:col}));break;
+    case'hl':g.append(sv('rect',{x:p.x,y:p.y,width:p.w,height:p.h,rx:5,fill:colr(p.c||'yellow'),opacity:.45}));break;}});}
+
+function framesBlock(frames,key){
+  let k=0;const dots=h('div',{class:'snap-dots'},frames.map((f,i)=>h('span',null,(i+1)+' '+f.t)));
+  const say=h('div',{class:'snap-say'}),svg=sv('svg',{viewBox:'0 0 640 220',role:'img','aria-label':'Step picture'});
+  const pad=h('div',{class:'sketch snap-sk'},svg),eq=h('div',{class:'meq'});
+  const back=h('button',{class:'btn',type:'button',onclick:()=>go(k-1)},'← Back'),next=h('button',{class:'btn pri',type:'button',onclick:()=>go(k+1)},'Next →');
+  function go(n){k=Math.max(0,Math.min(frames.length-1,n));const f=frames[k];
+    svg.textContent='';svg.setAttribute('viewBox','0 0 640 '+(f.h||220));const g=sv('g',{class:'pop'});svg.append(g);drawParts(g,f.parts||[],key+'-'+k);
+    eq.textContent=(f.eq||[]).join('\n');eq.hidden=!(f.eq&&f.eq.length);
+    say.textContent='';say.append(h('p',{html:rich(f.say||'')}));
+    [...dots.children].forEach((d,i)=>{d.className=i===k?'on':i<k?'done':'';});back.disabled=k===0;next.disabled=k===frames.length-1;}
+  go(0);return h('div',null,dots,say,pad,eq,h('div',{class:'btns'},back,next));
+}
+
+function circuitSVG(c,key){
+  const wires=c.wires.map(s=>{const i=s.indexOf('=');return i<0?{n:s,l:''}:{n:s.slice(0,i),l:s.slice(i+1)};}),ix={};wires.forEach((w,i)=>ix[w.n]=i);
+  const cols=c.cols.map(s=>s.trim()),X0=96,TOP=46,DY=36;
+  const wOf=s=>s[0]==='|'?26:/^BOX /.test(s)?Math.max(120,s.split(' ').slice(3).join(' ').length*7.5+30):50;
+  const ws=cols.map(wOf),xs=[];let acc=X0;ws.forEach(w=>{xs.push(acc+w/2);acc+=w;});
+  const Wd=acc+24,Hd=TOP+DY*(wires.length-1)+30;
+  const svg=sv('svg',{viewBox:'0 0 '+Wd+' '+Hd,width:Wd,height:Hd,role:'img','aria-label':c.title||'Quantum circuit'}),r=rng(hash(key));svg.style.width=(Wd*1.25)+'px';svg.style.height=(Hd*1.25)+'px';
+  const P=(d,col,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:colr(col),'stroke-width':w||2,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op==null?1:op});if(dash)e.setAttribute('stroke-dasharray','5 5');svg.append(e);return e;};
+  const ln=(x1,y1,x2,y2,col,w,op,dash)=>P(polyD(polyPts(r,[[x1,y1],[x2,y2]],.9,false)),col,w,op,dash);
+  const bx=(x,y,w,hh,col)=>{svg.append(sv('rect',{x,y,width:w,height:hh,rx:3,class:'cfill'}));P(polyD(polyPts(r,[[x,y],[x+w,y],[x+w,y+hh],[x,y+hh],[x+1,y-1]],1,true)),col,2);};
+  const tx=(x,y,s,size,col,anchor,op)=>{const e=sv('text',{x,y,'font-size':size,fill:colr(col),'text-anchor':anchor||'middle',opacity:op==null?1:op},s);svg.append(e);return e;};
+  const Y=n=>{if(!(n in ix))throw new Error('circuit wire '+n);return TOP+DY*ix[n];};
+  wires.forEach((w,i)=>{const y=TOP+DY*i;ln(X0-10,y,Wd-14,y,'ink',1.5,.7);tx(8,y+5,w.n,14,'ink','start',.65);if(w.l)tx(X0-14,y+6,w.l,17,'ink','end');});
+  cols.forEach((s,ci)=>{const x=xs[ci];
+    if(s[0]==='|'){ln(x,TOP-26,x,Hd-8,'blue',1.4,.6,true);const lab=s.slice(1).trim();if(lab)tx(x+5,TOP-30,lab,14,'blue','start');return;}
+    if(/^BOX /.test(s)){const [,a,b,...rest]=s.split(' '),y1=Y(a)-16,y2=Y(b)+16,w=ws[ci]-14;bx(x-w/2,y1,w,y2-y1,'blue');
+      const words=rest.join(' ').split(' / ');words.forEach((wd,i)=>tx(x,(y1+y2)/2+6+(i-(words.length-1)/2)*18,wd,15,'blue'));return;}
+    s.split(',').map(t=>t.trim().split(/\s+/)).forEach(([op,...a])=>{
+      if(op==='CX'||op==='CZ'){const yc=Y(a[0]),yt=Y(a[1]);ln(x,yc,x,yt,'ink',2);svg.append(sv('circle',{cx:x,cy:yc,r:4.5,fill:colr('ink')}));
+        if(op==='CZ')svg.append(sv('circle',{cx:x,cy:yt,r:4.5,fill:colr('ink')}));
+        else{svg.append(sv('circle',{cx:x,cy:yt,r:11,class:'cfill'}));P(smoothD(ellPts(r,x,yt,11,11)),'ink',2);ln(x-11,yt,x+11,yt,'ink',1.8);ln(x,yt-11,x,yt+11,'ink',1.8);}return;}
+      if(op==='M'){const y=Y(a[0]);bx(x-14,y-13,28,26,'ink');P('M'+(x-9)+' '+(y+6)+'Q'+x+' '+(y-9)+' '+(x+9)+' '+(y+6),'ink',1.6);ln(x,y+6,x+7,y-7,'ink',1.6);return;}
+      if(op==='R'){const y=Y(a[0]);bx(x-17,y-13,34,26,'ink');tx(x,y+5,'|0⟩',13,'ink');return;}
+      if(op==='FIX'){const [g,q,cond,...ms]=a,y=Y(q),ys=ms.map(Y),yf=ys.reduce((m,v)=>Math.abs(v-y)>Math.abs(m-y)?v:m,ys[0]);
+        ln(x-2,y,x-2,yf,'green',1.3,.9,true);ln(x+2,y,x+2,yf,'green',1.3,.9,true);ys.forEach(v=>svg.append(sv('circle',{cx:x,cy:v,r:3.5,fill:colr('green')})));
+        bx(x-13,y-13,26,26,'green');tx(x,y+6,g,17,'green');tx(x,y-18,'if '+cond,12,'green');return;}
+      const m=op.match(/^([A-Z])(e?)$/);if(m){const y=Y(a[0]),col=m[2]?'red':'ink';bx(x-13,y-13,26,26,col);tx(x,y+6,m[1],17,col);if(m[2])tx(x,y-18,'error',11,'red');return;}
+      throw new Error('circuit op '+op);});});
+  return svg;
+}
+function circuitBlock(list,key){return h('div',null,list.map((c,i)=>h('div',{class:'deep-item'},
+  c.title?h('h4',null,c.title):null,h('div',{class:'sketch circ'},circuitSVG(c,key+'-'+i)),
+  c.notes&&c.notes.length?h('ol',{class:'deep-notes'},c.notes.map(n=>h('li',{html:rich(n)}))):null)));}
+
+function deeperBlock(d,tid){
+  if(!d)return null;
+  const lv=(n,title,sub,make)=>{const det=h('details',{class:'math deep'},h('summary',null,h('span',{class:'mt'},'Level '+n+' · '+title),h('span',null,sub)));
+    let built=false;det.addEventListener('toggle',()=>{if(det.open&&!built){built=true;det.append(h('div',{class:'deep-b'},make()));}});return det;};
+  return h('div',{class:'deepwrap'},h('div',{class:'blockhead'},h('h3',null,'Go deeper')),
+    d.l1?lv(1,'How it works, exactly','every pattern, step by step',()=>framesBlock(d.l1,tid+'-l1')):null,
+    d.l2?lv(2,'The circuit','gates in order',()=>circuitBlock(d.l2,tid+'-l2')):null,
+    d.l3?lv(3,'Circuits used in practice','equivalent forms',()=>circuitBlock(d.l3,tid+'-l3')):null);
+}
+
 function checkBlock(c){
   let locked=false;const why=h('div',{class:'why',hidden:true},c.why);
   const opts=c.options.map((t,i)=>h('button',{class:'opt',type:'button',onclick:()=>{
