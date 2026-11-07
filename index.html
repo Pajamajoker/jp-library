@@ -202,7 +202,7 @@ select{font:inherit;font-size:13.5px;padding:5px 8px;border-radius:7px;border:1p
 .msteps .mwhy{margin:0;font-size:14px;color:var(--muted)}
 .deepwrap{display:flex;flex-direction:column;gap:10px}
 .deep .deep-b{padding:0 16px 16px}
-.deep .meq{font-family:var(--f-mono);font-size:14px;line-height:1.75;margin:0 0 10px;padding:8px 12px;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:pre}
+.deep .meq,.snapw .meq{font-family:var(--f-mono);font-size:14px;line-height:1.75;margin:0 0 10px;padding:8px 12px;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:pre}
 .deep .circ{overflow-x:auto;padding:8px 6px}
 .deep .circ svg{display:block;max-width:none;max-height:none}
 .deep .cfill{fill:var(--sk-paper);stroke:none}
@@ -635,6 +635,11 @@ Rules
       ancilla tags, reading the ancilla (nature spins a wheel), the snap and the fix. Use it where measurement-as-correction is taught.
   { type: 'shor', mode: 'build' | 'x' | 'z' | 'checks' }   hand-drawn Shor code. build: step through one qubit becoming 3 blocks of 3.
       x / z: tap qubits to place X or Z errors and read the bit checks. checks: X, Z or Y errors, all 8 checks, the fix and a verdict.
+  { type: 'frames', frames: [ { t, h, parts, eq, say } ] }   a hand-drawn stepper with Back and Next. Frames are written like
+      Go deeper level 1 frames (see 3d): one move per frame, parts on a 640 x h canvas.
+  { type: 'pauli', codes: ['bit3', 'phase3', 'shor9'], decode: true, logical: true, say: ['intro line', ...] }
+      tap qubits to place X, Z or Y errors. Each check row rings its clashes with the error and shows +1 or −1.
+      decode: a minimum-weight decoder and a verdict (fixed, fixed up to a check, or a logical error). logical: buttons that apply X_L and Z_L.
   null   no widget
 
 If you need a widget that does not exist, use 'steps' and say so in a one-line comment at the top of the file so the library owner can add it.
@@ -792,7 +797,7 @@ const NB=window.NB={list:[],loadErrors:[],
     D:(x,y,o)=>Object.assign({t:'dot',x,y},o)
   }};
 const PART_TYPES=['text','box','arrow','line','curve','ellipse','hl','dot'];
-const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap','shor'];
+const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap','shor','frames','pauli'];
 function validate(nb){
   const E=[];const bad=/[—–]/;
   const need=(c,m)=>{if(!c)E.push(m);};
@@ -1526,6 +1531,139 @@ W.shor=function(o){
     draw();(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
     return root;
   }
+};
+
+/* step-through hand-drawn sketch: { type: 'frames', frames: [ { t, h, parts, eq, say } ] } (same frames as Go deeper level 1) */
+W.frames=function(o){return h('div',{class:'w snapw'},framesBlock(o.frames||[],'fr'+hash(JSON.stringify(o.frames||[]).slice(0,400))));};
+
+/* Pauli playground: place X, Z, Y errors on a small code. Each check row marks where its letters clash with the error
+   (two different letters on one qubit, neither of them I). An odd number of clashes makes the check read −1.
+   options: codes: ['bit3','phase3','shor9'], decode: true (run a decoder, apply its fix), logical: true (apply logical operators), say: [intro lines] */
+W.pauli=function(o){
+  o=Object.assign({codes:['bit3']},o||{});
+  const CODES={
+    bit3:{n:3,name:'Bit-flip code',checks:['ZZI','IZZ'],lx:'XXX',lz:'ZII'},
+    phase3:{n:3,name:'Phase-flip code',checks:['XXI','IXX'],lx:'ZZZ',lz:'XII'},
+    shor9:{n:9,name:'Shor code',checks:['ZZIIIIIII','IZZIIIIII','IIIZZIIII','IIIIZZIII','IIIIIIZZI','IIIIIIIZZ','XXXXXXIII','IIIXXXXXX'],lx:'ZIIZIIZII',lz:'XXXIIIIII'}};
+  const root=h('div',{class:'w snapw'}),say=h('div',{class:'snap-say'});
+  const svg=sv('svg',{viewBox:'0 0 640 300',role:'img','aria-label':'Checks and errors, qubit by qubit',style:'max-height:none'}),pad=h('div',{class:'sketch snap-sk'},svg);
+  const B=(t,fn,cls)=>h('button',{class:'btn'+(cls?' '+cls:''),type:'button',onclick:fn},t);
+  const P=(d,col,w,op,dash)=>{const e=sv('path',{d,fill:'none',stroke:colr(col),'stroke-width':w||2.4,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op==null?1:op});if(dash)e.setAttribute('stroke-dasharray','5 6');return e;};
+  const rbox=(key,x,y,w,hh,col,op)=>{const r=rng(hash(key)),pts=[[x,y],[x+w,y],[x+w,y+hh],[x,y+hh],[x+1,y-1]];return [P(polyD(polyPts(r,pts,1.3,true)),col,2.2,op),P(polyD(polyPts(r,pts,1.6,true)),col,1,(op==null?1:op)*.5)];};
+  const rline=(key,pts,col,w,op,dash)=>P(polyD(polyPts(rng(hash(key)),pts,1,true)),col,w,op,dash);
+  const ring=(key,cx,cy,r,col,w,op)=>P(smoothD(ellPts(rng(hash(key)),cx,cy,r,r)),col,w,op);
+  const txt=(x,y,s,size,col,op,anchor)=>sv('text',{x,y,'font-size':size,fill:colr(col),opacity:op==null?1:op,'text-anchor':anchor||'middle'},s);
+  const hi=(x,y,w,hh)=>sv('rect',{x,y,width:w,height:hh,rx:6,fill:colr('yellow'),opacity:.35});
+  let seen=new Set(),now=new Set();
+  const G=key=>{const g=sv('g',{});if(!seen.has(key))g.setAttribute('class','pop');now.add(key);svg.append(g);return(...els)=>{els.flat().forEach(e=>e&&g.append(e));return g;};};
+
+  let ck=o.codes[0],C=CODES[ck],n=C.n,ex=[],ez=[],tool='X',msg='',cand=null,fix=null,fixQ=[];
+  const reset=()=>{C=CODES[ck];n=C.n;ex=Array(n).fill(0);ez=Array(n).fill(0);msg='';cand=null;fix=null;fixQ=[];};reset();
+  /* letters and vectors */
+  const let_=(x,z)=>x&&z?'Y':x?'X':z?'Z':'I';
+  const vec=s=>({x:[...s].map(c=>c==='X'||c==='Y'?1:0),z:[...s].map(c=>c==='Z'||c==='Y'?1:0)});
+  const str=v=>v.x.map((x,i)=>let_(x,v.z[i])).join('');
+  const cur=()=>({x:ex.slice(),z:ez.slice()});
+  const nm=s=>{const q=[...s].map((c,i)=>[c,i+1]).filter(a=>a[0]!=='I');if(!q.length)return'nothing';
+    if(q.length>3&&q.every(a=>a[0]===q[0][0])&&q[q.length-1][1]-q[0][1]===q.length-1)return q[0][0]+q[0][1]+'…'+q[0][0]+q[q.length-1][1];
+    return q.map(a=>a[0]+a[1]).join('');};
+  const clashAt=(c,e)=>c!=='I'&&e!=='I'&&c!==e;
+  const clashes=(chk,v)=>[...chk].map((c,i)=>clashAt(c,let_(v.x[i],v.z[i]))?i:-1).filter(i=>i>=0);
+  const syn=v=>C.checks.map(c=>clashes(c,v).length%2);
+  const synS=s=>'('+s.map(f=>f?'−':'+').join(', ')+')';
+  const weight=v=>v.x.filter((x,i)=>x||v.z[i]).length;
+  const mul=(a,b)=>({x:a.x.map((x,i)=>x^b.x[i]),z:a.z.map((z,i)=>z^b.z[i])});
+  const anti=(a,b)=>a.x.reduce((s,x,i)=>s^(x&b.z[i])^(a.z[i]&b.x[i]),0);
+  const anyErr=()=>ex.some(Boolean)||ez.some(Boolean);
+  /* decoder: all errors of the smallest weight that give this syndrome */
+  function decode(){const s=syn(cur()).join(''),found=[];
+    const L=['X','Z','Y'],rec=(start,left,acc)=>{if(!left){const v=vec(acc.join(''));if(syn(v).join('')===s)found.push(v);return;}
+      for(let q=start;q<n;q++)for(const l of L){const a=acc.slice();a[q]=l;rec(q+1,left-1,a);}};
+    for(let w=0;w<=3;w++){rec(0,w,Array(n).fill('I'));if(found.length)return{w,list:found};}
+    return{w:-1,list:[]};}
+  /* what error times fix is: nothing (a check), or a logical operator */
+  function judge(r){const lx=vec(C.lx),lz=vec(C.lz),hasX=anti(r,lz),hasZ=anti(r,lx);
+    if(!hasX&&!hasZ)return weight(r)?'check':'none';return hasX&&hasZ?'logical Y':hasX?'logical X':'logical Z';}
+
+  /* the state in words */
+  function stateText(){
+    if(C.n===3){const ph=ck==='phase3',a0=ph?ez:ex,a1=a0.map(b=>1-b),sg=ph?ex:ez,neg=p=>p.reduce((s,b,i)=>s^(b&sg[i]),0);
+      const ch=b=>ph?(b?'−':'+'):String(b),s0=neg(a0),s1=neg(a1),rel=s0^s1;
+      return'α|'+a0.map(ch).join('')+'⟩ '+(rel?'−':'+')+' β|'+a1.map(ch).join('')+'⟩';}
+    let sa=0,sb=0;const bl=[0,1,2].map(b=>{const i=3*b;let bits=ex.slice(i,i+3),f=ez[i]^ez[i+1]^ez[i+2];
+      if(bits.every(Boolean)){bits=[0,0,0];sb^=f?0:1;sa^=f?1:0;}return{f};});
+    /* α has [+] blocks, β has [−] blocks; a flipped block swaps them; XXX on a [−] block gives a minus */
+    const A=bl.map(b=>b.f?'[−]':'[+]').join(''),Bt=bl.map(b=>b.f?'[+]':'[−]').join('');
+    return'α '+A+' '+((sa^sb)?'−':'+')+' β '+Bt;}
+  function blockBits(b){const i=3*b,bits=ex.slice(i,i+3),f=ez[i]^ez[i+1]^ez[i+2],all=bits.every(Boolean);
+    const s=(all?[0,0,0]:bits).join(''),inv=(all?[1,1,1]:bits.map(x=>1-x)).join('');return'('+s+' '+(f?'∓':'±')+' '+inv+')';}
+
+  /* layout */
+  const QX=q=>n===3?[230,330,430][q]:[30,235,440][(q/3)|0]+48+42*(q%3);
+  function draw(){svg.textContent='';now=new Set();
+    const words=msg?msg.split(' '):[],lines=[''];words.forEach(w=>{if((lines[lines.length-1]+' '+w).length>80)lines.push(w);else lines[lines.length-1]+=(lines[lines.length-1]?' ':'')+w;});
+    const nl=msg?Math.min(4,lines.length):0,mh=nl?16+nl*21:0;
+    const rows=C.checks.length,QY=n===3?92:106,y0=n===3?160:198,ry=n===3?34:25,my=y0+rows*ry+2,H=my+mh+12;
+    svg.setAttribute('viewBox','0 0 640 '+H);
+    const top=G('st'+ck);top(txt(320,30,stateText(),n===3?24:21,'ink'),txt(320,50,C.name+(anyErr()?'':': no error'),14,'ink',.6));
+    const g=G('grid'+ck);
+    if(n===9)[0,1,2].forEach(b=>{const bx=[30,235,440][b];g(rbox('blk'+b,bx+14,QY-30,170,70,'ink',.7),txt(bx+20,QY-36,'block '+(b+1),13,'ink',.6,'start'),txt(bx+99,QY+60,blockBits(b),15,(ez[3*b]^ez[3*b+1]^ez[3*b+2])?'blue':'ink',.85));});
+    for(let q=0;q<n;q++){const x=QX(q),e=let_(ex[q],ez[q]),col=e==='X'?'red':e==='Z'?'blue':e==='Y'?'pink':'ink',r=n===3?24:17;
+      g(rline('col'+ck+q,[[x,y0-ry+14],[x,y0+rows*ry-18]],'ink',1,.14,true));
+      g(ring('q'+ck+q,x,QY,r,col,e!=='I'?3:2.2),txt(x,QY+(n===3?8:7),e==='I'?'':e,n===3?24:19,col),txt(x,QY+r+(n===3?20:16),'q'+(q+1),n===3?14:12,'ink',.6));
+      if(fixQ.includes(q))g(ring('fx'+q,x,QY,r+6,'green',2.6),n===3?txt(x,QY-r-10,'fix',13,'green'):null);
+      const hit=sv('circle',{cx:x,cy:QY,r:r+5,fill:'transparent',style:'cursor:pointer'});hit.addEventListener('click',()=>tap(q));g(hit);}
+    const v=cur(),s=syn(v),rr=G('rows'+ck);
+    rr(txt(10,y0-ry+8,'check',13,'ink',.55,'start'),txt(632,y0-ry+8,'clashes → reads',13,'ink',.55,'end'));
+    C.checks.forEach((c,k)=>{const y=y0+k*ry,cl=clashes(c,v),on=cl.length%2===1,col=on?'red':'ink';
+      rr(txt(10,y+5,nm(c),n===3?16:13,'blue',1,'start'));
+      [...c].forEach((l,q)=>{const x=QX(q),hit=cl.includes(q);
+        if(l==='I')rr(txt(x,y+5,'·',16,'ink',.3));
+        else rr(txt(x,y+(n===3?6:5),l,n===3?19:14,hit?'red':'ink',hit?1:.85));
+        if(hit)rr(ring('cl'+k+q,x,y,n===3?13:10,'red',2));});
+      rr(txt(632,y+5,cl.length+' → '+(on?'−1':'+1'),n===3?17:14,col,on?1:.6,'end'));});
+    if(msg){const m=G('msg'+msg.length+msg.charCodeAt(msg.length-1));m(hi(14,my,612,mh));
+      lines.slice(0,4).forEach((l,i)=>m(txt(320,my+24+i*21,l,15,'ink')));}
+    seen=now;
+    tools.forEach((b,i)=>b.className='btn'+(tool===['X','Z','Y'][i]?' pri':''));
+    codeBs.forEach((b,i)=>b.className='btn'+(o.codes[i]===ck?' pri':''));
+    if(decB){decB.disabled=!anyErr()&&!s.some(Boolean)?true:false;fixB.disabled=!cand;}
+  }
+  function tapMsg(q){const v=cur(),e=let_(ex[q],ez[q]),s=syn(v);
+    const fired=C.checks.filter((c,k)=>s[k]).map(nm),quiet=C.checks.filter((c,k)=>!s[k]).map(nm);
+    if(!anyErr())return'No error left. Every check reads +1.';
+    let t=(e==='I'?'Removed the error on q'+(q+1)+'. ':e+' on q'+(q+1)+'. ');
+    if(!fired.length)return t+'No check fires: each has an even number of clashes. The checks cannot see this error.';
+    return t+fired.join(', ')+(fired.length>1?' fire':' fires')+' (odd clashes).'+(quiet.length?' '+quiet.join(', ')+' '+(quiet.length>1?'stay':'stays')+' +1.':'')+' Syndrome '+synS(s)+'.';}
+  function tap(q){if(tool==='X'||tool==='Y')ex[q]^=1;if(tool==='Z'||tool==='Y')ez[q]^=1;cand=null;fixQ=[];msg=tapMsg(q);draw();}
+  const tools=['X','Z','Y'].map(t=>B(t+' error',()=>{tool=t;draw();}));
+  const codeBs=o.codes.length>1?o.codes.map(c=>B(CODES[c].name,()=>{ck=c;reset();draw();})):[];
+  let decB=null,fixB=null;
+  if(o.decode){
+    decB=B('Run the decoder',()=>{const s=syn(cur()),d=decode();cand=d.list[0]||null;fixQ=[];
+      const list=d.list.slice(0,4).map(v=>nm(str(v))).join(', ');
+      msg='Syndrome '+synS(s)+'. Smallest errors with it ('+d.w+(d.w===1?' flip':' flips')+'): '+(d.w?list:'none')+(d.list.length>4?', …':'')+'. Fix: '+(cand&&d.w?nm(str(cand)):'do nothing')+'.';draw();},'pri');
+    fixB=B('Apply the fix',()=>{if(!cand)return;const e0=cur(),r=mul(e0,cand),j=judge(r);
+      fixQ=cand.x.map((x,i)=>x||cand.z[i]?i:-1).filter(i=>i>=0);ex=r.x.slice();ez=r.z.slice();const fn=nm(str(cand));cand=null;
+      msg=j==='none'?'✓ Fixed: the fix was exactly the error, and two of the same cancel.':
+        j==='check'?'✓ Fixed. Error × fix = '+nm(str(r))+', which is a check: on code states it does nothing. The fix did not have to match the error.':
+        '✗ Logical error. Error × fix = '+nm(str(r))+': no check fires, yet it is a '+j+'. The decoder guessed wrong.';
+      if(j==='none'||j==='check'){ex.fill(0);ez.fill(0);}else msg+=' (fix was '+fn+')';draw();},'pri');}
+  const logBs=[];
+  if(o.logical){[['X','lx'],['Z','lz']].forEach(([t,k])=>{const b=B('',()=>{const v=vec(C[k]);ex=ex.map((x,i)=>x^v.x[i]);ez=ez.map((z,i)=>z^v.z[i]);cand=null;fixQ=[];
+      const counts=C.checks.map(c=>[nm(c),clashes(c,v).length]).filter(a=>a[1]).map(a=>a[0]+': '+a[1]).join(', ')||'none';
+      msg='Logical '+t+' = '+nm(C[k])+'. Clashes: '+counts+'. All even, so no check fires. Yet '+(t==='X'?'α and β swapped places.':'β picked up a minus.');draw();});
+    logBs.push([b,t,k]);});}
+  const syncLog=()=>logBs.forEach(([b,t,k])=>{b.textContent='Logical '+t+': '+nm(C[k]);});
+  const clr=B('Clear',()=>{reset();draw();});
+  const intro=o.say||['Pick X, Z or Y, then tap qubits to place errors. Each check row puts a red ring where its letter clashes with the error.','A clash is two different letters on one qubit, like Z against X. Odd number of clashes: the check reads −1.'];
+  say.textContent='';intro.forEach(s=>say.append(h('p',null,s)));
+  const row1=codeBs.length?h('div',{class:'btns'},...codeBs):null;
+  const row2=h('div',{class:'btns'},...tools,...(decB?[decB,fixB]:[]),...logBs.map(a=>a[0]),clr);
+  root.append(say,row1,pad,row2);
+  const redraw=()=>{syncLog();draw();};codeBs.forEach((b,i)=>b.addEventListener('click',syncLog));
+  redraw();(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
+  return root;
 };
 
 /* surface code patch, distance 3 (rotated layout): 9 data qubits, 8 checks */

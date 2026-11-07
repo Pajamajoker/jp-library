@@ -65,6 +65,28 @@
     return p;
   }
 
+  /* three qubits in a row for the Section 4 step sketches. labs: text in each ring, o.col(j): its colour */
+  const Q3 = [220, 320, 420];
+  function trio(y, labs, o) {
+    o = o || {}; const p = [];
+    Q3.forEach((x, j) => {
+      const c = (o.col && o.col(j)) || 'ink';
+      p.push(O(x, y, 22, { c }), T(x, y + 8, labs[j], { anchor: 'middle', size: 22, c }), T(x, y + 42, 'q' + (j + 1), { anchor: 'middle', size: 13 }));
+    });
+    return p;
+  }
+  /* one Pauli string under the three qubits. o.lab: name on the left, I drawn as a dot, o.hot: columns ringed red, o.c: letter colour */
+  function lets(y, s, o) {
+    o = o || {}; const p = [];
+    if (o.lab) p.push(T(80, y + 7, o.lab, { anchor: 'middle', size: 20, c: o.labc || 'blue' }));
+    [...s].forEach((l, j) => {
+      const hot = (o.hot || []).includes(j), c = hot ? 'red' : (o.c || 'ink');
+      p.push(T(Q3[j], y + 7, l === 'I' ? '·' : l, { anchor: 'middle', size: 22, c }));
+      if (hot) p.push(O(Q3[j], y, 15, { c: 'red' }));
+    });
+    return p;
+  }
+
   NB.register({
     id: 'qec-basics',
     title: 'QEC basics',
@@ -223,6 +245,27 @@
           {
             "term": "Stabilizer",
             "means": "A check the code state always passes. A code is defined by its list of stabilizers."
+          },
+          {
+            "term": "Clash",
+            "aka": ["clashes"],
+            "means": "Two different Paulis on the same qubit, like Z against X. Each clash flips the sign once: ZX = −XZ.",
+            "more": "A check reads −1 on an error when they clash an odd number of times, +1 when even."
+          },
+          {
+            "term": "Stabilizer group",
+            "aka": ["generators", "generator"],
+            "means": "All products of the checks. Only a few generators are measured, the rest follow: Z1Z2 · Z2Z3 = Z1Z3."
+          },
+          {
+            "term": "Logical operator",
+            "means": "Clashes evenly with every check, so no check fires, yet it changes the stored data. Not a product of checks.",
+            "more": "Bit-flip code: X1X2X3 and Z1. Shor: Z1Z4Z7 and X1X2X3. The distance is the size of the smallest one."
+          },
+          {
+            "term": "[[n, k, d]]",
+            "hover": false,
+            "means": "A code on n physical qubits storing k logical qubits with distance d. Shor is [[9, 1, 3]]."
           },
           {
             "term": "Syndrome",
@@ -1182,17 +1225,17 @@
       /* ============================ SECTION 4 ============================ */
       {
         title: 'Stabilizers, syndromes, decoders',
-        intro: 'One language for every code: a list of checks, the pattern of answers they give, and a rule that turns the pattern into a fix.',
+        intro: 'One language for every code: checks written as strings of Paulis, one rule for when a check fires, the syndrome, logical operators, and the decoder.',
         bridge: 'You now have the whole loop: checks, syndrome, decoder, correction. Section 5 applies it to the surface code, where the loop also repeats in time.',
         tabs: [
           {
             title: 'Stabilizers',
             buildsOn: 'Section 2 wrote checks as Z1Z2 = ±1. Those, the X-type checks of Section 3, and the Shor checks are all checks of one kind.',
-            leadsTo: 'Next, the pattern of answers that a set of stabilizers gives: the syndrome.',
+            leadsTo: 'Next, the one rule that says when an error turns a check from +1 into −1: counting clashes.',
             idea: [
-              'A *stabilizer* is a check whose answer is +1 on every valid code state.',
-              'Bit-flip code: Z1Z2, Z2Z3 (read bits, catch X). Phase-flip code: X1X2, X2X3 (read signs, catch Z).',
-              'Measuring a stabilizer reveals errors but not α and β, because all code states give the same answer.'
+              'A *stabilizer* is a check that answers +1 on every valid code state. You have met them: Z1Z2, Z2Z3, X1X2, and the Shor checks.',
+              'It is a string of Paulis, one letter per qubit. Z1Z2 means Z on q1, Z on q2, and I (do nothing) on q3.',
+              'Every code state gives +1, so the readout cannot tell code states apart. It learns about errors, never about α and β.'
             ],
             sketch: [
               B(30, 40, 250, 100), T(155, 76, 'code states', { anchor: 'middle', size: 28, c: 'blue' }), T(155, 118, 'α|000⟩+β|111⟩', { anchor: 'middle', size: 28 }),
@@ -1206,12 +1249,32 @@
             ],
             takeaway: 'A stabilizer says +1 on every code state. A change means an error.',
             widget: {
-              type: 'steps',
-              steps: [
-                { say: 'Z1Z2 asks: do q1 and q2 match?', show: 'Z1Z2 |000⟩ = +1 · |000⟩' },
-                { say: 'The same for the other code pattern.', show: 'Z1Z2 |111⟩ = +1 · |111⟩' },
-                { say: 'So any mix of the two patterns also gives +1, and nothing collapses.', show: 'Z1Z2 (α|000⟩ + β|111⟩) = +1 · (α|000⟩ + β|111⟩)' },
-                { say: 'After a bit flip on q1 the answer changes.', show: 'Z1Z2 (X1 |000⟩) = −1 · (X1 |000⟩)' }
+              type: 'frames',
+              frames: [
+                { t: 'A string of letters', h: 230, parts: [...trio(60, ['', '', '']), ...lets(150, 'ZZI', { lab: 'Z1Z2' }),
+                    T(320, 210, 'Z on q1, Z on q2, nothing (I) on q3', { anchor: 'middle', size: 19, c: 'blue' })],
+                  say: 'A check is a string of Paulis, one letter per qubit. Z1Z2 is Z on q1 and q2, and I, do nothing, on q3.' },
+                { t: 'On 000', h: 230, parts: [...trio(60, ['0', '0', '0']), ...lets(140, 'ZZI', { lab: 'Z1Z2' }),
+                    T(220, 196, '+1', { anchor: 'middle', size: 21, c: 'green' }), T(320, 196, '+1', { anchor: 'middle', size: 21, c: 'green' }), T(420, 196, '·', { anchor: 'middle', size: 21 }),
+                    T(500, 196, '(+1)(+1) = +1', { size: 19, c: 'green' })],
+                  eq: ['Z|0⟩ = +|0⟩      Z|1⟩ = −|1⟩', 'Z1Z2 |000⟩ = (+1)(+1) |000⟩ = +1 · |000⟩'],
+                  say: 'Z leaves a 0 alone and puts a minus on a 1. Here q1 and q2 are both 0: no minus at all, so the answer is +1.' },
+                { t: 'On 111', h: 230, parts: [...trio(60, ['1', '1', '1']), ...lets(140, 'ZZI', { lab: 'Z1Z2' }),
+                    T(220, 196, '−1', { anchor: 'middle', size: 21, c: 'red' }), T(320, 196, '−1', { anchor: 'middle', size: 21, c: 'red' }), T(420, 196, '·', { anchor: 'middle', size: 21 }),
+                    T(500, 196, '(−1)(−1) = +1', { size: 19, c: 'green' })],
+                  eq: ['Z1Z2 |111⟩ = (−1)(−1) |111⟩ = +1 · |111⟩'],
+                  say: 'Two minus signs cancel. Matching bits always give +1, whether both are 0 or both are 1.' },
+                { t: 'On a code state', h: 230, parts: [
+                    T(320, 50, 'Z1Z2 ( α|000⟩ + β|111⟩ )', { anchor: 'middle', size: 24 }), A(320, 66, 320, 96),
+                    T(320, 126, '= α (+1)|000⟩ + β (+1)|111⟩', { anchor: 'middle', size: 24 }),
+                    H(150, 160, 340, 44, { c: 'yellow' }), T(320, 190, '= +1 · ( α|000⟩ + β|111⟩ )', { anchor: 'middle', size: 24, c: 'green' })],
+                  say: 'Both patterns answer +1, so the whole state answers +1 for sure. Nothing collapses, α and β are untouched. That is what makes it a stabilizer.' },
+                { t: 'After an X on q1', h: 260, parts: [...trio(60, ['1', '0', '0'], { col: j => j ? 'ink' : 'red' }), ...lets(140, 'ZZI', { lab: 'Z1Z2' }),
+                    T(220, 196, '−1', { anchor: 'middle', size: 21, c: 'red' }), T(320, 196, '+1', { anchor: 'middle', size: 21, c: 'green' }),
+                    T(500, 196, '(−1)(+1) = −1', { size: 19, c: 'red' }),
+                    T(320, 240, 'the other pattern, 011, gives (+1)(−1) = −1 too', { anchor: 'middle', size: 18 })],
+                  eq: ['Z1Z2 ( α|100⟩ + β|011⟩ ) = −1 · ( α|100⟩ + β|011⟩ )'],
+                  say: 'After X on q1 the patterns are 100 and 011. Both answer −1. Same answer for both, so α and β stay hidden, but the error is seen.' }
               ]
             },
             check: {
@@ -1227,13 +1290,112 @@
             }
           },
           {
-            title: 'The syndrome',
-            buildsOn: 'Stabilizers each give +1 or −1. A code has several, and we read all of them.',
-            leadsTo: 'Next, the rule that maps a syndrome to a correction: the decoder.',
+            title: 'Clashes: when a check sees an error',
+            buildsOn: 'The stabilizer tab showed Z1Z2 answering +1 on code states and −1 after an X on q1. This tab gives the rule behind that −1.',
+            leadsTo: 'Next, checks can be multiplied, and the product is again a check.',
             idea: [
-              'The list of answers from all stabilizers is the *syndrome*.',
-              'It says which checks fired. Which qubit broke has to be worked out from it.',
-              'Different errors can give the same syndrome. Codes are built so likely errors give different ones.'
+              'Z and X on the same qubit *clash*: ZX = −XZ, the order flips the sign. Z with Z, or X with X, do not clash. I clashes with nothing.',
+              'Line up a check and an error, qubit by qubit, and count the clashes. Odd: the check reads −1. Even: it stays +1.',
+              'This is *flips one, reads the other* as a rule. Z checks clash with X errors, X checks clash with Z errors.',
+              'Two clashes cancel. That is why X1…X6 cannot see Z4Z5, and why big errors can slip past.'
+            ],
+            keys: [
+              { tone: 'main', h: 'The one rule for every check', t: 'Line up the check and the error qubit by qubit. A *clash* is Z against X, or Y against either. *Odd* number of clashes: the check reads −1. *Even*: it reads +1.' }
+            ],
+            sketch: [
+              T(30, 56, 'check', { size: 22, c: 'blue' }), T(220, 56, 'Z', { anchor: 'middle', size: 28 }), T(320, 56, 'Z', { anchor: 'middle', size: 28 }), T(420, 56, '·', { anchor: 'middle', size: 28 }),
+              T(30, 106, 'error', { size: 22, c: 'red' }), T(220, 106, 'X', { anchor: 'middle', size: 28, c: 'red' }), T(320, 106, '·', { anchor: 'middle', size: 28 }), T(420, 106, '·', { anchor: 'middle', size: 28 }),
+              E(220, 80, 26, 46, { c: 'red' }), T(540, 86, '1 clash → −1', { anchor: 'middle', size: 24, c: 'red' }),
+              T(30, 180, 'X1…X6  against  Z4 Z5', { size: 24, c: 'blue' }),
+              T(30, 220, 'a clash on q4, a clash on q5', { size: 22 }), T(560, 220, '2 → +1', { anchor: 'middle', size: 24, c: 'green' }),
+              H(24, 254, 590, 44, { c: 'yellow' }), T(320, 284, 'odd: the check fires.   even: it stays +1', { anchor: 'middle', size: 24 })
+            ],
+            takeaway: 'Odd number of clashes: the check fires. Even: it stays +1.',
+            widget: {
+              type: 'pauli', codes: ['bit3', 'phase3', 'shor9'],
+              say: ['Pick X, Z or Y and tap qubits. Every check row rings its clashes with the error in red and counts them.', 'Try Z on the bit-flip code: no Z letters clash with Z, so nothing fires. Then try the phase-flip code, and two Zs in one Shor block.']
+            },
+            math: [
+              { h: 'X first, then Z', eq: ['X|0⟩ = |1⟩,  then Z|1⟩ = −|1⟩', 'so  ZX |0⟩ = −|1⟩'] },
+              { h: 'Z first, then X', eq: ['Z|0⟩ = |0⟩,  then X|0⟩ = |1⟩', 'so  XZ |0⟩ = +|1⟩'], why: 'The same happens on |1⟩. So ZX = −XZ: swapping the order costs one minus sign. That is a clash.' },
+              { h: 'Move a check past an error', eq: ['S E = (−1)^k E S', 'k = number of clashes'], why: 'Slide S past E one qubit at a time. Each clash adds one minus sign, every other qubit adds none.' },
+              { h: 'Read the damaged state', eq: ['S ( E|ψ⟩ ) = (−1)^k E S|ψ⟩', '           = (−1)^k E|ψ⟩'], why: 'S|ψ⟩ = |ψ⟩ for a code state. So the damaged state answers (−1)^k: −1 if k is odd, +1 if even.' }
+            ],
+            check: {
+              q: 'The check is X1…X6 (X on qubits 1 to 6). The error is Z on q4 and Z on q5. What does the check read?',
+              options: ['−1, it sees two Z errors', '+1, the two clashes cancel', '−1, any Z is seen', 'It depends on α and β'],
+              answer: 1,
+              why: 'Two clashes give (−1)(−1) = +1. It does not need to see it: Z4Z5 is itself a check, so it does nothing to the code state.'
+            }
+          },
+          {
+            title: 'Checks multiply',
+            buildsOn: 'Clash counting says what one check sees. Checks can also be combined: the product of two checks is again a check.',
+            leadsTo: 'Next, read all the generators at once. The list of their answers is the syndrome.',
+            idea: [
+              'Multiply two checks qubit by qubit. Z·Z = I and X·X = I, so Z1Z2 · Z2Z3 = Z1Z3, another check of the bit-flip code.',
+              'All products of the checks form the *stabilizer group*. We measure only a few *generators*. The rest follow from them.',
+              'Shor: X1X2X3 · X4X5X6 = X1…X6. One block alone is not a check, since it reads a sign that carries α and β. Two blocks are.',
+              'n qubits with n − k generators store k logical qubits. Bit-flip code: 3 qubits, 2 checks, 1 logical. Shor: 9, 8, 1.'
+            ],
+            sketch: [
+              T(30, 60, 'Z1Z2', { size: 30, c: 'blue' }), T(130, 60, '·', { size: 30 }), T(160, 60, 'Z2Z3', { size: 30, c: 'blue' }), T(270, 60, '=', { size: 30 }), T(310, 60, 'Z1Z3', { size: 30, c: 'green' }),
+              T(30, 124, 'q1: Z·I = Z     q2: Z·Z = I     q3: I·Z = Z', { size: 21 }),
+              H(24, 158, 560, 44, { c: 'yellow' }), T(32, 188, 'a product of checks is a check too', { size: 26 }),
+              T(30, 252, 'X1X2X3 · X4X5X6 = X1…X6', { size: 24, c: 'blue' }),
+              T(30, 296, 'one block alone: not a check.  two blocks: a check', { size: 20 })
+            ],
+            takeaway: 'Products of checks are checks. Measure only a few generators.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'Two checks', h: 220, parts: [...trio(56, ['0', '0', '0']), ...lets(130, 'ZZI', { lab: 'Z1Z2' }), ...lets(180, 'IZZ', { lab: 'Z2Z3' })],
+                  say: 'The bit-flip code has two checks. What if you apply one and then the other? The result is one string of letters again.' },
+                { t: 'Column by column', h: 250, parts: [...trio(56, ['0', '0', '0']), ...lets(130, 'ZZI', { lab: 'Z1Z2' }), ...lets(172, 'IZZ', { lab: 'Z2Z3' }),
+                    L([[40, 196], [600, 196]]), ...lets(226, 'ZIZ', { lab: '= Z1Z3', labc: 'green', c: 'green' })],
+                  eq: ['Z·Z = I     X·X = I     I·P = P', 'Z1Z2 · Z2Z3 = Z1 (Z2·Z2) Z3 = Z1Z3'],
+                  say: 'Multiply qubit by qubit. On q2 there are two Zs, and Z twice does nothing. What is left is Z on q1 and Z on q3.' },
+                { t: 'Still +1 on code states', h: 220, parts: [...trio(56, ['1', '1', '1']), ...lets(130, 'ZIZ', { lab: 'Z1Z3', labc: 'green' }),
+                    T(220, 184, '−1', { anchor: 'middle', size: 21, c: 'red' }), T(420, 184, '−1', { anchor: 'middle', size: 21, c: 'red' }), T(500, 184, '(−1)(−1) = +1', { size: 19, c: 'green' })],
+                  eq: ['Z1Z3 = Z1Z2 · Z2Z3  →  (+1)(+1) = +1'],
+                  say: 'Each factor answers +1 on a code state, so the product does too. Z1Z3 asks: do q1 and q3 match? We never had to measure it.' },
+                { t: 'The group', h: 220, parts: [
+                    B(40, 40, 110, 56), T(95, 76, 'I', { anchor: 'middle', size: 24 }), B(180, 40, 120, 56, { c: 'blue' }), T(240, 76, 'Z1Z2', { anchor: 'middle', size: 22, c: 'blue' }),
+                    B(330, 40, 120, 56, { c: 'blue' }), T(390, 76, 'Z2Z3', { anchor: 'middle', size: 22, c: 'blue' }), B(480, 40, 120, 56), T(540, 76, 'Z1Z3', { anchor: 'middle', size: 22 }),
+                    T(320, 140, 'stabilizer group: 4 members', { anchor: 'middle', size: 21 }),
+                    H(150, 162, 340, 40, { c: 'yellow' }), T(320, 190, 'generators: Z1Z2 and Z2Z3', { anchor: 'middle', size: 21, c: 'blue' })],
+                  say: 'All products of the checks form the stabilizer group. Two generators make four members. Hardware measures only the generators, and the rest follow.' },
+                { t: 'Shor: blocks multiply', h: 240, parts: [
+                    T(40, 50, 'X1X2X3', { size: 20, c: 'red' }), T(220, 50, 'XXX  ···  ···', { size: 22 }), T(500, 50, 'not a check', { size: 18, c: 'red' }),
+                    T(40, 100, 'X4X5X6', { size: 20, c: 'red' }), T(220, 100, '···  XXX  ···', { size: 22 }), T(500, 100, 'not a check', { size: 18, c: 'red' }),
+                    L([[40, 124], [600, 124]]),
+                    T(40, 160, 'X1…X6', { size: 20, c: 'green' }), T(220, 160, 'XXX  XXX  ···', { size: 22, c: 'green' }), T(500, 160, 'a check', { size: 18, c: 'green' }),
+                    T(320, 214, 'one block reads a sign · two blocks read same or different', { anchor: 'middle', size: 17 })],
+                  say: 'X1X2X3 alone reads the sign of block 1. That sign carries α and β, so it is not a check. Two blocks together only ask same or different. That is a check.' },
+                { t: 'Counting', h: 220, parts: [
+                    T(320, 50, 'k = n − (number of generators)', { anchor: 'middle', size: 24, c: 'blue' }),
+                    T(120, 110, 'bit-flip:', { size: 21 }), T(260, 110, '3 qubits − 2 checks = 1 logical', { size: 21 }),
+                    T(120, 156, 'Shor:', { size: 21 }), T(260, 156, '9 qubits − 8 checks = 1 logical', { size: 21 }),
+                    H(110, 178, 420, 36, { c: 'yellow' }), T(320, 204, 'each check uses up one qubit', { anchor: 'middle', size: 20 })],
+                  say: 'Every independent check pins down one qubit worth of freedom. What is left over stores the data: k logical qubits from n physical ones.' }
+              ]
+            },
+            check: {
+              q: 'What is Z1Z2 · Z2Z3?',
+              options: ['Z1Z2Z3', 'Z1Z3', 'Z2', 'I'],
+              answer: 1,
+              why: 'Z2 · Z2 = I, so only Z1 and Z3 remain.'
+            }
+          },
+          {
+            title: 'The syndrome',
+            buildsOn: 'The checks-multiply tab picked a few generators to measure. Each one answers by clash counting, and together they give a list.',
+            leadsTo: 'Next, errors whose syndrome is all +1 that still change the data: logical operators.',
+            idea: [
+              'Read every generator. The list of answers, like (−, +), is the *syndrome*.',
+              'Each answer comes from clash counting against one check. So the syndrome depends only on the error, never on α and β.',
+              'Bit-flip code: 2 checks give 4 syndromes, one for no error and one for each single X. Every single X is told apart.',
+              'Different errors can share a syndrome: X2 and X1X3 both give (−, −). Codes are built so likely errors differ.'
             ],
             sketch: [
               T(40, 50, 'error', { size: 28, c: 'red' }), T(220, 50, 'Z1Z2', { size: 28, c: 'blue' }), T(340, 50, 'Z2Z3', { size: 28, c: 'blue' }),
@@ -1247,14 +1409,8 @@
             ],
             takeaway: 'Syndrome = the pattern of fired checks.',
             widget: {
-              type: 'steps',
-              steps: [
-                { say: 'No error: both checks say +1.', show: 'syndrome (+, +)' },
-                { say: 'X on q1 flips only the pair (q1, q2).', show: 'syndrome (−, +)' },
-                { say: 'X on q2 flips both pairs.', show: 'syndrome (−, −)' },
-                { say: 'X on q3 flips only the pair (q2, q3).', show: 'syndrome (+, −)' },
-                { say: 'Four cases, four different patterns. Every single flip is identified.', show: '' }
-              ]
+              type: 'pauli', codes: ['bit3', 'shor9'],
+              say: ['Put one X on each qubit in turn and read the syndrome under the rows. Every single X gives its own pattern.', 'Then try X1 and X3 together: the same syndrome as X2. On the Shor code, find the 8 checks and watch which ones fire.']
             },
             check: {
               q: 'The syndrome is (−, −). Which single X error explains it?',
@@ -1264,13 +1420,48 @@
             }
           },
           {
+            title: 'Logical operators: invisible but harmful',
+            buildsOn: 'The syndrome tab showed different errors can share a syndrome. Some errors share the all-quiet syndrome of no error at all.',
+            leadsTo: 'Next, the decoder: syndrome in, fix out, and how a wrong guess becomes a logical error.',
+            idea: [
+              'Some errors clash an even number of times with every check. All checks stay +1, so nothing is seen.',
+              'If such an error is not itself a product of checks, it still changes the data. It is a *logical operator*.',
+              'Bit-flip code: X1X2X3 swaps α and β. Z1 alone puts a minus on β. So against Z its distance is only 1.',
+              'The *distance* d is the weight of the smallest logical operator. Codes are written [[n, k, d]]. Shor is [[9, 1, 3]].'
+            ],
+            sketch: [
+              T(320, 40, 'X1X2X3 on α|000⟩ + β|111⟩', { anchor: 'middle', size: 24 }),
+              O(220, 94, 22, { c: 'red' }), T(220, 102, 'X', { anchor: 'middle', size: 22, c: 'red' }),
+              O(320, 94, 22, { c: 'red' }), T(320, 102, 'X', { anchor: 'middle', size: 22, c: 'red' }),
+              O(420, 94, 22, { c: 'red' }), T(420, 102, 'X', { anchor: 'middle', size: 22, c: 'red' }),
+              T(320, 166, 'Z1Z2: 2 clashes → +1      Z2Z3: 2 clashes → +1', { anchor: 'middle', size: 21 }),
+              H(110, 192, 420, 44, { c: 'yellow' }), T(320, 222, 'α|111⟩ + β|000⟩: α and β swapped', { anchor: 'middle', size: 22, c: 'red' }),
+              T(320, 290, 'no check fired, yet the data changed', { anchor: 'middle', size: 23, c: 'green' })
+            ],
+            takeaway: 'Logical operator: no check fires, yet the data changes.',
+            keys: [
+              { tone: 'main', h: 'Distance, in stabilizer language', t: 'A *logical operator* commutes with every check (even clashes everywhere) but is not a product of checks. The *distance* d is the fewest qubits any logical operator touches. Shor: d = 3, for example Z1Z4Z7.' }
+            ],
+            widget: {
+              type: 'pauli', codes: ['bit3', 'shor9'], logical: true,
+              say: ['Apply a logical operator and watch the rows: every check counts an even number of clashes, so all stay +1. Then read the state on top.', 'On the bit-flip code, also try a single Z: one qubit is enough to break it. On the Shor code, the smallest logical touches 3 qubits.']
+            },
+            check: {
+              q: 'Which of these is a logical operator of the Shor code?',
+              options: ['Z4Z5', 'Z1Z4Z7', 'X5', 'X1…X6'],
+              answer: 1,
+              why: 'Z1Z4Z7 flips the sign of every block, so no comparison of blocks changes, yet α and β swap. Z4Z5 and X1…X6 are checks. X5 is caught.'
+            }
+          },
+          {
             title: 'The decoder',
-            buildsOn: 'The syndrome tab gave a table from errors to patterns. The decoder runs that table backwards.',
+            buildsOn: 'Logical operators showed the checks cannot see everything. The decoder has to pick a fix from the syndrome alone.',
             leadsTo: 'Section 5 scales the code up, and then the decoder becomes the hard part: it must keep up with the checks.',
             idea: [
-              'A *decoder* maps a syndrome to a correction.',
-              'For 3 qubits it is a four-row lookup. For big codes it is a real algorithm on a classical computer.',
-              'It picks the most likely error that explains the syndrome, usually the one with the fewest flips.'
+              'A *decoder* turns a syndrome into a fix. It never sees the error, only the syndrome.',
+              'Its rule: among all errors with this syndrome, pick the most likely. With rare errors, that is the one with the fewest flips.',
+              'The fix need not equal the error. Error × fix only has to be a check: Z5 fixed by Z4 gives Z4Z5, which does nothing.',
+              'If error × fix is a logical operator, the decoder made a logical error. That happens when more flips occur than it assumed.'
             ],
             sketch: [
               B(30, 50, 170, 70), T(115, 94, 'syndrome', { anchor: 'middle', size: 30, c: 'blue' }),
@@ -1283,25 +1474,18 @@
               T(36, 250, 'pick the smaller: X on q2', { size: 30, c: 'green' })
             ],
             takeaway: 'Decoder: syndrome in, most likely fix out.',
+            keys: [
+              { tone: 'fix', h: 'When is a fix right?', t: 'Not when it equals the error. It is right when *error × fix* is a check, because a check does nothing to the code state. It is a *logical error* when error × fix is a logical operator.' }
+            ],
             widget: {
-              type: 'steps',
-              steps: [
-                { say: 'The syndrome is (−, −).', show: 'candidates: X2   or   X1 and X3 together' },
-                { say: 'X2 is one flip. X1 and X3 together are two flips.', show: 'X2 has 1 flip,  X1 X3 has 2 flips' },
-                { say: 'One flip is more likely than two when errors are rare.', show: 'choose X2' },
-                { say: 'The decoder tells the machine to apply X on q2.', show: 'correction = X2' }
-              ]
+              type: 'pauli', codes: ['bit3', 'shor9'], decode: true,
+              say: ['Place errors, run the decoder, then apply its fix. It lists the smallest errors that match the syndrome and picks the first.', 'Try Z5 on the Shor code: the fix lands on q4 and still works. Then try X1 and X2 together, or a Z on the bit-flip code.']
             },
             check: {
-              q: 'Two different errors give the same syndrome. How does the decoder choose?',
-              options: [
-                'At random',
-                'It picks the most likely one, usually the one with fewer flips',
-                'It refuses to decode',
-                'It picks the one with more flips'
-              ],
+              q: 'Shor code: the error is Z on q5, and the decoder applies Z on q4. What happened?',
+              options: ['A logical error', 'It is fixed: Z4Z5 is a check, so it does nothing', 'Not fixed: wrong qubit', 'The syndrome becomes (−, −)'],
               answer: 1,
-              why: 'When errors are rare, fewer flips is more probable.'
+              why: 'Error × fix = Z4Z5, a bit check of block 2. On code states it acts as nothing, so the data is exactly back.'
             }
           }
         ]
