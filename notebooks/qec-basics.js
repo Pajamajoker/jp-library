@@ -263,6 +263,14 @@
             "more": "Bit-flip code: X1X2X3 and Z1. Shor: Z1Z4Z7 and X1X2X3. The distance is the size of the smallest one."
           },
           {
+            "term": "Quiet error",
+            "means": "An error that leaves every check at +1. Harmless if it is itself a check, a logical operator (harmful) if not."
+          },
+          {
+            "term": "Distance",
+            "means": "The number of qubits in the smallest logical operator. Any smaller error makes some check fire."
+          },
+          {
             "term": "[[n, k, d]]",
             "hover": false,
             "means": "A code on n physical qubits storing k logical qubits with distance d. Shor is [[9, 1, 3]]."
@@ -1390,7 +1398,7 @@
           {
             title: 'The syndrome',
             buildsOn: 'The checks-multiply tab picked a few generators to measure. Each one answers by clash counting, and together they give a list.',
-            leadsTo: 'Next, errors whose syndrome is all +1 that still change the data: logical operators.',
+            leadsTo: 'Next: errors whose syndrome is all +1, exactly like no error. Are they safe?',
             idea: [
               'Read every generator. The list of answers, like (−, +), is the *syndrome*.',
               'Each answer comes from clash counting against one check. So the syndrome depends only on the error, never on α and β.',
@@ -1420,48 +1428,129 @@
             }
           },
           {
-            title: 'Logical operators: invisible but harmful',
-            buildsOn: 'The syndrome tab showed different errors can share a syndrome. Some errors share the all-quiet syndrome of no error at all.',
-            leadsTo: 'Next, the decoder: syndrome in, fix out, and how a wrong guess becomes a logical error.',
+            title: 'Quiet errors: harmless or harmful',
+            buildsOn: 'The syndrome tab: the checks are our only window on errors. All +1 is what no error looks like.',
+            leadsTo: 'Next: how many qubits must a quiet, harmful error touch? That number is the distance.',
             idea: [
-              'Some errors clash an even number of times with every check. All checks stay +1, so nothing is seen.',
-              'If such an error is not itself a product of checks, it still changes the data. It is a *logical operator*.',
-              'Bit-flip code: X1X2X3 swaps α and β. Z1 alone puts a minus on β. So against Z its distance is only 1.',
-              'The *distance* d is the weight of the smallest logical operator. Codes are written [[n, k, d]]. Shor is [[9, 1, 3]].'
+              'Goal: find errors the checks *cannot* see. A *quiet error* clashes evenly with every check, so the syndrome is all +1.',
+              '*Harmless* quiet error: it is itself a check, so it leaves the code state alone.',
+              '*Harmful* quiet error: it turns one code state into another. That is a *logical operator*.',
+              'Why the checks miss the harmful kind: they only ask *is this a code state?*, never *which one?*'
+            ],
+            keys: [
+              { tone: 'fix', h: 'Quiet and harmless', t: 'The error is a check, like Z1Z2 on the bit-flip code. A check gives +1 on every code state, so the data is exactly as before.' },
+              { tone: 'x', h: 'Quiet and harmful', t: 'The error is a *logical operator*, like X1X2X3. Every check stays +1, but α|000⟩ + β|111⟩ becomes α|111⟩ + β|000⟩.' }
             ],
             sketch: [
-              T(320, 40, 'X1X2X3 on α|000⟩ + β|111⟩', { anchor: 'middle', size: 24 }),
-              O(220, 94, 22, { c: 'red' }), T(220, 102, 'X', { anchor: 'middle', size: 22, c: 'red' }),
-              O(320, 94, 22, { c: 'red' }), T(320, 102, 'X', { anchor: 'middle', size: 22, c: 'red' }),
-              O(420, 94, 22, { c: 'red' }), T(420, 102, 'X', { anchor: 'middle', size: 22, c: 'red' }),
-              T(320, 166, 'Z1Z2: 2 clashes → +1      Z2Z3: 2 clashes → +1', { anchor: 'middle', size: 21 }),
-              H(110, 192, 420, 44, { c: 'yellow' }), T(320, 222, 'α|111⟩ + β|000⟩: α and β swapped', { anchor: 'middle', size: 22, c: 'red' }),
-              T(320, 290, 'no check fired, yet the data changed', { anchor: 'middle', size: 23, c: 'green' })
+              B(230, 16, 180, 52), T(320, 50, 'an error', { anchor: 'middle', size: 24 }),
+              A(280, 72, 160, 112), A(360, 72, 480, 112),
+              B(30, 116, 250, 64, { c: 'blue' }), T(155, 144, 'some check fires', { anchor: 'middle', size: 20, c: 'blue' }), T(155, 170, 'seen: the decoder fixes it', { anchor: 'middle', size: 16 }),
+              B(370, 116, 240, 64), T(490, 144, 'every check +1', { anchor: 'middle', size: 20 }), T(490, 170, 'quiet: looks like no error', { anchor: 'middle', size: 16 }),
+              A(460, 184, 370, 224), A(520, 184, 550, 224),
+              B(250, 228, 200, 70, { c: 'green' }), T(350, 256, 'it is a check', { anchor: 'middle', size: 20, c: 'green' }), T(350, 282, 'harmless: Z1Z2', { anchor: 'middle', size: 16 }),
+              B(470, 228, 160, 70, { c: 'red' }), T(550, 256, 'not a check', { anchor: 'middle', size: 20, c: 'red' }), T(550, 282, 'logical: X1X2X3', { anchor: 'middle', size: 16 })
             ],
-            takeaway: 'Logical operator: no check fires, yet the data changes.',
+            takeaway: 'Quiet error: harmless if it is a check, a logical operator if not.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'The question', h: 220, parts: [
+                    T(320, 50, 'syndrome (+, +)', { anchor: 'middle', size: 26, c: 'green' }),
+                    T(320, 100, '= the checks see nothing', { anchor: 'middle', size: 22 }),
+                    H(170, 136, 300, 44, { c: 'yellow' }), T(320, 166, 'but did nothing happen?', { anchor: 'middle', size: 23, c: 'red' })],
+                  say: 'Both checks read +1. That is what no error looks like. But some errors also give (+, +). Are they safe? Try three of them on the bit-flip code, α|000⟩ + β|111⟩.' },
+                { t: 'Error 1: Z1Z2', h: 270, parts: [
+                    ...lets(50, 'ZZI', { lab: 'error', labc: 'red', c: 'red' }), L([[40, 78], [600, 78]]),
+                    ...lets(110, 'ZZI', { lab: 'Z1Z2' }), T(540, 117, '0 clashes → +1', { anchor: 'middle', size: 18, c: 'green' }),
+                    ...lets(160, 'IZZ', { lab: 'Z2Z3' }), T(540, 167, '0 clashes → +1', { anchor: 'middle', size: 18, c: 'green' }),
+                    H(130, 204, 380, 44, { c: 'yellow' }), T(320, 234, 'quiet, and nothing changed', { anchor: 'middle', size: 22, c: 'green' })],
+                  eq: ['Z1Z2 |000⟩ = (+1)(+1) |000⟩ = |000⟩', 'Z1Z2 |111⟩ = (−1)(−1) |111⟩ = |111⟩', 'state after:  α|000⟩ + β|111⟩   (unchanged)'],
+                  say: 'This error has no X, so it clashes with nothing: both checks stay +1. It is the same string as the check Z1Z2, and a check gives +1 on every code state. The data is untouched. *Quiet and harmless.*' },
+                { t: 'Error 2: X1X2X3', h: 270, parts: [
+                    ...lets(50, 'XXX', { lab: 'error', labc: 'red', c: 'red' }), L([[40, 78], [600, 78]]),
+                    ...lets(110, 'ZZI', { lab: 'Z1Z2', hot: [0, 1] }), T(540, 117, '2 clashes → +1', { anchor: 'middle', size: 18, c: 'green' }),
+                    ...lets(160, 'IZZ', { lab: 'Z2Z3', hot: [1, 2] }), T(540, 167, '2 clashes → +1', { anchor: 'middle', size: 18, c: 'green' }),
+                    H(90, 204, 460, 44, { c: 'yellow' }), T(320, 234, 'quiet, but α and β swapped', { anchor: 'middle', size: 22, c: 'red' })],
+                  eq: ['000 → 111     and     111 → 000', 'α|000⟩ + β|111⟩   →   α|111⟩ + β|000⟩'],
+                  say: 'Each check meets two Xs: two clashes, so +1 again. Quiet. But every bit flipped, so 000 became 111 and 111 became 000. The state is now α|111⟩ + β|000⟩. *The data changed and nothing fired.*' },
+                { t: 'Why the checks miss it', h: 260, parts: [
+                    B(70, 40, 180, 70), T(160, 84, '|000⟩', { anchor: 'middle', size: 26 }),
+                    B(390, 40, 180, 70), T(480, 84, '|111⟩', { anchor: 'middle', size: 26 }),
+                    A(262, 75, 380, 75), T(320, 62, 'X1X2X3', { anchor: 'middle', size: 17, c: 'red' }),
+                    T(160, 140, 'neighbours match', { anchor: 'middle', size: 18, c: 'green' }), T(480, 140, 'neighbours match', { anchor: 'middle', size: 18, c: 'green' }),
+                    H(100, 168, 440, 44, { c: 'yellow' }), T(320, 198, 'checks ask: do neighbours match?', { anchor: 'middle', size: 21 }),
+                    T(320, 244, 'they never ask: which one are we in?', { anchor: 'middle', size: 21, c: 'red' })],
+                  say: 'The checks only ask *do neighbouring bits match?* In 000 they match, and in 111 they match too. X1X2X3 jumps from one code state straight to the other, so there is nothing to complain about.' },
+                { t: 'Error 3: Z1', h: 270, parts: [
+                    ...lets(50, 'ZII', { lab: 'error', labc: 'red', c: 'red' }), L([[40, 78], [600, 78]]),
+                    ...lets(110, 'ZZI', { lab: 'Z1Z2' }), T(540, 117, '0 clashes → +1', { anchor: 'middle', size: 18, c: 'green' }),
+                    ...lets(160, 'IZZ', { lab: 'Z2Z3' }), T(540, 167, '0 clashes → +1', { anchor: 'middle', size: 18, c: 'green' }),
+                    H(70, 204, 500, 44, { c: 'yellow' }), T(320, 234, 'quiet and harmful, with one flip', { anchor: 'middle', size: 22, c: 'red' })],
+                  eq: ['Z1 |000⟩ = |000⟩       Z1 |111⟩ = −|111⟩', 'α|000⟩ + β|111⟩   →   α|000⟩ − β|111⟩'],
+                  say: 'A Z on q1 clashes with nothing, since the checks are made of Zs. But it puts a minus on 111, so β becomes −β. One flip, quiet and harmful. This is why the bit-flip code cannot handle phase errors.' },
+                { t: 'Sorting them', h: 250, parts: [
+                    T(40, 40, 'error', { size: 19, c: 'red' }), T(170, 40, 'checks', { size: 19, c: 'blue' }), T(290, 40, 'data', { size: 19 }), T(450, 40, 'kind', { size: 19 }),
+                    L([[30, 54], [610, 54]]),
+                    T(40, 96, 'Z1Z2', { size: 20 }), T(170, 96, '+, +', { size: 20 }), T(290, 96, 'unchanged', { size: 19, c: 'green' }), T(450, 96, 'harmless: a check', { size: 18, c: 'green' }),
+                    T(40, 146, 'X1X2X3', { size: 20 }), T(170, 146, '+, +', { size: 20 }), T(290, 146, 'α, β swap', { size: 19, c: 'red' }), T(450, 146, 'logical X', { size: 18, c: 'red' }),
+                    T(40, 196, 'Z1', { size: 20 }), T(170, 196, '+, +', { size: 20 }), T(290, 196, 'β → −β', { size: 19, c: 'red' }), T(450, 196, 'logical Z', { size: 18, c: 'red' }),
+                    T(320, 238, 'same syndrome, very different damage', { anchor: 'middle', size: 18 })],
+                  say: 'All three are quiet. What differs is the data. A quiet error that is a check is harmless. A quiet error that is not a check is a *logical operator*: it does a gate on the stored qubit (X swaps α and β, Z flips the sign of β) and nobody notices.' }
+              ]
+            },
+            check: {
+              q: 'On the bit-flip code, which error is quiet but harmful?',
+              options: ['X on q2', 'Z1Z2', 'X1X2X3', 'X on q1 and q2'],
+              answer: 2,
+              why: 'X1X2X3 clashes twice with each check, so both stay +1, yet it swaps α and β. Z1Z2 is quiet too, but it is a check, so it is harmless. The other two make a check fire.'
+            }
+          },
+          {
+            title: 'Distance: how big a harmful quiet error must be',
+            buildsOn: 'Quiet errors: some of them are logical operators, quiet and harmful.',
+            leadsTo: 'Next: when a check does fire, the decoder must guess the fix.',
+            idea: [
+              'Goal: one number for how strong a code is. Count the qubits in its smallest logical operator. That is the *distance* d.',
+              'Any error smaller than d cannot be quiet and harmful. Some check fires, so we get a chance to fix it.',
+              'Bit-flip code: against X, d = 3 (X1X2X3). Against Z, d = 1 (Z1). Shor: 3 either way, for example Z1Z4Z7 (one Z per block) or X1X2X3.',
+              'Codes are written *[[n, k, d]]*: n qubits, k logical qubits, distance d. Shor is [[9, 1, 3]].'
+            ],
             keys: [
-              { tone: 'main', h: 'Distance, in stabilizer language', t: 'A *logical operator* commutes with every check (even clashes everywhere) but is not a product of checks. The *distance* d is the fewest qubits any logical operator touches. Shor: d = 3, for example Z1Z4Z7.' }
+              { tone: 'main', h: 'What d = 3 buys you', t: 'One flip: always seen, and the decoder pins it down. Two flips: still seen, but they can look like a different one-flip error and get misfixed. Three flips: can be quiet. A bigger d pushes each of these further out.' }
             ],
+            sketch: [
+              T(320, 36, 'how many qubits the error touches (Shor, d = 3)', { anchor: 'middle', size: 19 }),
+              B(50, 64, 160, 84, { c: 'green' }), T(130, 100, '1 flip', { anchor: 'middle', size: 24 }), T(130, 130, 'seen, fixed', { anchor: 'middle', size: 17, c: 'green' }),
+              B(240, 64, 160, 84, { c: 'blue' }), T(320, 100, '2 flips', { anchor: 'middle', size: 24 }), T(320, 130, 'seen, maybe misfixed', { anchor: 'middle', size: 16, c: 'blue' }),
+              B(430, 64, 160, 84, { c: 'red' }), T(510, 100, '3 flips', { anchor: 'middle', size: 24 }), T(510, 130, 'can be quiet', { anchor: 'middle', size: 17, c: 'red' }),
+              H(110, 186, 420, 44, { c: 'yellow' }), T(320, 216, 'd = 3 means [[9, 1, 3]]', { anchor: 'middle', size: 22 }),
+              T(320, 280, 'smallest logical: Z1Z4Z7, one Z in each block', { anchor: 'middle', size: 19, c: 'blue' })
+            ],
+            takeaway: 'Distance = size of the smallest logical. Smaller errors are seen.',
             widget: {
               type: 'pauli', codes: ['bit3', 'shor9'], logical: true,
-              say: ['Apply a logical operator and watch the rows: every check counts an even number of clashes, so all stay +1. Then read the state on top.', 'On the bit-flip code, also try a single Z: one qubit is enough to break it. On the Shor code, the smallest logical touches 3 qubits.']
+              say: ['Hunt for the smallest quiet error that changes the data. A logical one leaves every row at +1, but the state on top changes.', 'Bit-flip code: one Z is enough. Shor: try Z on q1, q4 and q7, or X on q1, q2 and q3. Any one or two flips make some check fire.']
             },
             check: {
               q: 'Which of these is a logical operator of the Shor code?',
               options: ['Z4Z5', 'Z1Z4Z7', 'X5', 'X1…X6'],
               answer: 1,
-              why: 'Z1Z4Z7 flips the sign of every block, so no comparison of blocks changes, yet α and β swap. Z4Z5 and X1…X6 are checks. X5 is caught.'
+              why: 'Z1Z4Z7 flips the sign of every block, so no comparison of blocks changes, yet [+][+][+] and [−][−][−] swap. Z4Z5 and X1…X6 are checks, so harmless. X5 makes a check fire.'
             }
           },
           {
-            title: 'The decoder',
-            buildsOn: 'Logical operators showed the checks cannot see everything. The decoder has to pick a fix from the syndrome alone.',
-            leadsTo: 'Section 5 scales the code up, and then the decoder becomes the hard part: it must keep up with the checks.',
+            title: 'The decoder: from syndrome to fix',
+            buildsOn: 'Distance: small errors always make a check fire. Now the fired checks must become a fix.',
+            leadsTo: 'Next: run the decoder yourself, and find where it fails.',
             idea: [
-              'A *decoder* turns a syndrome into a fix. It never sees the error, only the syndrome.',
-              'Its rule: among all errors with this syndrome, pick the most likely. With rare errors, that is the one with the fewest flips.',
-              'The fix need not equal the error. Error × fix only has to be a check: Z5 fixed by Z4 gives Z4Z5, which does nothing.',
-              'If error × fix is a logical operator, the decoder made a logical error. That happens when more flips occur than it assumed.'
+              'Goal: undo the error. Problem: we never see the error, only the syndrome.',
+              'Many errors share a syndrome. The *decoder* picks the most likely one and applies it again, since every Pauli undoes itself (X·X = I).',
+              'Most likely means fewest flips. If each qubit flips with chance 1 in 100, two flips together have chance 1 in 10 000.',
+              'What the data feels in the end is *error × fix*. Nothing or a check: fixed. A logical operator: silent failure.'
+            ],
+            keys: [
+              { tone: 'fix', h: 'When is a fix right?', t: 'Not when it equals the error. It is right when *error × fix* is nothing or a check, because a check does nothing to the code state.' },
+              { tone: 'x', h: 'A silent failure', t: 'When *error × fix* is a logical operator, every check reads +1 afterwards, so it looks fixed. The data is wrong and nobody knows. This is a *logical error*.' }
             ],
             sketch: [
               B(30, 50, 170, 70), T(115, 94, 'syndrome', { anchor: 'middle', size: 30, c: 'blue' }),
@@ -1473,13 +1562,86 @@
               T(36, 200, '(−,−): X on q2 (1 flip) or X on q1 and q3 (2 flips)', { size: 26 }),
               T(36, 250, 'pick the smaller: X on q2', { size: 30, c: 'green' })
             ],
-            takeaway: 'Decoder: syndrome in, most likely fix out.',
-            keys: [
-              { tone: 'fix', h: 'When is a fix right?', t: 'Not when it equals the error. It is right when *error × fix* is a check, because a check does nothing to the code state. It is a *logical error* when error × fix is a logical operator.' }
+            takeaway: 'Decoder: syndrome in, most likely fix out. Judge it by error × fix.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'Only the syndrome', h: 220, parts: [
+                    T(320, 46, 'what the hardware tells us:', { anchor: 'middle', size: 20 }),
+                    T(320, 100, 'Z1Z2 = −1      Z2Z3 = −1', { anchor: 'middle', size: 26, c: 'red' }),
+                    T(320, 146, 'syndrome (−, −)', { anchor: 'middle', size: 24 }),
+                    T(320, 196, 'the error itself stays hidden', { anchor: 'middle', size: 20, c: 'blue' })],
+                  say: 'The bit-flip code again. The checks report (−, −). We must put the data back without ever seeing which qubits flipped.' },
+                { t: 'Who could it be?', h: 250, parts: [
+                    ...lets(60, 'IXI', { lab: 'X2', labc: 'red', c: 'red' }), T(540, 67, '1 flip', { anchor: 'middle', size: 19 }),
+                    ...lets(130, 'XIX', { lab: 'X1X3', labc: 'red', c: 'red' }), T(540, 137, '2 flips', { anchor: 'middle', size: 19 }),
+                    H(150, 176, 340, 44, { c: 'yellow' }), T(320, 206, 'both give (−, −)', { anchor: 'middle', size: 22 })],
+                  say: 'X on q2 gives (−, −): it sits in both pairs, so each check has one clash. X on q1 and q3 together also gives (−, −): Z1Z2 clashes on q1, Z2Z3 clashes on q3. The syndrome cannot tell them apart.' },
+                { t: 'Bet on the likely one', h: 240, parts: [
+                    T(60, 66, 'X2', { size: 22, c: 'red' }), T(200, 66, 'chance ≈ p', { size: 22 }), T(420, 66, '= 1 / 100', { size: 22 }),
+                    T(60, 126, 'X1X3', { size: 22, c: 'red' }), T(200, 126, 'chance ≈ p · p', { size: 22 }), T(420, 126, '= 1 / 10 000', { size: 22 }),
+                    H(80, 166, 480, 44, { c: 'yellow' }), T(320, 196, 'guess X2: 100 times more likely', { anchor: 'middle', size: 22, c: 'green' })],
+                  eq: ['p = 0.01 = chance one qubit flips', 'one flip: 0.01        two flips: 0.01 × 0.01 = 0.0001'],
+                  say: 'Errors are rare. Say each qubit flips with chance 1 in 100. Two flips at once are then 100 times rarer than one. So the decoder bets on X2, and applies X on q2.' },
+                { t: 'If it really was X2', h: 220, parts: [
+                    T(320, 50, 'error × fix  =  X2 · X2', { anchor: 'middle', size: 24 }), A(320, 66, 320, 96),
+                    T(320, 126, '=  I   (nothing at all)', { anchor: 'middle', size: 24, c: 'green' }),
+                    H(170, 152, 300, 44, { c: 'yellow' }), T(320, 182, 'data back exactly', { anchor: 'middle', size: 22, c: 'green' })],
+                  eq: ['X · X = I : a Pauli applied twice undoes itself'],
+                  say: 'X on q2 applied a second time undoes the first. Error × fix = I. The data is back. Given (−, −), this is what happens about 99 times in 100.' },
+                { t: 'If it really was X1X3', h: 260, parts: [
+                    T(320, 44, 'error × fix  =  X1X3 · X2  =  X1X2X3', { anchor: 'middle', size: 22 }),
+                    ...lets(100, 'XXX', { lab: 'total', labc: 'red', c: 'red' }),
+                    T(320, 156, 'the quiet, harmful error from the quiet errors tab', { anchor: 'middle', size: 18 }),
+                    H(60, 184, 520, 44, { c: 'yellow' }), T(320, 214, 'checks (+, +), yet α and β swapped', { anchor: 'middle', size: 21, c: 'red' })],
+                  say: 'Now the fix X2 joins the real X1 and X3. Together that is X1X2X3, the logical operator from the quiet errors tab. Every check reads +1, so it *looks* fixed, but α and β are swapped. A *logical error*, and nobody notices.' },
+                { t: 'The fix need not match', h: 260, parts: [
+                    T(320, 40, 'Shor code: the error is Z on q5', { anchor: 'middle', size: 21, c: 'red' }),
+                    T(320, 80, 'the decoder applies Z on q4', { anchor: 'middle', size: 21, c: 'blue' }),
+                    T(320, 128, 'error × fix  =  Z4Z5', { anchor: 'middle', size: 24 }),
+                    T(320, 168, 'a check: bits of block 2 still match', { anchor: 'middle', size: 18 }),
+                    H(150, 192, 340, 44, { c: 'yellow' }), T(320, 222, 'harmless: data back', { anchor: 'middle', size: 22, c: 'green' })],
+                  eq: ['Z4 and Z5 each flip the sign of block 2', 'two flips of the same sign cancel'],
+                  say: 'On the Shor code any Z in block 2 flips the same sign, so the decoder may fix Z5 with Z4. Error × fix = Z4Z5, a check: the harmless kind of quiet error. The fix did not match the error, and it still worked.' },
+                { t: 'The pay-off', h: 240, parts: [
+                    T(40, 60, 'no code', { size: 21 }), T(200, 60, 'ruined by 1 flip', { size: 20 }), T(520, 60, '≈ 1 / 100', { anchor: 'middle', size: 21, c: 'red' }),
+                    T(40, 120, 'd = 3', { size: 21 }), T(200, 120, 'ruined only by 2 flips', { size: 20 }), T(520, 120, '≈ 3 / 10 000', { anchor: 'middle', size: 21, c: 'green' }),
+                    H(90, 160, 460, 44, { c: 'yellow' }), T(320, 190, 'about 30 times safer', { anchor: 'middle', size: 22, c: 'green' }),
+                    T(320, 228, 'and safer still as p drops or d grows', { anchor: 'middle', size: 18 })],
+                  eq: ['bit-flip code fails if 2 of its 3 qubits flip', '3 pairs × p² = 3 × 0.0001 = 0.0003'],
+                  say: 'This is the point of all the machinery. Without a code, one flip ruins the data. With distance 3, it takes two flips at once, and those are rare. Smaller p, or bigger d, makes it safer still.' }
+              ]
+            },
+            check: {
+              q: 'Bit-flip code. The real error is X on q1 and q3. The decoder applies X on q2. What happens?',
+              options: ['Fixed: the checks read (+, +)', 'Logical error: X1X2X3 swaps α and β', 'The syndrome is still (−, −)', 'Nothing: X2 has no effect'],
+              answer: 1,
+              why: 'Error × fix = X1X2X3, a logical operator. The checks read (+, +), so it looks fixed, but the data is wrong.'
+            }
+          },
+          {
+            title: 'Try the decoder',
+            buildsOn: 'The decoder tab walked one syndrome through: the likely guess, the silent failure, and a fix that need not match.',
+            leadsTo: 'Section 5 scales the code up, and then the decoder becomes the hard part: it must keep up with the checks.',
+            idea: [
+              'Goal: watch the decoder work, then break it.',
+              'Steps: place an error, read the syndrome, run the decoder, apply its fix. Then judge *error × fix*.',
+              'One flip: always fixed, even when the fix lands on another qubit. Two flips: sometimes a logical error.'
             ],
+            sketch: [
+              B(20, 40, 120, 56, { c: 'red' }), T(80, 75, 'error', { anchor: 'middle', size: 22, c: 'red' }), A(146, 68, 186, 68),
+              B(190, 40, 140, 56, { c: 'blue' }), T(260, 75, 'syndrome', { anchor: 'middle', size: 22, c: 'blue' }), A(336, 68, 376, 68),
+              B(380, 40, 120, 56), T(440, 75, 'decoder', { anchor: 'middle', size: 22 }), A(506, 68, 546, 68),
+              T(585, 76, 'fix', { anchor: 'middle', size: 24, c: 'green' }),
+              T(320, 150, 'error × fix is …', { anchor: 'middle', size: 24 }),
+              A(260, 166, 170, 206), A(380, 166, 470, 206),
+              B(40, 212, 250, 70, { c: 'green' }), T(165, 242, 'nothing, or a check', { anchor: 'middle', size: 20, c: 'green' }), T(165, 268, 'fixed', { anchor: 'middle', size: 18 }),
+              B(350, 212, 250, 70, { c: 'red' }), T(475, 242, 'a logical operator', { anchor: 'middle', size: 20, c: 'red' }), T(475, 268, 'silent logical error', { anchor: 'middle', size: 18 })
+            ],
+            takeaway: 'One flip: always fixed. Two flips: the decoder can be fooled.',
             widget: {
               type: 'pauli', codes: ['bit3', 'shor9'], decode: true,
-              say: ['Place errors, run the decoder, then apply its fix. It lists the smallest errors that match the syndrome and picks the first.', 'Try Z5 on the Shor code: the fix lands on q4 and still works. Then try X1 and X2 together, or a Z on the bit-flip code.']
+              say: ['Place errors, run the decoder, then apply its fix. The message says whether error × fix is a check (fixed) or a logical operator (logical error).', 'Shor: try Z5, the fix lands on q4 and still works. Then X1 and X2 together. Bit-flip code: try X1 and X3, then a single Z.']
             },
             check: {
               q: 'Shor code: the error is Z on q5, and the decoder applies Z on q4. What happened?',
