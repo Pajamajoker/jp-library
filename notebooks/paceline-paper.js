@@ -42,6 +42,11 @@
           { term: 'T gate', aka: ['T gates', 'T'], means: 'A rotation by π/4 about Z. Not Clifford. Clifford plus T can approximate any gate.' },
           { term: 'Clifford+T', means: 'Circuits built from Clifford gates and T gates only.' },
           { term: 'magic state', aka: ['magic states'], means: 'A special prepared state. Used up to apply one T gate.' },
+          { term: '|T⟩', means: 'The magic state (|0⟩ + ω|1⟩)/√2, which is T applied to |+⟩.' },
+          { term: 'ω', means: 'exp(iπ/4), the phase a T gate puts on |1⟩.' },
+          { term: 'ω⁻¹', means: 'exp(−iπ/4) = 1/ω, the phase turned the other way.' },
+          { term: 'T†', means: 'The inverse of T: a turn of −π/4 about Z. The odd outcome of a T injection gives it.' },
+          { term: 'Z ⊗ Z', aka: ['joint measurement', 'joint parity'], means: 'A joint readout of two qubits: +1 if their digits agree, −1 if not. It never reads either one alone.' },
           { term: 'factory', aka: ['factories', 'magic-state factory'], means: 'A module that distils magic states. The reference machine has one, at the end of the line.' },
           { term: 'distil', aka: ['distils'], means: 'Turn many noisy magic states into fewer, cleaner ones.' },
           { term: 'T injection', aka: ['T injections'], means: 'Measure a magic state jointly with a qubit. Applies T, up to a Clifford correction set by the outcome.' },
@@ -142,7 +147,7 @@
       /* ============================ SECTION 1 (background) ============================ */
       {
         title: 'Background: Paulis, Cliffords and T',
-        intro: 'Programs on this machine are written with Pauli products. This section builds the gate set: Paulis, when they commute, Clifford gates, and the T gate.',
+        intro: 'Programs on this machine are written with Pauli products. This section builds the gate set: Paulis, when they commute, Clifford gates, the T gate, and how T is injected.',
         bridge: 'You now hold Pauli products, the commute rule, Clifford gates and the T gate fed by magic states. Section 2 rewrites a whole program in these pieces, as a list of Pauli rotations.',
         tabs: [
           {
@@ -267,36 +272,208 @@
             }
           },
           {
-            title: 'T needs a magic state',
-            buildsOn: 'Clifford+T circuits can approximate any gate. This tab says where the T gates of an error-corrected machine come from.',
-            leadsTo: 'Next section writes a whole program as rotations about Pauli products, which is how this machine sees it.',
+            title: 'Magic states and factories',
+            buildsOn: 'The T gate tab showed T is a π/4 turn about Z and is not Clifford. This tab asks how a protected qubit gets that turn.',
+            leadsTo: 'Next tab uses one magic state to turn a data qubit by T, one line at a time, without ever reading the data.',
             idea: [
-              'On protected qubits a T gate is not applied directly. It uses up a *magic state*, a special prepared state.',
-              'A *factory* module *distils* magic states: many noisy ones in, fewer clean ones out.',
-              'A *T injection* measures a magic state jointly with the qubit. That applies T, up to a *Clifford correction* set by the outcome.'
+              'Codes give protected qubits a safe recipe for Clifford gates. No code has a safe direct recipe for every gate, and T is the hard one.',
+              'The way round it: prepare T’s turn ahead of time on a spare qubit. That qubit is a *magic state*, |T⟩ = (|0⟩ + ω|1⟩)/√2.',
+              '*ω* = exp(iπ/4), the π/4 phase of T. So |T⟩ is just T applied to |+⟩: a point on the equator, 45° round from |+⟩.',
+              'A *factory* module *distils* magic states: it takes many noisy ones and returns fewer, cleaner ones.'
             ],
             sketch: [
-              ...bx(40, 110, 140, 70, 'factory', { c: 'pink' }),
-              A(185, 145, 280, 145),
-              O(310, 145, 22, { c: 'pink' }),
-              t(310, 100, 'magic state', { c: 'pink' }),
-              A(335, 145, 420, 145),
-              ...bx(430, 110, 150, 70, 'qubit'),
-              t(505, 230, 'T applied', { c: 'green' }),
-              t(320, 285, 'outcome may ask for a Clifford fix', { c: 'red' })
+              ...bx(30, 100, 150, 80, 'factory', { c: 'ink' }),
+              D(60, 60, { c: 'red' }), D(95, 50, { c: 'red' }), D(130, 62, { c: 'red' }), D(160, 48, { c: 'red' }),
+              t(105, 30, 'many noisy in', { c: 'red', size: 20 }),
+              A(185, 140, 255, 140, { c: 'green' }),
+              O(400, 150, 100),
+              E(400, 150, 100, 28, { dash: true }),
+              L([[400, 150], [471, 171]], { c: 'ink' }),
+              D(471, 171, { c: 'ink' }),
+              t(400, 290, '|T⟩ = T|+⟩: 45° round the equator', { c: 'ink', size: 22 }),
+              t(230, 120, 'clean |T⟩', { c: 'green', size: 20 })
             ],
-            takeaway: 'Each T gate uses one magic state from a factory, via a T injection.',
-            widget: null,
+            takeaway: 'A magic state |T⟩ is T’s turn, stored ahead of time on a spare qubit.',
+            widget: { type: 'qubit', sliders: ['phi'], gates: ['H', 'S'], bloch: true, readouts: true, start: { theta: 90, phi: 45 } },
             check: {
-              q: 'A T injection has run. What can its outcome change?',
+              q: 'Which state is the magic state |T⟩?',
+              options: ['(|0⟩ + ω|1⟩)/√2 with ω = exp(iπ/4)', '(|0⟩ + |1⟩)/√2', '|1⟩', '(|0⟩ + i|1⟩)/√2'],
+              answer: 0,
+              why: '|T⟩ = T|+⟩: T puts the phase ω = exp(iπ/4) on the |1⟩ part of |+⟩. The i version is S|+⟩.'
+            }
+          },
+          {
+            title: 'T injection, step by step',
+            buildsOn: 'The magic state |T⟩ carries T’s phase ω on its |1⟩ part. This tab moves that phase onto a data qubit.',
+            leadsTo: 'Next tab follows the other outcome, which turns the data the wrong way, and the fix that repairs it.',
+            idea: [
+              'Wrong picture: to apply T we must look at the data qubit. Reading it would collapse α and β. A T injection never does that.',
+              'It measures one joint property: *Z ⊗ Z* on the data qubit and |T⟩. That asks only: an even or odd number of 1s between them?',
+              'Both answers come up 50/50 for every α and β, so the readout learns nothing about the data.',
+              'Even (+1): only the patterns 00 and 11 survive, and the data ends up as α|0⟩ + ωβ|1⟩. That is T applied.'
+            ],
+            keys: [
+              { tone: 'main', h: 'The data qubit is never read', t: 'The only questions asked are *joint*: the parity of data and magic state, then the magic state alone. Neither answer depends on α or β, so nothing about the protected data is learned or collapsed.' }
+            ],
+            math: [
+              { h: 'Multiply out', eq: ['(α|0⟩ + β|1⟩)(|0⟩ + ω|1⟩)/√2', '= (α|00⟩ + αω|01⟩ + β|10⟩ + βω|11⟩)/√2'], why: 'Left digit is the data qubit, right digit the magic state.' },
+              { h: 'Chance of even parity', eq: ['P(+1) = (|α|² + |βω|²) / 2', '      = (|α|² + |β|²) / 2 = 1/2'], why: '|ω| = 1, and |α|² + |β|² = 1. The answer does not depend on α or β.' },
+              { h: 'Chance of odd parity', eq: ['P(−1) = (|αω|² + |β|²) / 2 = 1/2'] },
+              { h: 'Even: what is left', eq: ['α|00⟩ + ωβ|11⟩'], why: 'Divide by √(1/2) to renormalise. The two qubits now agree.' },
+              { h: 'Read the magic qubit in X', eq: ['|0⟩ = (|+⟩ + |−⟩)/√2', '|1⟩ = (|+⟩ − |−⟩)/√2'] },
+              { h: 'Result', eq: ['reads +:  α|0⟩ + ωβ|1⟩ = T|ψ⟩', 'reads −:  α|0⟩ − ωβ|1⟩ = Z T|ψ⟩'], why: 'The − case only needs a Z, a plain Pauli, to finish.' }
+            ],
+            sketch: [
+              ...bx(30, 70, 200, 60, 'α|0⟩ + β|1⟩', { c: 'blue' }),
+              t(130, 50, 'data qubit', { c: 'blue', size: 20 }),
+              ...bx(30, 190, 200, 60, '|T⟩', { c: 'ink' }),
+              t(130, 280, 'magic state', { c: 'ink', size: 20 }),
+              L([[240, 100], [270, 100], [270, 220], [240, 220]]),
+              ...bx(290, 130, 120, 60, 'Z ⊗ Z'),
+              t(350, 115, 'parity only', { size: 20 }),
+              A(415, 160, 465, 160),
+              H(470, 60, 150, 40, { c: 'yellow' }),
+              t(545, 88, '50/50 coin'),
+              t(545, 170, 'even:', { c: 'green', size: 22 }),
+              t(545, 200, 'T applied', { c: 'green', size: 22 }),
+              t(545, 260, 'odd: next tab', { c: 'red', size: 22 })
+            ],
+            takeaway: 'A T injection asks only a joint parity. It never reads the data qubit.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'Two qubits', h: 220, parts: [
+                    ...bx(60, 50, 220, 60, 'α|0⟩ + β|1⟩', { c: 'blue' }), t(170, 140, 'data qubit ψ', { c: 'blue', size: 20 }),
+                    ...bx(360, 50, 220, 60, '|0⟩ + ω|1⟩', { c: 'ink' }), t(470, 140, 'magic state, ÷ √2', { c: 'ink', size: 20 }),
+                    t(320, 195, 'ω = exp(iπ/4), the phase that T adds', { size: 20 })],
+                  say: 'The data qubit holds unknown α and β. The magic state holds the phase ω on its 1 part. Goal: move ω onto the data’s 1 part.' },
+                { t: 'Four patterns', h: 220, parts: [
+                    ...bx(30, 60, 130, 60, 'α · 00'), ...bx(180, 60, 130, 60, 'αω · 01'),
+                    ...bx(330, 60, 130, 60, 'β · 10'), ...bx(480, 60, 130, 60, 'βω · 11'),
+                    t(320, 40, 'data digit first, magic digit second', { size: 20 }),
+                    t(320, 175, 'every pair of digits, with its weight', { size: 20 })],
+                  eq: ['(α|0⟩ + β|1⟩)(|0⟩ + ω|1⟩)/√2', '= (α|00⟩ + αω|01⟩ + β|10⟩ + βω|11⟩)/√2'],
+                  say: 'Multiply out, like the coin table in Quantum basics. Each of the four patterns gets one weight.' },
+                { t: 'Ask only the parity', h: 220, parts: [
+                    H(30, 60, 130, 60, { c: 'mint' }), H(480, 60, 130, 60, { c: 'mint' }),
+                    ...bx(30, 60, 130, 60, 'α · 00', { c: 'green' }), ...bx(180, 60, 130, 60, 'αω · 01', { c: 'red' }),
+                    ...bx(330, 60, 130, 60, 'β · 10', { c: 'red' }), ...bx(480, 60, 130, 60, 'βω · 11', { c: 'green' }),
+                    t(320, 165, 'Z ⊗ Z: even (+1) or odd (−1)?', { size: 22 }),
+                    t(170, 205, 'even: 00, 11', { c: 'green', size: 20 }), t(470, 205, 'odd: 01, 10', { c: 'red', size: 20 })],
+                  say: 'Z ⊗ Z gives +1 if the two digits agree and −1 if they differ. It never asks what the data digit is on its own.' },
+                { t: 'A fair coin', h: 220, parts: [
+                    O(320, 90, 50), t(320, 100, '50/50', { size: 26 }),
+                    t(320, 175, 'same odds for every α and β', { c: 'green', size: 22 })],
+                  eq: ['P(even) = (|α|² + |β|²)/2 = 1/2', 'P(odd)  = (|α|² + |β|²)/2 = 1/2'],
+                  say: 'Since |ω| = 1, both answers have chance one half whatever α and β are. A readout that gives the same odds for every state learns nothing about that state.' },
+                { t: 'Even: 00 and 11 stay', h: 220, parts: [
+                    ...bx(120, 50, 170, 60, 'α · 00', { c: 'green' }), ...bx(350, 50, 170, 60, 'ωβ · 11', { c: 'green' }),
+                    t(320, 150, 'the two qubits now agree', { size: 22 }),
+                    t(320, 190, 'ω sits on the β part', { c: 'ink', size: 22 })],
+                  eq: ['α|00⟩ + ωβ|11⟩'],
+                  say: 'The odd patterns are gone. α and β are kept exactly, and the ω that rode on the magic qubit’s 1 is now tied to the data’s 1.' },
+                { t: 'Release the magic qubit', h: 220, parts: [
+                    ...bx(60, 50, 200, 60, 'magic in X'), A(270, 80, 340, 80),
+                    ...bx(350, 50, 240, 60, 'α|0⟩ + ωβ|1⟩', { c: 'green' }),
+                    H(200, 150, 240, 40, { c: 'yellow' }), t(320, 178, '= T (α|0⟩ + β|1⟩)', { size: 24 })],
+                  eq: ['X readout +:  α|0⟩ + ωβ|1⟩ = T|ψ⟩', 'X readout −:  α|0⟩ − ωβ|1⟩, fix with one Z'],
+                  say: 'Measuring the magic qubit in X unglues it without revealing α or β, again a 50/50 answer. The data qubit is left turned by T. A − answer only needs a Z.' }
+              ]
+            },
+            deeper: {
+              l2: [
+                { title: 'T injection as a circuit', wires: ['q=ψ', 'm=|T⟩'],
+                  cols: ['CX q m', 'M m', 'FIX S q 1 m'],
+                  notes: ['A CNOT from the data q to the magic qubit m, then a Z readout of m, asks exactly the Z ⊗ Z question: m reads 0 if the digits agreed, 1 if not.',
+                    'Readout 0: the data is T|ψ⟩. Readout 1: the data is T†|ψ⟩, the turn the wrong way, and an S gate fixes it.',
+                    'This is the textbook form. The frames above use the joint-measurement form, which ends in the same state.'] }
+              ],
+              l3: [
+                { title: 'On the bicycle machine', wires: ['pivot', 'magic'],
+                  cols: ['BOX pivot magic joint Z ⊗ Z / 120 timesteps', 'H magic', 'M magic', 'FIX S pivot odd pivot'],
+                  notes: ['Here the magic state comes from the factory and is measured jointly with the host’s *pivot*, not with a data qubit.',
+                    'H then a Z readout is the X readout of the frames. The S fix depends on the joint parity, not on this last readout.',
+                    'Earlier steps move the rotation onto the pivot, so the data qubits only ever meet joint measurements. Section 4 shows how.',
+                    'The paper counts 120 timesteps for the measurement, and the factory stays busy 109 timesteps more.'] }
+              ]
+            },
+            check: {
+              q: 'Why does the Z ⊗ Z readout not disturb α and β?',
               options: [
-                'Whether a Clifford correction is needed',
-                'Which factory made the magic state',
-                'The code distance',
-                'Nothing, T injections are deterministic'
+                'Both answers have chance 1/2 for every α and β, so it learns nothing about them',
+                'It is done on a copy of the data qubit',
+                'It is measured very gently',
+                'It only reads the data qubit when the factory is idle'
               ],
               answer: 0,
-              why: 'The injection applies T up to a Clifford correction set by its outcome.'
+              why: 'A readout only disturbs what it can tell apart. This one gives the same odds for every data state.'
+            }
+          },
+          {
+            title: 'The fix: a T that went backwards',
+            buildsOn: 'The step-by-step tab followed the even outcome to T|ψ⟩. This tab follows the odd outcome, which happens just as often.',
+            leadsTo: 'Next section writes a whole program as Pauli rotations, where this outcome-dependent fix becomes a wait between operations.',
+            idea: [
+              'Odd (−1): the patterns 01 and 10 survive. After the magic qubit is released, the data is α|0⟩ + ω⁻¹β|1⟩.',
+              '*ω⁻¹* = exp(−iπ/4) is ω turned the other way. So the data got *T†*, the inverse of T: a turn of −π/4.',
+              'The fix is one S gate. S = T · T, so S · T† = T. S is Clifford, the easy kind. This is the *Clifford correction*.',
+              'Which fix is needed is known only after the readout. So whatever comes next must wait for that outcome.'
+            ],
+            sketch: [
+              O(170, 160, 100),
+              E(170, 160, 100, 28, { dash: true }),
+              L([[170, 160], [270, 160]], { c: 'blue' }),
+              L([[170, 160], [241, 181]], { c: 'green' }),
+              L([[170, 160], [241, 139]], { c: 'red' }),
+              t(170, 40, 'seen from above the equator', { size: 20 }),
+              t(300, 210, 'T: +45°', { c: 'green', size: 22 }),
+              t(300, 125, 'T†: −45°', { c: 'red', size: 22 }),
+              ...bx(400, 120, 200, 60, 'S: +90°', { c: 'green' }),
+              t(500, 220, '−45° + 90° = +45°', { c: 'green', size: 22 }),
+              t(500, 90, 'odd outcome', { c: 'red', size: 22 })
+            ],
+            takeaway: 'Odd outcome gives T†. One S gate turns it into T.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'Odd: 01 and 10 stay', h: 220, parts: [
+                    ...bx(120, 50, 170, 60, 'ωα · 01', { c: 'red' }), ...bx(350, 50, 170, 60, 'β · 10', { c: 'red' }),
+                    t(320, 150, 'the two qubits now disagree', { size: 22 }),
+                    t(320, 190, 'ω sits on the α part this time', { c: 'ink', size: 22 })],
+                  eq: ['ωα|01⟩ + β|10⟩'],
+                  say: 'Same chance as the even case, one half. Now ω is attached to the data’s 0 part instead of its 1 part.' },
+                { t: 'Release the magic qubit', h: 220, parts: [
+                    ...bx(60, 50, 200, 60, 'magic in X'), A(270, 80, 340, 80),
+                    ...bx(350, 50, 240, 60, 'ωα|0⟩ + β|1⟩', { c: 'red' }),
+                    t(320, 170, 'up to a Z, as in the even case', { size: 20 })],
+                  eq: ['ωα|0⟩ + β|1⟩'],
+                  say: 'Reading the magic qubit in X unglues it, just as before. The data keeps α and β, but ω is on the wrong part.' },
+                { t: 'That is T†', h: 220, parts: [
+                    t(320, 50, 'ωα|0⟩ + β|1⟩', { size: 26 }), A(320, 66, 320, 96),
+                    t(320, 126, '= ω (α|0⟩ + (β/ω)|1⟩)', { size: 26 }),
+                    H(190, 150, 260, 44, { c: 'pink' }), t(320, 180, '= T† (α|0⟩ + β|1⟩)', { size: 24 })],
+                  eq: ['ω⁻¹ = exp(−iπ/4) = 1/ω', 'an overall factor ω changes nothing you can measure'],
+                  say: 'Pull ω out in front. An overall factor has no effect on any readout. What remains has ω⁻¹ on the 1 part: the T turn backwards.' },
+                { t: 'Fix with S', h: 220, parts: [
+                    ...bx(40, 60, 160, 60, 'T†: −45°', { c: 'red' }), t(230, 98, '+', { size: 30 }),
+                    ...bx(260, 60, 160, 60, 'S: +90°', { c: 'green' }), t(450, 98, '=', { size: 30 }),
+                    ...bx(480, 60, 120, 60, 'T', { c: 'green' }),
+                    t(320, 175, 'S = T · T, a Clifford gate', { size: 22 })],
+                  eq: ['S · T† = T · T · T† = T'],
+                  say: 'S is two T turns. One cancels the T†, one is left. S is Clifford, so it has a safe protected recipe. This is the Clifford correction.' },
+                { t: 'Why later work waits', h: 220, parts: [
+                    ...bx(40, 70, 170, 60, 'T injection', { c: 'ink' }), D(210, 100, { c: 'red' }),
+                    A(215, 100, 300, 100, { c: 'red' }),
+                    ...bx(310, 70, 290, 60, 'next step: with or without S?'),
+                    t(320, 180, 'known only after the readout', { c: 'red', size: 22 })],
+                  say: 'Half the time the fix is needed, half the time not, and nobody knows which until the readout ends. Any step that depends on it must wait. Section 4 calls this the outcome wait.' }
+              ]
+            },
+            check: {
+              q: 'The parity readout is odd. Which gate turns the data from T†|ψ⟩ into T|ψ⟩?',
+              options: ['S', 'T†', 'X', 'H'],
+              answer: 0,
+              why: 'S = T · T, so S · T† = T. A second T† would turn further the wrong way.'
             }
           }
         ]
@@ -534,11 +711,11 @@
             ],
             sketch: [
               B(40, 90, 560, 90),
-              ...bx(50, 105, 50, 60, 'p', { c: 'pink' }),
+              ...bx(50, 105, 50, 60, 'p', { c: 'ink' }),
               B(110, 105, 40, 60), B(155, 105, 40, 60), B(200, 105, 40, 60), B(245, 105, 40, 60),
               B(290, 105, 40, 60), B(335, 105, 40, 60), B(380, 105, 40, 60), B(425, 105, 40, 60),
               B(470, 105, 40, 60), B(515, 105, 40, 60), B(560, 105, 30, 60, { dash: true }),
-              t(75, 60, 'pivot', { c: 'pink' }),
+              t(75, 60, 'pivot', { c: 'ink' }),
               t(340, 225, '11 data slots'),
               t(320, 290, 'the slot sets the measurement cost', { c: 'red' })
             ],
@@ -563,9 +740,9 @@
             sketch: [
               ...bx(30, 120, 90, 60, 'm1'), ...bx(150, 120, 90, 60, 'm2'), ...bx(270, 120, 90, 60, 'm3'),
               ...bx(390, 120, 90, 60, 'host', { c: 'blue' }),
-              ...bx(520, 120, 90, 60, 'factory', { c: 'pink' }),
+              ...bx(520, 120, 90, 60, 'factory', { c: 'ink' }),
               L([[120, 150], [150, 150]], { c: 'green' }), L([[240, 150], [270, 150]], { c: 'green' }),
-              L([[360, 150], [390, 150]], { c: 'green' }), L([[480, 150], [520, 150]], { c: 'pink' }),
+              L([[360, 150], [390, 150]], { c: 'green' }), L([[480, 150], [520, 150]], { c: 'ink' }),
               t(195, 90, 'couplers join neighbours', { c: 'green' }),
               t(320, 250, 'reference machine: one factory at the end')
             ],
@@ -594,8 +771,8 @@
               ...bx(30, 40, 280, 56, 'in-module: 120', { c: 'blue' }),
               ...bx(330, 40, 280, 56, 'shift automorphism'),
               ...bx(30, 130, 280, 56, 'inter-module: 120', { c: 'green' }),
-              ...bx(330, 130, 280, 56, 'T injection', { c: 'pink' }),
-              t(470, 225, 'factory busy +109', { c: 'pink' }),
+              ...bx(330, 130, 280, 56, 'T injection', { c: 'ink' }),
+              t(470, 225, 'factory busy +109', { c: 'ink' }),
               t(320, 290, 'timesteps: one per physical gate')
             ],
             takeaway: 'Four instructions. Measurements 120 timesteps. T holds the factory longer.',
@@ -656,7 +833,7 @@
               ...bx(160, 120, 100, 60, 'P₂=I'),
               ...bx(290, 120, 100, 60, 'P₃≠I', { c: 'blue' }),
               ...bx(420, 120, 100, 60, 'host'),
-              ...bx(550, 120, 70, 60, 'F', { c: 'pink' }),
+              ...bx(550, 120, 70, 60, 'F', { c: 'ink' }),
               H(30, 205, 490, 30, { c: 'mint' }),
               t(275, 228, 'chain: 4 modules, 3 links', { size: 22 }),
               L([[130, 150], [160, 150]], { c: 'green' }), L([[260, 150], [290, 150]], { c: 'green' }), L([[390, 150], [420, 150]], { c: 'green' }),
@@ -714,8 +891,8 @@
               t(60, 70, 'm1', { anchor: 'start' }), t(60, 140, 'm2', { anchor: 'start' }), t(60, 210, 'host', { anchor: 'start' }),
               B(130, 50, 90, 30, { c: 'blue' }), B(220, 50, 60, 30, { c: 'green' }), B(280, 50, 90, 30, { c: 'blue' }),
               B(130, 120, 70, 30, { c: 'blue' }), B(220, 120, 60, 30, { c: 'green' }), B(280, 120, 70, 30, { c: 'blue' }),
-              B(130, 190, 60, 30, { c: 'blue' }), B(220, 190, 60, 30, { c: 'green' }), B(370, 190, 220, 30, { c: 'pink' }),
-              t(480, 260, 'T stream', { c: 'pink' }),
+              B(130, 190, 60, 30, { c: 'blue' }), B(220, 190, 60, 30, { c: 'green' }), B(370, 190, 220, 30, { c: 'ink' }),
+              t(480, 260, 'T stream', { c: 'ink' }),
               t(250, 300, 'lead-in, joint, tail')
             ],
             takeaway: 'A task holds each chain module from first to last instruction.',
@@ -745,7 +922,7 @@
               'The architecture’s *cost model* leaves this wait out. The paper puts it into every time it reports.'
             ],
             sketch: [
-              ...bx(40, 90, 220, 60, 'o₁: T stream', { c: 'pink' }),
+              ...bx(40, 90, 220, 60, 'o₁: T stream', { c: 'ink' }),
               D(260, 120, { c: 'red' }),
               t(260, 75, 'last outcome', { c: 'red' }),
               A(262, 135, 330, 205, { c: 'red' }),
@@ -1014,7 +1191,7 @@
             sketch: [
               B(40, 220, 80, 40), B(140, 190, 80, 70), B(240, 160, 80, 100),
               B(340, 110, 80, 150, { c: 'red' }), B(440, 60, 80, 200, { c: 'red' }),
-              ...bx(540, 200, 80, 60, 'F', { c: 'pink' }),
+              ...bx(540, 200, 80, 60, 'F', { c: 'ink' }),
               t(480, 40, 'host', { c: 'red' }),
               t(180, 300, 'far from factory'),
               t(200, 90, 'busiest: 41% to 52%', { c: 'red' })
@@ -1043,8 +1220,8 @@
               'The fix is more T supply, which changes the hardware. Even T-light runs end up host-bound: busy 65 to 83%.'
             ],
             sketch: [
-              ...bx(40, 110, 130, 70, 'factory', { c: 'pink' }),
-              B(200, 120, 400, 50, { c: 'pink' }),
+              ...bx(40, 110, 130, 70, 'factory', { c: 'ink' }),
+              B(200, 120, 400, 50, { c: 'ink' }),
               H(200, 120, 392, 50, { c: 'pink' }),
               t(400, 153, 'busy up to 98%'),
               t(320, 70, 'T-heavy run with one factory'),
@@ -1080,7 +1257,7 @@
             sketch: [
               ...bx(20, 120, 130, 56, 'placement', { c: 'blue' }),
               ...bx(170, 120, 130, 56, 'seating', { c: 'green' }),
-              ...bx(320, 120, 130, 56, 'factory', { c: 'pink' }),
+              ...bx(320, 120, 130, 56, 'factory', { c: 'ink' }),
               ...bx(470, 120, 150, 56, 'ordering', { c: 'red' }),
               A(150, 148, 168, 148), A(300, 148, 318, 148), A(450, 148, 468, 148),
               t(320, 70, 'two candidates through every step'),
@@ -1258,13 +1435,13 @@
               'Ordering now matters more: independent rotations can use different factories at once.'
             ],
             sketch: [
-              ...bx(20, 80, 60, 50, 'F', { c: 'pink' }),
+              ...bx(20, 80, 60, 50, 'F', { c: 'ink' }),
               B(100, 80, 60, 50), B(180, 80, 60, 50), B(260, 80, 60, 50), B(340, 80, 60, 50), B(420, 80, 60, 50),
-              ...bx(500, 80, 60, 50, 'F', { c: 'pink' }),
+              ...bx(500, 80, 60, 50, 'F', { c: 'ink' }),
               t(290, 50, 'factory at each end'),
               B(40, 200, 330, 40),
-              ...bx(160, 250, 50, 40, 'F', { c: 'pink' }),
-              ...bx(310, 250, 50, 40, 'F', { c: 'pink' }),
+              ...bx(160, 250, 50, 40, 'F', { c: 'ink' }),
+              ...bx(310, 250, 50, 40, 'F', { c: 'ink' }),
               t(520, 230, 'one every\nthird module')
             ],
             takeaway: 'Extra factories, each 823 qubits. Each rotation uses the nearest.',
@@ -1385,11 +1562,11 @@
             ],
             sketch: [
               L([[60, 280], [600, 280]]),
-              B(90, 255, 70, 25, { c: 'pink' }), B(170, 250, 70, 30, { c: 'blue' }), B(250, 130, 70, 150, { c: 'green' }),
+              B(90, 255, 70, 25, { c: 'ink' }), B(170, 250, 70, 30, { c: 'blue' }), B(250, 130, 70, 150, { c: 'green' }),
               t(205, 120, 'T-heavy, every third module'),
               t(125, 245, '1.18×', { size: 20 }), t(205, 240, '1.02×', { size: 20 }),
               t(285, 160, '2.37×', { c: 'green' }),
-              t(480, 130, 'factories alone', { c: 'pink' }),
+              t(480, 130, 'factories alone', { c: 'ink' }),
               t(480, 180, 'Paceline alone', { c: 'blue' }),
               t(480, 230, 'both', { c: 'green' })
             ],
