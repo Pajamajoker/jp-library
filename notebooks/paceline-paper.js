@@ -89,6 +89,10 @@
           { term: 'shift automorphism', means: 'Permutes a module’s logical qubits so its LPU can reach them.' },
           { term: 'inter-module measurement', aka: ['inter-module measurements'], means: 'Measure a Pauli product across two neighbouring modules. 120 timesteps.' },
           { term: 'timestep', aka: ['timesteps'], means: 'The unit of time: one physical gate.' },
+          { term: 'automorphism', means: 'A symmetry of a code: shuffle its physical qubits and the code looks the same.' },
+          { term: 'Pauli measurement', aka: ['measuring a Pauli product'], means: 'Asks one ±1 question about a Pauli product, and nothing more.' },
+          { term: 'native Clifford rotation', aka: ['native Clifford rotations'], means: 'A Clifford step the LPU can do directly. Each costs one in-module measurement.' },
+          { term: 'P ⊗ Z', means: 'P on the data and Z on a magic state, measured jointly. Turns the data by π/4 about P.' },
           { term: 'native', means: 'A Pauli the LPU can measure directly, with no synthesis.' }
         ]
       },
@@ -105,6 +109,10 @@
           { term: 'lead-in', aka: ['lead-ins'], means: 'The synthesis before the joint measurement on one module.' },
           { term: 'tail', aka: ['tails'], means: 'The steps that undo synthesis after the joint measurement.' },
           { term: 'outcome wait', aka: ['outcome waits'], means: 'An operation waits for the last T injection outcome of the operation before it, if they do not commute.' },
+          { term: 'held but idle', means: 'A task holds the module, but the module does no work right now.' },
+          { term: 'busy', hover: false, means: 'A module doing work for a task.' },
+          { term: 'free', hover: false, means: 'A module no task holds.' },
+          { term: 'clock', hover: false, means: 'Each module’s clock: the time it becomes free.' },
           { term: 'cost model', means: 'The architecture designers’ timing rule. It leaves the outcome wait out.' },
           { term: 'reference compiler', means: 'The architecture’s own compiler. Program order and reference placement.' },
           { term: 'reference placement', means: 'Qubits put on modules in index order, 11 per module.' },
@@ -121,6 +129,12 @@
           { term: 'schedule', means: 'A start time for every operation.' },
           { term: 'run time', means: 'Time from the first instruction to the last. Also called makespan.' },
           { term: 'floor', means: 'The larger of two lower bounds: host load per factory, and the longest chain of non-commuting operations.' },
+          { term: 'lower bound', means: 'A time no schedule can beat.' },
+          { term: 'graph', means: 'Dots joined by edges. Each edge joins exactly two dots.' },
+          { term: 'min-cut placement', means: 'A chip-design method: split a circuit into regions with few wires crossing.' },
+          { term: 'depth', means: 'How far from the start an operation sits in the precedence graph.' },
+          { term: 'local search', means: 'Keep making the single change that helps most, until no change helps.' },
+          { term: 'Sethi et al.’s rule', aka: ['Sethi’s order', 'Sethi order'], means: 'Order modules so the least-used one sits farthest from the factory.' },
           { term: 'in flight', means: 'Operations running at the same moment.' },
           { term: 'list scheduling', means: 'Keep a list of ready operations. Each time, start the one that can begin earliest.' },
           { term: 'ready', means: 'An operation whose predecessors have all been issued.' },
@@ -643,8 +657,8 @@
       /* ============================ SECTION 3 (background) ============================ */
       {
         title: 'Background: the bicycle machine',
-        intro: 'The paper’s machine stores many logical qubits per block and joins blocks in a line. This section builds it piece by piece and lists its four instructions.',
-        bridge: 'You now hold modules on a line, each with 11 data slots, a pivot and an LPU, a factory on its host, and four timed instructions. Section 4 runs one rotation on this machine, step by step.',
+        intro: 'The paper’s machine stores many logical qubits per block and joins blocks in a line. This section builds its hardware piece by piece.',
+        bridge: 'You now hold modules on a line, each with 11 data slots, a pivot and an LPU, and a factory on its host. Section 4 shows what the machine does with them: it measures Pauli products.',
         tabs: [
           {
             title: 'Many logical qubits per block',
@@ -731,7 +745,7 @@
           {
             title: 'Modules on a line',
             buildsOn: 'One module has a pivot, 11 slots and an LPU. This tab joins many modules and adds the factory from Section 1.',
-            leadsTo: 'Next tab lists the four instructions the machine runs, with their times.',
+            leadsTo: 'Next section asks what this machine actually does to its logical qubits: it measures Pauli products.',
             idea: [
               'Modules sit on a line. *Couplers* link the LPUs of neighbouring modules only.',
               'A *factory* module distils magic states and connects to one code module, its *host*.',
@@ -754,53 +768,258 @@
               answer: 0,
               why: 'Couplers link the LPUs of neighbouring modules.'
             }
-          },
-          {
-            title: 'Four instructions',
-            buildsOn: 'The machine is modules on a line with a factory on the host. This tab lists everything that machine can be told to do.',
-            leadsTo: 'Next section uses these four instructions to run one rotation across several modules.',
-            idea: [
-              '*In-module measurement*: a Pauli on one module, through its LPU. *Shift automorphism*: shuffles a module’s qubits so the LPU can reach them.',
-              '*Inter-module measurement*: a Pauli product across two neighbours. *T injection*: a magic state measured with the host’s pivot.',
-              'Time counts *timesteps*, one per physical gate. Both measurements take 120. A T injection holds the factory 109 more.'
-            ],
-            keys: [
-              { tone: 'main', h: 'How a run fails', t: 'Instruction failures are independent. A run fails with probability about *Σ Nᵢ Pᵢ*, where Nᵢ counts uses of instruction i and Pᵢ is its error rate. Fewer inter-module measurements means fewer failures.' }
-            ],
-            sketch: [
-              ...bx(30, 40, 280, 56, 'in-module: 120', { c: 'blue' }),
-              ...bx(330, 40, 280, 56, 'shift automorphism'),
-              ...bx(30, 130, 280, 56, 'inter-module: 120', { c: 'green' }),
-              ...bx(330, 130, 280, 56, 'T injection', { c: 'ink' }),
-              t(470, 225, 'factory busy +109', { c: 'ink' }),
-              t(320, 290, 'timesteps: one per physical gate')
-            ],
-            takeaway: 'Four instructions. Measurements 120 timesteps. T holds the factory longer.',
-            widget: null,
-            check: {
-              q: 'A program uses fewer inter-module measurements. What happens to its failure probability?',
-              options: ['It falls, since failure is about Σ Nᵢ Pᵢ', 'It rises', 'It is unchanged', 'It depends only on T injections'],
-              answer: 0,
-              why: 'Each use of an instruction adds its error rate to the total.'
-            }
           }
         ]
       },
 
       /* ============================ SECTION 4 (background) ============================ */
       {
-        title: 'Background: running one rotation',
-        intro: 'One rotation may touch qubits on several modules. This section follows it through the machine: chain, synthesis, task, and the reference compiler that runs them all.',
-        bridge: 'You now hold the whole execution model and the baseline it is compared against. The paper itself starts next: Section 5 measures where the baseline’s time goes.',
+        title: 'Background: logic by measuring',
+        intro: 'This machine does almost all its logic by measuring Pauli products, not by applying gates. This section shows what such a measurement does, then each instruction that uses one.',
+        bridge: 'You now hold: a Pauli measurement asks a ±1 question, a rotation is a joint measurement with a magic state, and the machine has four timed instructions. Section 5 runs one rotation that spans several modules.',
         tabs: [
           {
-            title: 'Split the Pauli by module',
-            buildsOn: 'Section 3 put 11 program qubits on each module. A rotation’s Pauli product spans qubits on many modules.',
-            leadsTo: 'Next tab joins the touched modules into one connected run, the chain, ending at the host.',
+            title: 'Measuring a Pauli product',
+            buildsOn: 'Section 3 ended with modules on a line. Section 1 defined Pauli products. This tab asks what it means to measure one.',
+            leadsTo: 'Next tab uses this kind of measurement to perform a rotation, the thing a program is made of.',
             idea: [
-              'Write the Pauli as P = P₁ ⊗ P₂ ⊗ P₃ ⊗ …, one piece per module. *Pₘ* acts only on module m.',
-              'Pₘ = I means module m holds none of the rotation’s qubits.',
-              'Example: P = ZX on module 1, I on module 2, Y on module 3.'
+              'Measuring a Pauli product asks one yes or no question. The answer is *+1* or *−1*.',
+              'Measuring Z₁Z₂ asks only: do qubits 1 and 2 agree? It never asks what either qubit is on its own.',
+              'So if every pattern in the state gives the same answer, the measurement changes nothing. α|00⟩ + β|11⟩ stays as it is.',
+              'QEC basics used this for checks. The T injection used it as Z ⊗ Z. This machine uses it for almost everything.'
+            ],
+            sketch: [
+              t(320, 45, 'measure Z₁Z₂: do they agree?', { size: 24 }),
+              ...bx(40, 80, 120, 56, '00', { c: 'green' }), ...bx(180, 80, 120, 56, '11', { c: 'green' }),
+              ...bx(340, 80, 120, 56, '01', { c: 'red' }), ...bx(480, 80, 120, 56, '10', { c: 'red' }),
+              t(170, 170, 'agree: +1', { c: 'green' }), t(470, 170, 'differ: −1', { c: 'red' }),
+              H(110, 215, 420, 44, { c: 'yellow' }),
+              t(320, 246, 'never asks what one qubit is')
+            ],
+            takeaway: 'A Pauli measurement asks one ±1 question and nothing more.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'On 00', h: 200, parts: [...bx(250, 40, 140, 60, '0 0'), t(320, 150, 'agree: +1', { c: 'green', size: 24 })],
+                  eq: ['Z₁Z₂ |00⟩ = (+1)(+1) |00⟩ = +1 · |00⟩'],
+                  say: 'Z leaves a 0 alone. Both qubits are 0, so no minus sign appears and the answer is +1.' },
+                { t: 'On 11', h: 200, parts: [...bx(250, 40, 140, 60, '1 1'), t(320, 150, 'agree: +1', { c: 'green', size: 24 })],
+                  eq: ['Z₁Z₂ |11⟩ = (−1)(−1) |11⟩ = +1 · |11⟩'],
+                  say: 'Z puts a minus on a 1. Two minus signs cancel, so matching qubits give +1 again.' },
+                { t: 'On 01', h: 200, parts: [...bx(250, 40, 140, 60, '0 1', { c: 'red' }), t(320, 150, 'differ: −1', { c: 'red', size: 24 })],
+                  eq: ['Z₁Z₂ |01⟩ = (+1)(−1) |01⟩ = −1 · |01⟩'],
+                  say: 'One minus sign survives, so qubits that differ give −1.' },
+                { t: 'On α|00⟩ + β|11⟩', h: 200, parts: [t(320, 60, 'α|00⟩ + β|11⟩', { size: 28 }), A(320, 76, 320, 110),
+                    H(170, 125, 300, 44, { c: 'yellow' }), t(320, 155, 'both +1: nothing changes', { c: 'green', size: 24 })],
+                  eq: ['Z₁Z₂ (α|00⟩ + β|11⟩) = +1 · (α|00⟩ + β|11⟩)'],
+                  say: 'Both patterns answer +1, so the answer is +1 for sure. Nothing collapses and α and β are untouched. Measuring Z₁ alone would have collapsed this state to 00 or 11.' }
+              ]
+            },
+            check: {
+              q: 'You measure Z₁Z₂ on α|00⟩ + β|11⟩. What happens?',
+              options: ['It reads +1 and the state is unchanged', 'It collapses to 00 or 11', 'It reads 0 or 1 at random', 'It reads −1'],
+              answer: 0,
+              why: 'Every pattern in the state agrees, so the question has one answer and nothing is disturbed.'
+            }
+          },
+          {
+            title: 'A rotation by measuring',
+            buildsOn: 'A Pauli measurement asks a ±1 question. Section 2 said a program is a list of Pauli rotations. This tab joins the two.',
+            leadsTo: 'Next tab names the part of the machine that carries out these measurements on a module.',
+            idea: [
+              'A program is a list of rotations about Pauli products like ZZX. The machine has no gate that turns about ZZX directly.',
+              'Recall the T injection: measure Z ⊗ Z on a data qubit and |T⟩, read |T⟩ in X, fix with S if the parity was odd.',
+              'Swap that one Z for a whole product P. Measuring P ⊗ Z with |T⟩ turns the data by π/4 about P.',
+              'The fix becomes a quarter turn about P, still Clifford. So one rotation is one joint measurement, plus a fix.'
+            ],
+            sketch: [
+              t(160, 45, 'one qubit', { c: 'blue', size: 24 }),
+              ...bx(60, 70, 200, 56, 'Z ⊗ Z with |T⟩', { c: 'blue' }),
+              A(160, 132, 160, 180, { c: 'blue' }),
+              t(160, 215, 'T on the qubit', { c: 'blue' }),
+              t(480, 45, 'many qubits', { c: 'green', size: 24 }),
+              ...bx(380, 70, 200, 56, 'P ⊗ Z with |T⟩', { c: 'green' }),
+              A(480, 132, 480, 180, { c: 'green' }),
+              t(480, 215, 'π/4 turn about P', { c: 'green' }),
+              t(320, 290, 'odd outcome: Clifford fix, as before', { c: 'red', size: 22 })
+            ],
+            takeaway: 'A rotation about P = measure P ⊗ Z with a magic state, then fix.',
+            widget: null,
+            check: {
+              q: 'How does this machine turn qubits by π/4 about ZZX?',
+              options: [
+                'It measures ZZX ⊗ Z jointly with a magic state, then applies a Clifford fix if needed',
+                'It applies three T gates, one per qubit',
+                'It reads all three qubits and rewrites them',
+                'It cannot, so such rotations are skipped'
+              ],
+              answer: 0,
+              why: 'The T injection trick works for any Pauli product P in place of the single Z.'
+            }
+          },
+          {
+            title: 'Who measures: the LPU',
+            buildsOn: 'A rotation needs a joint measurement of a Pauli product. Section 3 paired each block with an LPU. This tab gives the LPU its job.',
+            leadsTo: 'Next tab shows that the LPU cannot reach every logical qubit as it sits, and the shuffle that fixes that.',
+            idea: [
+              'An *in-module measurement* measures a Pauli product on one module’s logical qubits. The module’s LPU performs it.',
+              'Time on this machine is counted in *timesteps*. One timestep is the time of one physical gate.',
+              'An in-module measurement takes 120 timesteps. An LPU performs one at a time.'
+            ],
+            sketch: [
+              ...bx(40, 90, 260, 120, 'block: 12 logical', { c: 'green' }),
+              ...bx(360, 115, 120, 70, 'LPU', { c: 'blue' }),
+              L([[300, 150], [360, 150]], { c: 'blue' }),
+              t(420, 90, 'measures Paulis', { c: 'blue', size: 22 }),
+              t(560, 160, '120\ntimesteps'),
+              t(320, 280, '1 timestep = 1 physical gate')
+            ],
+            takeaway: 'In-module measurement: one Pauli on one module, 120 timesteps.',
+            widget: null,
+            check: {
+              q: 'What is one timestep?',
+              options: ['The time of one physical gate', 'One round of checks', 'One in-module measurement', 'One microsecond'],
+              answer: 0,
+              why: 'The paper counts durations in timesteps, one per physical gate.'
+            }
+          },
+          {
+            title: 'Shift automorphism',
+            buildsOn: 'The LPU performs in-module measurements on its block. This tab adds the one instruction that is not a measurement.',
+            leadsTo: 'Next tab leaves one module and measures across two neighbouring modules.',
+            idea: [
+              'An *automorphism* of a code is a symmetry: shuffle the code’s physical qubits and the code looks the same.',
+              'A *shift automorphism* uses such a symmetry to move the block’s logical qubits to new positions.',
+              'It permutes the module’s logical qubits so that the LPU can reach the ones a measurement needs.',
+              'So where a qubit sits changes how much work a measurement costs. Section 5 makes that cost a number.'
+            ],
+            sketch: [
+              ...bx(40, 80, 70, 56, 'q₁'), ...bx(120, 80, 70, 56, 'q₂'), ...bx(200, 80, 70, 56, 'q₃'),
+              A(285, 108, 345, 108),
+              ...bx(360, 80, 70, 56, 'q₃', { c: 'green' }), ...bx(440, 80, 70, 56, 'q₁'), ...bx(520, 80, 70, 56, 'q₂'),
+              t(155, 180, 'before'), t(475, 180, 'after a shift'),
+              t(320, 250, 'same code, logical qubits moved', { c: 'green' })
+            ],
+            takeaway: 'A shift automorphism moves logical qubits within a block, losing nothing.',
+            widget: null,
+            check: {
+              q: 'Why can a shift automorphism move logical qubits without damaging them?',
+              options: ['It is a symmetry of the code, so the code looks the same after it', 'It measures each qubit first', 'It copies the qubits', 'It only acts on the pivot'],
+              answer: 0,
+              why: 'An automorphism maps the code onto itself, so the stored data survives the shuffle.'
+            }
+          },
+          {
+            title: 'Measuring across two modules',
+            buildsOn: 'In-module measurements stay inside one block. Section 3 joined neighbouring modules with couplers.',
+            leadsTo: 'Next tab places the last instruction, the T injection, on the module next to the factory.',
+            idea: [
+              'An *inter-module measurement* measures a Pauli product spread over two *neighbouring* modules, through the coupler.',
+              'It also takes 120 timesteps. It holds both modules while it runs.',
+              'Modules that are not neighbours cannot be measured together in one step. Section 5 shows how a longer reach is built.'
+            ],
+            sketch: [
+              ...bx(40, 100, 150, 80, 'module 1'), ...bx(245, 100, 150, 80, 'module 2'), ...bx(450, 100, 150, 80, 'module 3'),
+              L([[190, 140], [245, 140]], { c: 'green' }), L([[395, 140], [450, 140]], { c: 'green' }),
+              K([[115, 100], [200, 50], [440, 50], [525, 100]], { c: 'red', dash: true }),
+              t(320, 40, 'not in one step', { c: 'red', size: 22 }),
+              t(218, 220, '120 timesteps', { c: 'green' }),
+              t(320, 285, 'neighbours only')
+            ],
+            takeaway: 'Inter-module measurement: neighbours only, 120 timesteps.',
+            widget: null,
+            check: {
+              q: 'Can one inter-module measurement join module 1 and module 3?',
+              options: ['No, only neighbouring modules', 'Yes, any two modules', 'Yes, if module 2 is empty', 'Only through the factory'],
+              answer: 0,
+              why: 'Couplers join neighbours, so one inter-module measurement spans two neighbouring modules.'
+            }
+          },
+          {
+            title: 'T injection on this machine',
+            buildsOn: 'A rotation is a joint measurement with a magic state. Section 3 put the factory next to one module, the host.',
+            leadsTo: 'Next tab adds up the cost of all four instructions: time spent and chance of failure.',
+            idea: [
+              'The factory hands a magic state to its host. A *T injection* measures it jointly with the host’s *pivot*.',
+              'So the T injection never touches a data slot. The rotation’s question must first be carried onto the host’s pivot.',
+              'The measurement takes 120 timesteps. The factory stays occupied 109 timesteps more, so the next injection waits.'
+            ],
+            sketch: [
+              ...bx(40, 100, 200, 90, 'host'),
+              ...bx(60, 120, 50, 50, 'p', { c: 'blue' }),
+              t(85, 90, 'pivot', { c: 'blue', size: 20 }),
+              ...bx(420, 100, 180, 90, 'factory'),
+              A(415, 145, 250, 145, { c: 'green' }),
+              t(330, 130, '|T⟩', { c: 'green' }),
+              t(140, 240, 'joint with the pivot', { c: 'blue', size: 22 }),
+              t(510, 240, 'busy 120 + 109', { c: 'red', size: 22 })
+            ],
+            takeaway: 'A T injection meets the host’s pivot, never a data slot.',
+            widget: {
+              type: 'stack',
+              unit: 'timesteps',
+              segments: [
+                { label: 'joint measurement with the pivot', v: 120 },
+                { label: 'factory still occupied', v: 109 }
+              ],
+              note: 'One T injection holds the factory for 229 timesteps in all. A T-heavy rotation needs 24 to 94 of these in a row.'
+            },
+            check: {
+              q: 'Which qubit does a T injection measure the magic state with?',
+              options: ['The host’s pivot', 'The data qubit being rotated', 'Every qubit on the host', 'The factory’s own pivot'],
+              answer: 0,
+              why: 'The paper: a T injection measures a magic state jointly with the host’s pivot.'
+            }
+          },
+          {
+            title: 'Adding up time and failure',
+            buildsOn: 'Four instructions now have their times. Each one, like any physical step, also has a small chance to fail.',
+            leadsTo: 'Next section runs one real rotation, which needs many of these instructions on several modules.',
+            idea: [
+              'Time: an LPU does one instruction at a time, so the instructions on one module add up end to end.',
+              'Failure: each use of instruction i fails with a small chance *Pᵢ*. Suppose it is used *Nᵢ* times.',
+              'For small, independent chances, the chance that anything fails is about the sum: *Σ Nᵢ Pᵢ*.',
+              'So using fewer inter-module measurements makes a run fail less often.'
+            ],
+            math: [
+              { h: 'Why small chances add', eq: ['P(A or B) = P(A) + P(B) − P(A and B)', 'P(A and B) = P(A) P(B), tiny'], why: 'When both are rare, the overlap term is negligible, so the chances just add.' },
+              { h: 'A made-up example', eq: ['1,000 uses at 10⁻⁶ → 10⁻³', '200 uses at 10⁻⁵ → 2 × 10⁻³', 'total ≈ 3 × 10⁻³'], why: 'These numbers only show the arithmetic. They are not the paper’s rates.' }
+            ],
+            sketch: [
+              B(40, 70, 120, 50, { c: 'blue' }), B(160, 70, 120, 50, { c: 'blue' }), B(280, 70, 120, 50, { c: 'blue' }),
+              t(220, 50, 'one module: times add', { c: 'blue', size: 22 }),
+              t(100, 103, '120', { size: 22 }), t(220, 103, '120', { size: 22 }), t(340, 103, '120', { size: 22 }),
+              t(520, 103, '= 360', { c: 'blue' }),
+              H(150, 190, 340, 50, { c: 'yellow' }),
+              t(320, 225, 'failure ≈ Σ Nᵢ Pᵢ', { size: 30 }),
+              t(320, 290, 'fewer uses, fewer failures', { c: 'green', size: 22 })
+            ],
+            takeaway: 'Times add on a module. Failure ≈ Σ Nᵢ Pᵢ over instruction uses.',
+            widget: null,
+            check: {
+              q: 'A compiler halves the number of inter-module measurements and changes nothing else. What happens to failure?',
+              options: ['It falls, since that term of Σ Nᵢ Pᵢ halves', 'It doubles', 'It stays the same', 'It falls to zero'],
+              answer: 0,
+              why: 'Nᵢ for inter-module measurements halves, so its share of the sum halves.'
+            }
+          }
+        ]
+      },
+
+      /* ============================ SECTION 5 (background) ============================ */
+      {
+        title: 'Background: one rotation across modules',
+        intro: 'A rotation’s Pauli usually touches qubits on several modules, and each LPU sees only its own. This section builds, one move at a time, how the machine still measures it.',
+        bridge: 'You now hold the full lowering of one rotation: split P by module, glue a GHZ chain of pivots to the host, synthesise each piece, then inject T on the host. Section 6 times many rotations together.',
+        tabs: [
+          {
+            title: 'A rotation that spans modules',
+            buildsOn: 'Section 4 said a rotation about P is a joint measurement of P with a magic state, and each LPU measures only its own module.',
+            leadsTo: 'Next tab tries the obvious fix, measuring each piece on its own, and shows why it breaks.',
+            idea: [
+              'A program’s P often touches qubits on several modules. No single LPU can measure all of it.',
+              'Write P = P₁ ⊗ P₂ ⊗ P₃ ⊗ …, one piece per module. *Pₘ* is the part of P on module m.',
+              'Example: P = ZX on module 1, I on module 2, Y on module 3. Pₘ = I means module m holds none of P’s qubits.'
             ],
             sketch: [
               t(320, 50, 'P = P₁ ⊗ P₂ ⊗ P₃', { size: 30 }),
@@ -820,27 +1039,141 @@
             }
           },
           {
-            title: 'A chain to the host',
-            buildsOn: 'Each module has a piece Pₘ. A rotation needs T injections, which happen only at the host from Section 3.',
-            leadsTo: 'Next tab looks inside one module of the chain: how its piece Pₘ is measured.',
+            title: 'Naive try: measure each piece',
+            buildsOn: 'P splits into pieces Pₘ, one per module. Each LPU can measure its own piece. This tab tries exactly that.',
+            leadsTo: 'Next tab fixes the problem with helpers glued together, so only the combined answer is learned.',
             idea: [
-              'The *chain* runs over neighbouring modules from the host to the farthest module with Pₘ ≠ I.',
-              'It prepares a *GHZ state* on the pivots of the chain. Each neighbouring pair is a *link*: one inter-module measurement.',
-              'The chain may cross modules with Pₘ = I. On each module with Pₘ ≠ I, the pivot is measured jointly with Pₘ.'
+              'Classical first: the parity of a bit string is the product of the parities of its pieces, in ±1 form.',
+              'So measuring each Pₘ and multiplying does give the right ±1 for P. But it learns each piece’s answer too.',
+              'That extra knowledge disturbs the data. Take α|00⟩ + β|11⟩ with qubits on two modules and P = Z₁Z₂.',
+              'Z₁Z₂ reads +1 and changes nothing. Measuring Z₁ then Z₂ collapses the state to 00 or 11.'
             ],
             sketch: [
-              ...bx(30, 120, 100, 60, 'P₁≠I', { c: 'blue' }),
-              ...bx(160, 120, 100, 60, 'P₂=I'),
-              ...bx(290, 120, 100, 60, 'P₃≠I', { c: 'blue' }),
-              ...bx(420, 120, 100, 60, 'host'),
-              ...bx(550, 120, 70, 60, 'F', { c: 'ink' }),
-              H(30, 205, 490, 30, { c: 'mint' }),
-              t(275, 228, 'chain: 4 modules, 3 links', { size: 22 }),
-              L([[130, 150], [160, 150]], { c: 'green' }), L([[260, 150], [290, 150]], { c: 'green' }), L([[390, 150], [420, 150]], { c: 'green' }),
-              t(210, 90, 'crossed but empty', { c: 'red' })
+              t(160, 45, 'measure Z₁Z₂', { c: 'green', size: 24 }),
+              t(160, 105, 'α|00⟩ + β|11⟩'),
+              A(160, 120, 160, 170, { c: 'green' }),
+              t(160, 205, 'unchanged', { c: 'green' }),
+              t(480, 45, 'measure Z₁, then Z₂', { c: 'red', size: 24 }),
+              t(480, 105, 'α|00⟩ + β|11⟩'),
+              A(480, 120, 480, 170, { c: 'red' }),
+              t(480, 205, '00 or 11: collapsed', { c: 'red' }),
+              H(120, 245, 400, 40, { c: 'yellow' }),
+              t(320, 273, 'ask for the product only')
+            ],
+            takeaway: 'Measuring each piece learns too much and collapses the data.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'Start', h: 200, parts: [t(320, 60, 'α|00⟩ + β|11⟩', { size: 28 }), t(320, 120, 'qubit 1 on module 1, qubit 2 on module 2', { size: 20 })],
+                  say: 'The program wants the answer to Z₁Z₂ only. Both patterns agree, so that answer is +1 and the state should survive.' },
+                { t: 'Measure Z₁ alone', h: 200, parts: [t(320, 60, 'Z₁ reads +1 (00) or −1 (11)', { size: 24, c: 'red' }), A(320, 80, 320, 120, { c: 'red' }),
+                    t(320, 160, 'α|00⟩ or β|11⟩, the other is gone', { size: 22, c: 'red' })],
+                  eq: ['chance of +1 = |α|²,  chance of −1 = |β|²'],
+                  say: 'The two patterns give different answers to Z₁, so this readout tells them apart. The state collapses to one pattern.' },
+                { t: 'Multiply', h: 200, parts: [t(320, 60, 'Z₁ × Z₂ = (+1)(+1) or (−1)(−1) = +1', { size: 22 }),
+                    H(170, 100, 300, 44, { c: 'yellow' }), t(320, 130, 'right answer, ruined state', { size: 24 })],
+                  say: 'The product is +1 either way, which is right. But α and β were lost on the way. The machine must learn the product without the pieces.' }
+              ]
+            },
+            check: {
+              q: 'Why is measuring each piece Pₘ separately not good enough?',
+              options: [
+                'It learns each piece’s answer, which can collapse the data',
+                'It gives the wrong product',
+                'It takes no time',
+                'It needs a magic state per piece'
+              ],
+              answer: 0,
+              why: 'The product is right, but the extra answers tell patterns apart and destroy α and β.'
+            }
+          },
+          {
+            title: 'Glue the helpers: a GHZ state',
+            buildsOn: 'Measuring each piece alone learns too much. Each module has a helper qubit, the pivot, from Section 3.',
+            leadsTo: 'Next tab builds that glued state along a line of modules, using inter-module measurements.',
+            idea: [
+              'Put the pivots of the modules into a *GHZ state*: all 0 and all 1 together, (|00…0⟩ + |11…1⟩)/√2.',
+              'Then measure each piece Pₘ jointly with its own pivot, on its own module.',
+              'Each module’s answer alone is now a coin flip and says nothing. Multiplied together, they give the answer for P.',
+              'So the machine learns the product, and only the product. The data survives.'
+            ],
+            keys: [
+              { tone: 'main', h: 'The idea to keep', t: 'The GHZ glue hides each piece’s answer inside the randomness of the pivots. Only the *product* of the module answers carries information, and it equals the answer for the whole P.' }
+            ],
+            sketch: [
+              ...bx(40, 70, 160, 60, 'P₁ ⊗ pivot', { c: 'blue' }),
+              ...bx(240, 70, 160, 60, 'P₂ ⊗ pivot', { c: 'blue' }),
+              ...bx(440, 70, 160, 60, 'P₃ ⊗ pivot', { c: 'blue' }),
+              K([[120, 140], [220, 175], [320, 140], [420, 175], [520, 140]], { c: 'green', dash: true }),
+              t(320, 205, 'pivots glued: GHZ', { c: 'green' }),
+              t(120, 250, 'coin', { size: 22 }), t(320, 250, 'coin', { size: 22 }), t(520, 250, 'coin', { size: 22 }),
+              t(320, 300, 'product = answer for P', { c: 'green' })
+            ],
+            takeaway: 'Glued pivots: each answer is random, their product is P’s answer.',
+            widget: null,
+            check: {
+              q: 'With the pivots in a GHZ state, what does one module’s answer alone tell you?',
+              options: ['Nothing, it is a coin flip', 'The answer for the whole P', 'The value of α', 'Whether the factory is free'],
+              answer: 0,
+              why: 'Only the product of all the module answers carries the result.'
+            }
+          },
+          {
+            title: 'Building the chain',
+            buildsOn: 'The pivots must be glued into a GHZ state. Section 4 said one inter-module measurement joins two neighbouring modules.',
+            leadsTo: 'Next tab says where the chain must end, and why it can cross modules that hold none of P.',
+            idea: [
+              'Glue grows one neighbour at a time. One inter-module measurement joins two neighbouring pivots.',
+              'The glued run of modules is the operation’s *chain*. Each neighbouring pair in it is a *link*.',
+              'Each link costs one inter-module measurement. A chain of k modules has k − 1 links.'
+            ],
+            sketch: [
+              ...bx(40, 110, 110, 60, 'p'), ...bx(190, 110, 110, 60, 'p'), ...bx(340, 110, 110, 60, 'p'), ...bx(490, 110, 110, 60, 'p'),
+              L([[150, 140], [190, 140]], { c: 'green' }), L([[300, 140], [340, 140]], { c: 'green' }), L([[450, 140], [490, 140]], { c: 'green' }),
+              t(170, 95, 'link', { c: 'green', size: 20 }), t(320, 95, 'link', { c: 'green', size: 20 }), t(470, 95, 'link', { c: 'green', size: 20 }),
+              t(320, 230, '4 modules, 3 links'),
+              t(320, 285, 'one inter-module measurement per link', { c: 'green', size: 22 })
+            ],
+            takeaway: 'A chain of k modules has k − 1 links, one measurement each.',
+            widget: null,
+            check: {
+              q: 'A chain spans 6 neighbouring modules. How many inter-module measurements glue it?',
+              options: ['5', '6', '1', '12'],
+              answer: 0,
+              why: 'k modules in a row have k − 1 neighbouring pairs, one link each.'
+            }
+          },
+          {
+            title: 'The chain ends at the host',
+            buildsOn: 'A chain is glued pivots on neighbouring modules. Section 4 put the T injection on the host’s pivot.',
+            leadsTo: 'Next tab looks inside one module of the chain, where its piece Pₘ must be measured with its pivot.',
+            idea: [
+              'The T injection happens at the host’s pivot, so the host must be in the GHZ glue.',
+              'So the chain runs from the host to the farthest module with Pₘ ≠ I.',
+              'Glue only joins neighbours, so the chain also crosses modules between them, even where Pₘ = I.',
+              'On the reference machine the host is at the end of the line, so every chain reaches that end.'
+            ],
+            sketch: [
+              ...bx(20, 120, 100, 60, 'P₁=I'),
+              ...bx(140, 120, 100, 60, 'P₂≠I', { c: 'blue' }),
+              ...bx(260, 120, 100, 60, 'P₃=I'),
+              ...bx(380, 120, 100, 60, 'host'),
+              ...bx(500, 120, 110, 60, 'factory'),
+              H(140, 205, 340, 30, { c: 'mint' }),
+              t(310, 228, 'chain: modules 2, 3, host', { size: 22 }),
+              t(310, 95, 'crossed but empty', { c: 'red', size: 20 }),
+              t(70, 270, 'not in chain', { size: 20 })
             ],
             takeaway: 'The chain runs from the farthest touched module to the host.',
-            widget: null,
+            widget: {
+              type: 'steps',
+              steps: [
+                { say: 'The host is module 5, beside the factory. A rotation touches qubits on module 2 only.', show: 'P₂ ≠ I, all other Pₘ = I' },
+                { say: 'The T injection is on module 5, so the glue must reach module 5.', show: 'chain must include module 5' },
+                { say: 'Glue joins neighbours only, so it passes through 3 and 4.', show: 'chain = 2, 3, 4, 5' },
+                { say: 'Count the links: neighbouring pairs in the chain.', show: '(2,3) (3,4) (4,5): 3 inter-module measurements' }
+              ]
+            },
             check: {
               q: 'The host is module 5 and a rotation touches only module 2. How many modules does its chain hold?',
               options: ['4: modules 2, 3, 4, 5', '1: module 2', '2: modules 2 and 5', '5: every module'],
@@ -849,53 +1182,104 @@
             }
           },
           {
-            title: 'Synthesis level',
-            buildsOn: 'On each touched module the pivot is measured jointly with Pₘ. This tab asks how the LPU measures a Pₘ it cannot measure directly.',
-            leadsTo: 'Next tab puts synthesis, joint measurement and T injections together into one timed task.',
+            title: 'Not every piece is native',
+            buildsOn: 'On each chain module with Pₘ ≠ I, the piece Pₘ is measured jointly with the pivot by an in-module measurement.',
+            leadsTo: 'Next tab shows how a non-native piece is measured anyway, using a Clifford gate as a disguise.',
             idea: [
-              'Only a few Paulis are *native* to the LPU. Every other Pₘ must be *synthesised*.',
-              'Synthesis wraps a native measurement in native Clifford rotations, one in-module measurement each, then undoes them.',
-              'Their count is the Pauli’s *synthesis level*. It depends on which slots Pₘ touches. On the gross code: 18.5 on average.'
+              'An LPU can measure only a few Pauli products directly. These are its *native* Paulis.',
+              'Most pieces Pₘ a program needs are not native.',
+              'Naive try: just ask the LPU to measure Pₘ. It cannot: that measurement is not in its list.'
             ],
             sketch: [
-              ...bx(30, 120, 120, 60, 'Clifford'),
-              ...bx(170, 120, 120, 60, 'native', { c: 'green' }),
-              ...bx(310, 120, 120, 60, 'undo'),
-              A(150, 150, 168, 150), A(290, 150, 308, 150),
-              t(90, 90, 'lead-in', { c: 'blue' }),
-              t(370, 90, 'tail', { c: 'blue' }),
-              t(530, 130, 'level =', { c: 'red' }),
-              t(530, 170, 'measurements', { c: 'red' }),
-              H(110, 235, 420, 40, { c: 'yellow' }),
-              t(320, 264, 'slots touched set the level')
+              ...bx(40, 80, 220, 140, 'native list', { c: 'green' }),
+              t(150, 250, 'a few Paulis', { c: 'green', size: 22 }),
+              ...bx(380, 120, 200, 60, 'Pₘ', { c: 'red' }),
+              L([[300, 150], [370, 150]], { c: 'red', dash: true }),
+              t(480, 230, 'not in the list', { c: 'red' }),
+              t(320, 40, 'what the LPU can measure directly')
             ],
-            takeaway: 'Synthesis level = in-module measurements spent. Set by the slots.',
+            takeaway: 'An LPU measures only native Paulis directly. Most pieces are not native.',
             widget: null,
+            check: {
+              q: 'What does native mean for a Pauli on this machine?',
+              options: ['The LPU can measure it directly', 'It acts on the pivot only', 'It needs no magic state', 'It commutes with every other Pauli'],
+              answer: 0,
+              why: 'Native Paulis are the ones in the LPU’s direct list.'
+            }
+          },
+          {
+            title: 'Synthesis and its level',
+            buildsOn: 'Most pieces are not native. Section 2 showed a Clifford gate turns one Pauli product into another.',
+            leadsTo: 'Next section times a whole rotation, where these synthesis steps turn out to take most of the time.',
+            idea: [
+              'Pick Clifford steps C that turn Pₘ into a native Pauli N. Apply C, measure N, then undo C.',
+              'Measuring N after C asks exactly the Pₘ question. This disguise is called *synthesis*.',
+              'Each Clifford step is a native Clifford rotation, and each costs one in-module measurement.',
+              'The number used is the piece’s *synthesis level*. It depends on the slots Pₘ touches. Gross code average: 18.5.'
+            ],
+            sketch: [
+              ...bx(30, 110, 130, 60, 'C', { c: 'blue' }),
+              ...bx(190, 110, 130, 60, 'measure N', { c: 'green' }),
+              ...bx(350, 110, 130, 60, 'undo C', { c: 'blue' }),
+              A(160, 140, 188, 140), A(320, 140, 348, 140),
+              t(95, 90, 'lead-in', { c: 'blue', size: 22 }),
+              t(415, 90, 'tail', { c: 'blue', size: 22 }),
+              t(560, 130, 'level =', { c: 'red', size: 22 }),
+              t(560, 160, 'C steps', { c: 'red', size: 22 }),
+              H(110, 225, 420, 40, { c: 'yellow' }),
+              t(320, 254, 'the slots touched set the level')
+            ],
+            takeaway: 'Synthesis disguises Pₘ as a native Pauli. Level = steps it costs.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'The problem', h: 200, parts: [...bx(220, 40, 200, 60, 'measure Pₘ', { c: 'red' }), t(320, 150, 'not native: the LPU cannot', { c: 'red', size: 22 })],
+                  say: 'The module needs the answer to Pₘ, but Pₘ is not on the LPU’s native list.' },
+                { t: 'Disguise it', h: 200, parts: [...bx(80, 40, 160, 60, 'Pₘ'), A(250, 70, 390, 70, { c: 'blue' }), t(320, 55, 'C', { c: 'blue', size: 26 }),
+                    ...bx(400, 40, 160, 60, 'N', { c: 'green' }), t(320, 150, 'a Clifford turns one Pauli into another', { size: 20 })],
+                  say: 'Clifford gates send Paulis to Paulis. Choose Clifford steps C that send Pₘ to a native N.' },
+                { t: 'Measure, then undo', h: 200, parts: [...bx(30, 40, 160, 60, 'C', { c: 'blue' }), ...bx(240, 40, 160, 60, 'N', { c: 'green' }), ...bx(450, 40, 160, 60, 'undo C', { c: 'blue' }),
+                    t(320, 150, 'answer for N = answer for Pₘ', { c: 'green', size: 22 })],
+                  say: 'After C, the N question is the Pₘ question in disguise. Measure N, then undo C so the data is back where it was.' },
+                { t: 'Count the cost', h: 200, parts: [t(320, 60, 'level = number of C steps', { size: 26, c: 'red' }), t(320, 120, 'each step = 1 in-module measurement', { size: 22 }),
+                    t(320, 170, 'gross code: 18.5 on average', { size: 22 })],
+                  say: 'Each Clifford step is itself done by an in-module measurement. Their count is the synthesis level, and it depends on which slots Pₘ touches.' }
+              ]
+            },
             check: {
               q: 'What decides the synthesis level of a module’s piece Pₘ?',
               options: ['Which slots Pₘ touches', 'How far the module is from the factory', 'The rotation angle', 'How many T gates the rotation needs'],
               answer: 0,
               why: 'The level depends on the slots the Pauli touches.'
             }
-          },
+          }
+        ]
+      },
+
+      /* ============================ SECTION 6 (background) ============================ */
+      {
+        title: 'Background: timing a whole program',
+        intro: 'One rotation now has a full recipe. This section times many of them sharing the machine, and builds the baseline the paper compares against.',
+        bridge: 'You now hold tasks, busy, held and free modules, per-module clocks, the outcome wait, and the baseline. The paper starts next: Section 7 measures how much of the baseline’s time is lost.',
+        tabs: [
           {
-            title: 'One operation as a task',
-            buildsOn: 'An operation has a chain, and on each module a synthesis level. This tab times all of it as one unit.',
-            leadsTo: 'Next tab adds the one wait that ties consecutive operations together, the outcome wait.',
+            title: 'One rotation as a task',
+            buildsOn: 'Section 5 gave one rotation’s recipe: GHZ chain, synthesis on each piece, T injection on the host.',
+            leadsTo: 'Next tab asks what a module does while it waits inside a task.',
             idea: [
-              'The model runs each operation as a *task*. On each module of its chain: a *lead-in*, its share of joint measurements, a *tail*.',
-              'The host also runs the rotation’s *T stream*, its T injections.',
-              'A task holds each module from its first instruction there to its last. Tasks never overlap on a module.'
+              'The paper’s model calls one operation a *task*. On each chain module it has a *lead-in*: the synthesis steps C.',
+              'Then its share of the joint measurements, then a *tail*: the steps that undo C.',
+              'The host also runs the rotation’s *T stream*, its T injections in a row.'
             ],
             sketch: [
               t(60, 70, 'm1', { anchor: 'start' }), t(60, 140, 'm2', { anchor: 'start' }), t(60, 210, 'host', { anchor: 'start' }),
               B(130, 50, 90, 30, { c: 'blue' }), B(220, 50, 60, 30, { c: 'green' }), B(280, 50, 90, 30, { c: 'blue' }),
               B(130, 120, 70, 30, { c: 'blue' }), B(220, 120, 60, 30, { c: 'green' }), B(280, 120, 70, 30, { c: 'blue' }),
-              B(130, 190, 60, 30, { c: 'blue' }), B(220, 190, 60, 30, { c: 'green' }), B(370, 190, 220, 30, { c: 'ink' }),
-              t(480, 260, 'T stream', { c: 'ink' }),
+              B(130, 190, 60, 30, { c: 'blue' }), B(220, 190, 60, 30, { c: 'green' }), B(370, 190, 220, 30, { c: 'red' }),
+              t(480, 260, 'T stream', { c: 'red' }),
               t(250, 300, 'lead-in, joint, tail')
             ],
-            takeaway: 'A task holds each chain module from first to last instruction.',
+            takeaway: 'Task = lead-ins, joint measurements and tails, plus the host’s T stream.',
             widget: {
               type: 'stack',
               unit: 'timesteps',
@@ -906,23 +1290,73 @@
               note: 'One operation of the 118-qubit adder, run alone, takes 2,557 timesteps. In-module synthesis is 93% of that.'
             },
             check: {
-              q: 'Can two tasks use the same module at overlapping times?',
-              options: ['No, a task holds the module from its first to its last instruction there', 'Yes, if they commute', 'Yes, if one is a T stream', 'Only on the host'],
+              q: 'What is a task’s lead-in on a module?',
+              options: ['The synthesis steps before the joint measurement', 'The T injections', 'The GHZ links', 'Waiting for the factory'],
               answer: 0,
-              why: 'In the model, tasks never overlap on a module.'
+              why: 'The lead-in synthesises the module’s piece. The tail undoes it.'
             }
           },
           {
-            title: 'Waiting for an outcome',
-            buildsOn: 'A task ends its T stream on the host. Section 1 said each T injection outcome may call for a Clifford correction.',
-            leadsTo: 'Next tab shows the reference compiler, which runs these tasks in written order.',
+            title: 'Busy, held, free',
+            buildsOn: 'A task has work on several modules, and its parts must line up: joint measurements need every chain module at once.',
+            leadsTo: 'Next tab gives each module a clock and says when a new task may start.',
             idea: [
-              'A T injection outcome sets a Clifford correction. That correction changes the next operation that does not commute.',
-              'So that next operation waits for the outcome of its predecessor’s last T injection: the *outcome wait*.',
-              'The architecture’s *cost model* leaves this wait out. The paper puts it into every time it reports.'
+              'A task *holds* each chain module from its first instruction there to its last. No other task may use it meanwhile.',
+              'Inside that window a module can wait, for example while the host runs the T stream. It is *held but idle*.',
+              'So at any moment a module is *busy* (working), held but idle, or *free* (no task holds it).'
             ],
             sketch: [
-              ...bx(40, 90, 220, 60, 'o₁: T stream', { c: 'ink' }),
+              t(60, 80, 'm1', { anchor: 'start' }), t(60, 170, 'host', { anchor: 'start' }),
+              B(130, 60, 80, 30, { c: 'green' }), H(210, 60, 230, 30, { c: 'yellow' }), B(210, 60, 230, 30, { c: 'red', dash: true }), B(440, 60, 60, 30, { c: 'green' }),
+              B(130, 150, 80, 30, { c: 'green' }), B(210, 150, 290, 30, { c: 'green' }),
+              t(170, 120, 'busy', { c: 'green', size: 20 }), t(325, 120, 'held but idle', { c: 'red', size: 20 }), t(560, 80, 'free', { size: 20 }),
+              t(355, 220, 'm1 waits for the host’s T stream', { size: 20 }),
+              A(130, 280, 600, 280), t(590, 270, 'time', { anchor: 'end', size: 20 })
+            ],
+            takeaway: 'Busy works. Held but idle waits inside a task. Free has no task.',
+            widget: null,
+            check: {
+              q: 'Module 1 finished its lead-in but must wait for the host’s T stream before its tail. What is it?',
+              options: ['Held but idle', 'Busy', 'Free', 'Failed'],
+              answer: 0,
+              why: 'The task still holds it, but it does no work while it waits.'
+            }
+          },
+          {
+            title: 'Every module keeps a clock',
+            buildsOn: 'Tasks hold modules and never overlap on one. This tab says when the next task may begin.',
+            leadsTo: 'Next tab adds a second reason to wait, the T injection outcome from Section 1.',
+            idea: [
+              'Each module keeps its own *clock*: the time it becomes free.',
+              'A new task needs every module of its chain, so it starts at the *latest* clock among them.',
+              'Example: chain modules free at 300, 900 and 500. The task starts at 900. Two modules sit free until then.'
+            ],
+            sketch: [
+              ...bx(40, 60, 160, 56, 'm1: 300'), ...bx(240, 60, 160, 56, 'm2: 900', { c: 'red' }), ...bx(440, 60, 160, 56, 'm3: 500'),
+              A(320, 125, 320, 175, { c: 'red' }),
+              ...bx(170, 180, 300, 56, 'task starts at 900', { c: 'red' }),
+              t(320, 285, 'the slowest module decides')
+            ],
+            takeaway: 'A task starts when the last module of its chain is free.',
+            widget: null,
+            check: {
+              q: 'A chain’s modules are free at 200, 700 and 400. When can the task start?',
+              options: ['700', '200', '400', '1300'],
+              answer: 0,
+              why: 'It needs all of them, so it waits for the latest clock.'
+            }
+          },
+          {
+            title: 'The outcome wait',
+            buildsOn: 'A task waits for its modules. Section 1 showed a T injection’s outcome decides a Clifford fix.',
+            leadsTo: 'Next tab shows the compiler that the architecture ships with, which orders tasks as written.',
+            idea: [
+              'A T injection’s outcome sets a Clifford fix. That fix changes the next operation that does not commute with this one.',
+              'So that next operation waits for its predecessor’s last T injection outcome: the *outcome wait*.',
+              'The architecture’s *cost model* leaves this wait out. The paper adds it into every time it reports.'
+            ],
+            sketch: [
+              ...bx(40, 90, 220, 60, 'o₁: T stream'),
               D(260, 120, { c: 'red' }),
               t(260, 75, 'last outcome', { c: 'red' }),
               A(262, 135, 330, 205, { c: 'red' }),
@@ -933,25 +1367,21 @@
             takeaway: 'A non-commuting successor waits for the last T outcome.',
             widget: null,
             check: {
-              q: 'Why does the outcome wait matter more with extra factories?',
-              options: [
-                'It makes program order look faster than it can run, and that error grows when operations could overlap',
-                'Extra factories make T injections slower',
-                'It applies only to commuting operations',
-                'It removes the need for Clifford corrections'
-              ],
+              q: 'Which operation must wait for o₁’s last T outcome?',
+              options: ['The next operation that does not commute with o₁', 'Every later operation', 'Only operations on the host', 'None, outcomes are instant'],
               answer: 0,
-              why: 'The paper says the omission barely matters with one factory, but hides real waits once more work can overlap.'
+              why: 'The fix changes only operations that do not commute with o₁.'
             }
           },
           {
             title: 'The reference compiler',
-            buildsOn: 'Tasks, chains and outcome waits are the execution model. This tab shows how the architecture’s own compiler fills it in.',
-            leadsTo: 'Next section starts the paper: it times this baseline on 24 programs and finds where the time goes.',
+            buildsOn: 'Tasks, clocks and outcome waits are the timing rules. Something must still choose where qubits go and the order of tasks.',
+            leadsTo: 'Next tab defines how run times are compared, and the baseline every result is measured against.',
             idea: [
               'The *reference compiler* places qubits on modules in index order, 11 per module: the *reference placement*.',
-              'It issues operations in program order. Each holds its whole chain while it runs.',
-              'The *baseline*: this compiler on the reference machine, timed with outcome waits added.'
+              'It seats each qubit in a slot by index too.',
+              'It issues operations in *program order*, and each holds its whole chain while it runs.',
+              'Its designers note the scheme forces all Pauli rotations to be performed serially.'
             ],
             sketch: [
               ...bx(40, 60, 160, 56, 'q1 to q11'), ...bx(240, 60, 160, 56, 'q12 to q22'), ...bx(440, 60, 160, 56, 'q23 to q33'),
@@ -961,7 +1391,7 @@
               A(162, 225, 178, 225), A(302, 225, 318, 225),
               t(540, 232, 'one by one', { c: 'red' })
             ],
-            takeaway: 'Baseline: index placement, program order, outcome waits included.',
+            takeaway: 'Reference compiler: index placement, program order.',
             widget: null,
             check: {
               q: 'Under the reference placement, where do qubits 12 to 22 go?',
@@ -969,23 +1399,54 @@
               answer: 0,
               why: 'Index order, 11 per module: qubits 1 to 11 on module 1, 12 to 22 on module 2.'
             }
+          },
+          {
+            title: 'Run time, speed-up, baseline',
+            buildsOn: 'The reference compiler gives one way to run a program. The paper needs a fair way to compare it with others.',
+            leadsTo: 'Next section starts the paper: it times the baseline on 24 programs and asks how much time is lost.',
+            idea: [
+              '*Run time*: from the first instruction to the last.',
+              '*Speed-up*: baseline run time divided by the new run time. 2× means the new run takes half as long.',
+              'The *baseline*: the reference compiler on the reference machine, timed with outcome waits added.',
+              'The paper checked its timing rules: replaying the reference compiler matches the cost model to the timestep in all 30 cases.'
+            ],
+            math: [
+              { h: 'Speed-up', eq: ['speed-up = baseline time / new time', '1000 / 400 = 2.5×'], why: 'Above 1 is faster than the baseline. Below 1 is slower.' }
+            ],
+            sketch: [
+              B(60, 80, 500, 50, { c: 'red' }),
+              t(310, 113, 'baseline: 1000', { c: 'red' }),
+              B(60, 170, 200, 50, { c: 'green' }),
+              t(160, 203, 'new: 400', { c: 'green' }),
+              H(300, 170, 260, 50, { c: 'yellow' }),
+              t(430, 203, '1000 / 400 = 2.5×'),
+              t(320, 280, 'speed-up over the baseline')
+            ],
+            takeaway: 'Speed-up = baseline time / new time.',
+            widget: null,
+            check: {
+              q: 'The baseline takes 900 timesteps and a new compiler 300. What is the speed-up?',
+              options: ['3×', '0.33×', '600', '1.5×'],
+              answer: 0,
+              why: '900 / 300 = 3.'
+            }
           }
         ]
       },
 
-      /* ============================ SECTION 5 (paper) ============================ */
+      /* ============================ SECTION 7 (paper) ============================ */
       {
         title: 'The paper: time is the price',
-        intro: 'With the background in hand, here is the paper’s question. Bicycle codes save qubits but pay in time, so run time decides whether they win.',
-        bridge: 'You now know the baseline spends most of its run waiting, far above the floor on T-light programs. Section 6 names the four reasons, each one later removed by a step of Paceline.',
+        intro: 'All the background is in place. Here is the paper’s question: bicycle codes save qubits but pay in time, so how much of that time is wasted?',
+        bridge: 'You now know the baseline spends most of its run waiting, far above the floor on T-light programs. Section 8 names the four reasons.',
         tabs: [
           {
             title: 'Fewer qubits, more time',
-            buildsOn: 'Section 4 ended with the baseline compiler. This tab starts the paper with the trade the bicycle machine makes.',
-            leadsTo: 'Next tab names what existing compilers optimise, and the gap the paper fills.',
+            buildsOn: 'Section 6 ended with the baseline and speed-up. This tab starts the paper with the trade the bicycle machine makes.',
+            leadsTo: 'Next tab says which choices a compiler can still make on this machine.',
             idea: [
-              'Recap: a bicycle machine runs rotations as tasks on chains of modules, fed by one factory.',
-              'It uses about 10× fewer physical qubits than the surface code.',
+              'Recap: a rotation is a task on a chain of modules, fed by one factory, timed against the baseline.',
+              'The machine uses about 10× fewer physical qubits than the surface code.',
               'But its designers estimate over 10× more time per T gate. So run time decides whether the qubit savings pay off.'
             ],
             sketch: [
@@ -1002,7 +1463,7 @@
             check: {
               q: 'Why does the paper focus on run time?',
               options: [
-                'Its time per T gate is over 10× higher, so time decides if the qubit savings pay off',
+                'Time per T gate is over 10× higher, so time decides if the qubit savings pay off',
                 'Bicycle codes use more qubits than the surface code',
                 'Run time sets the code distance',
                 'Failure probability cannot be measured'
@@ -1012,13 +1473,14 @@
             }
           },
           {
-            title: 'What Paceline decides',
-            buildsOn: 'Run time decides whether the machine wins. This tab asks which choices the architecture leaves open to a compiler.',
-            leadsTo: 'Next tab gives a lower bound on run time, the floor, to measure how much is being lost.',
+            title: 'What a compiler can still choose',
+            buildsOn: 'Run time decides whether the machine wins. Section 5 fixed how each rotation is lowered: chain, synthesis, T injection.',
+            leadsTo: 'Next tab finds a time no such choice can beat, the first of two lower bounds.',
             idea: [
-              'Earlier compilers for this machine cut logical error or compile time. How operations share modules and the factory got little study.',
-              '*Paceline* keeps the architecture’s lowering of every operation unchanged.',
-              'It makes three choices: which module each qubit goes to, which slot it takes, and when each operation runs.'
+              'Earlier compilers for this machine cut logical error or compile time. How operations share modules got little study.',
+              'The paper’s compiler, *Paceline*, keeps the lowering of every operation as it is.',
+              'It chooses the *placement* (which module each qubit goes to), the *seating* (which slot) and the *schedule* (when each runs).',
+              'With several factories it also picks which factory each rotation uses.'
             ],
             sketch: [
               ...bx(40, 70, 170, 60, 'placement', { c: 'blue' }),
@@ -1032,23 +1494,73 @@
             widget: null,
             check: {
               q: 'Which of these does Paceline change?',
-              options: ['Which slot each qubit takes', 'How each Pauli is synthesised', 'The instruction set', 'The GHZ chain lowering'],
+              options: ['Which slot each qubit takes', 'How each Pauli is synthesised', 'The instruction set', 'The GHZ chain recipe'],
               answer: 0,
               why: 'It keeps the lowering and instruction set, and picks placement, seating and schedule.'
             }
           },
           {
-            title: 'A floor under run time',
-            buildsOn: 'Paceline picks placement, seating and schedule. This tab gives a time no such choice can beat.',
+            title: 'Lower bound 1: the host',
+            buildsOn: 'Paceline picks placement, seating and schedule. Section 5 said every chain ends at the host, where the T stream runs.',
+            leadsTo: 'Next tab gives the second lower bound, from the precedence graph of Section 2.',
+            idea: [
+              'A *lower bound* is a time no schedule can beat.',
+              'Every rotation passes through a factory’s host. The host runs its T stream and at least its cheapest pivot work.',
+              'The host does one thing at a time. So the host’s total work per factory is a lower bound on run time.'
+            ],
+            sketch: [
+              ...bx(40, 70, 120, 50, 'rot 1'), ...bx(170, 70, 120, 50, 'rot 2'), ...bx(300, 70, 120, 50, 'rot 3'), ...bx(430, 70, 120, 50, '…'),
+              A(100, 125, 280, 185), A(230, 125, 300, 185), A(360, 125, 330, 185), A(490, 125, 360, 185),
+              ...bx(230, 190, 180, 56, 'host', { c: 'red' }),
+              t(320, 290, 'all of it, one at a time', { c: 'red' })
+            ],
+            takeaway: 'The host’s total work is a time no schedule can beat.',
+            widget: null,
+            check: {
+              q: 'Why is the host’s total work a lower bound on run time?',
+              options: ['Every rotation needs the host, and it does one thing at a time', 'The host is the slowest module', 'The host has no pivot', 'The host runs the precedence graph'],
+              answer: 0,
+              why: 'All rotations queue through the host, so its work cannot be squeezed below its sum.'
+            }
+          },
+          {
+            title: 'Lower bound 2 and the floor',
+            buildsOn: 'The host gives one lower bound. Section 2 said the longest path in the precedence graph bounds run time too.',
+            leadsTo: 'Next tab measures how far the baseline sits above these bounds.',
+            idea: [
+              'Bound 2: the longest chain of non-commuting operations, each timed at its cheapest. They must run one after another.',
+              'The larger of the two bounds is the *floor*. No placement or order can run faster.',
+              'It is not always reachable, but it shows how much time might be won back.'
+            ],
+            sketch: [
+              O(80, 120, 20), O(220, 120, 20), O(360, 120, 20), O(500, 120, 20),
+              A(100, 120, 198, 120), A(240, 120, 338, 120), A(380, 120, 478, 120),
+              t(290, 70, 'longest non-commuting chain', { c: 'blue' }),
+              L([[60, 230], [600, 230]], { dash: true }),
+              t(320, 220, 'floor = larger bound', { size: 22 }),
+              t(320, 285, 'host work, or this chain', { c: 'red', size: 22 })
+            ],
+            takeaway: 'Floor = the larger of host work and the longest chain.',
+            widget: null,
+            check: {
+              q: 'Host work is 5,000 timesteps and the longest chain 8,000. What is the floor?',
+              options: ['8,000', '5,000', '13,000', '3,000'],
+              answer: 0,
+              why: 'The floor is the larger of the two bounds.'
+            }
+          },
+          {
+            title: 'How far above the floor',
+            buildsOn: 'The floor is a time nothing can beat. This tab compares the baseline with it on 24 programs.',
             leadsTo: 'Next tab looks inside a baseline run to see what the modules do with the lost time.',
             idea: [
-              'Bound 1: every rotation passes through a factory’s host, so the host’s load per factory bounds the run.',
-              'Bound 2: the longest chain of non-commuting operations, each at its cheapest. The larger bound is the *floor*.',
-              'Baseline T-light programs run 4.4 to 5.7× above the floor. T-heavy ones run within 1.01 to 1.22× of it.'
+              'Baseline T-light programs run 4.4 to 5.7× above the floor. Most of their time could in principle be won back.',
+              'Baseline T-heavy programs run within 1.01 to 1.22× of it. There is almost nothing left to win by compiling.',
+              'The programs fall into these two groups, with nothing in between.'
             ],
             sketch: [
               L([[60, 250], [600, 250]], { dash: true }),
-              t(560, 240, 'floor', { anchor: 'end' }),
+              t(590, 240, 'floor', { anchor: 'end' }),
               B(130, 60, 120, 190, { c: 'blue' }),
               B(380, 220, 120, 30, { c: 'red' }),
               t(190, 40, '4.4 to 5.7×', { c: 'blue' }),
@@ -1059,24 +1571,19 @@
             widget: null,
             check: {
               q: 'T-heavy baseline runs sit within 1.22× of the floor. What does that mean?',
-              options: [
-                'Little time is left to win by compiling alone',
-                'They waste the most time',
-                'They have no T gates',
-                'The floor is wrong for them'
-              ],
+              options: ['Little time is left to win by compiling alone', 'They waste the most time', 'They have no T gates', 'The floor is wrong for them'],
               answer: 0,
               why: 'A run near its lower bound has almost no slack for a compiler to recover.'
             }
           },
           {
-            title: 'Busy, held, free',
-            buildsOn: 'T-light programs run far above the floor. This tab asks what a module is doing during that extra time.',
-            leadsTo: 'Next section traces this waiting to four bottlenecks.',
+            title: 'Where the time goes',
+            buildsOn: 'T-light programs run far above the floor. Section 6 split a module’s time into busy, held but idle, and free.',
+            leadsTo: 'Next section traces this waiting to four causes.',
             idea: [
               'On the 118-qubit adder, the average module is busy 32% of the run.',
-              'It is held by an operation but idle 44% of the run, and free 24%.',
-              'The longest dependency chain is only 8 to 12% of the baseline run time on T-light programs. The rest is waiting.'
+              'It is held but idle 44% of the run, and free 24%.',
+              'Its longest dependency chain is only 8 to 12% of the baseline run time on T-light programs. The rest is waiting.'
             ],
             sketch: [
               H(60, 110, 165, 60, { c: 'mint' }),
@@ -1110,20 +1617,47 @@
         ]
       },
 
-      /* ============================ SECTION 6 (paper) ============================ */
+      /* ============================ SECTION 8 (paper) ============================ */
       {
         title: 'The paper: four bottlenecks',
         intro: 'The paper traces the waiting to four causes. Each one is later removed by one step of Paceline.',
-        bridge: 'You now hold four bottlenecks: program order, synthesis, load near the factory, and the factory itself. Section 7 builds Paceline, one step per bottleneck.',
+        bridge: 'You now hold four bottlenecks: program order, synthesis, load near the host, and the factory itself. Section 9 builds the first two fixes, ordering and seating.',
         tabs: [
           {
+            title: 'Why chains are long',
+            buildsOn: 'Section 7 found modules held but idle 44% of the run. Section 5 said every chain must reach the host.',
+            leadsTo: 'Next tab shows what long chains do to operations run in program order.',
+            idea: [
+              'On the reference machine the host is at the end of the line, so every chain runs all the way to that end.',
+              'Even a rotation on far modules holds every module in between.',
+              'So chains are long: 8.4 of 11 modules on average on the adder, 5.2 of 7 on the multiplier.'
+            ],
+            sketch: [
+              B(20, 120, 55, 50), B(80, 120, 55, 50), B(140, 120, 55, 50), B(200, 120, 55, 50), B(260, 120, 55, 50),
+              B(320, 120, 55, 50), B(380, 120, 55, 50), B(440, 120, 55, 50), ...bx(500, 120, 55, 50, 'h'),
+              ...bx(565, 120, 55, 50, 'F'),
+              H(80, 185, 475, 30, { c: 'mint' }),
+              t(318, 208, 'one chain, most of the line', { size: 22 }),
+              t(108, 100, 'touched', { c: 'blue', size: 20 }),
+              t(320, 280, 'adder: 8.4 of 11 modules')
+            ],
+            takeaway: 'With the factory at the end, chains cover most of the line.',
+            widget: null,
+            check: {
+              q: 'Why does a rotation on module 2 hold modules 3 to 10 on an 11-module adder?',
+              options: ['Its chain must reach the host at the end of the line', 'Those modules hold its qubits', 'Synthesis needs them', 'The factory is on module 2'],
+              answer: 0,
+              why: 'The chain runs from the farthest touched module to the host.'
+            }
+          },
+          {
             title: '1. Program order serialises',
-            buildsOn: 'Modules are held but idle 44% of the run. This tab finds the first reason: operations block each other.',
+            buildsOn: 'Chains cover most modules. Section 6 said the reference compiler runs operations in program order.',
             leadsTo: 'Next tab looks inside one operation, where synthesis takes most of the time.',
             idea: [
-              'Each operation holds a long chain: 8.4 of 11 modules on the adder, 5.2 of 7 on the multiplier.',
-              'So consecutive operations almost always share a module, and in program order the second waits for the first.',
-              'Only 1.19 operations are in flight on average on the adder, 1.07 on the multiplier. Yet many of them commute.'
+              'Two consecutive operations almost always share a module. In program order, the second waits for the first.',
+              'So only 1.19 operations are *in flight*, running at once, on the adder on average. On the multiplier, 1.07.',
+              'Yet many of those operations commute. On disjoint chains they could run side by side.'
             ],
             sketch: [
               B(40, 70, 560, 50, { c: 'blue' }),
@@ -1144,85 +1678,124 @@
             }
           },
           {
-            title: '2. Synthesis dominates each operation',
-            buildsOn: 'Operations run nearly one at a time. This tab asks what takes so long inside one of them.',
-            leadsTo: 'Next tab shows that overlapping operations moves the problem onto the modules near the factory.',
+            title: '2. Synthesis dominates',
+            buildsOn: 'Operations run nearly one at a time. Section 5 said each piece costs its synthesis level in in-module measurements.',
+            leadsTo: 'Next tab shows that where qubits sit inside a module changes this cost.',
             idea: [
-              'Run alone, an adder operation takes 2,557 timesteps. In-module synthesis is 93% of it.',
-              'Synthesis follows the level of each piece Pₘ, which depends on the slots. The reference placement seats by index.',
-              'Seating the same qubits on the same modules by level cuts total synthesis level 28% on the adder, 27% on the multiplier.'
-            ],
-            keys: [
-              { tone: 'fix', h: 'A free win', t: 'A seat never lengthens a chain or moves work between modules, so it *costs nothing at run time*. On T-heavy programs, though, synthesis is only 7 to 15% of an operation.' }
+              'Run alone, an adder operation takes 2,557 timesteps.',
+              'In-module synthesis, the lead-ins and tails, is 93% of that.',
+              'On T-heavy programs it is only 7 to 15%, because their T streams are so long.'
             ],
             sketch: [
               B(40, 80, 520, 50, { c: 'blue' }),
               B(560, 80, 40, 50),
               t(300, 113, 'synthesis 93%', { c: 'blue' }),
               t(320, 60, 'one adder operation: 2,557 timesteps'),
-              A(300, 150, 300, 190),
-              B(40, 200, 374, 50, { c: 'green' }),
-              t(227, 233, 'seat by level: 28% less', { c: 'green' }),
-              t(520, 233, 'same modules')
+              B(40, 200, 80, 50, { c: 'blue' }), B(120, 200, 480, 50, { c: 'red' }),
+              t(80, 280, '7 to 15%', { c: 'blue', size: 20 }),
+              t(360, 233, 'T stream', { c: 'red' }),
+              t(320, 180, 'T-heavy operation', { size: 22 })
             ],
-            takeaway: 'Synthesis is 93% of an adder op. Better seats cut it 28%, free.',
+            takeaway: 'Synthesis is 93% of an adder operation.',
             widget: null,
             check: {
-              q: 'Why does a better seating cost nothing at run time?',
-              options: [
-                'It never lengthens a chain or moves work between modules',
-                'It removes all T gates',
-                'It is done by the factory',
-                'It only changes the angle of rotations'
-              ],
+              q: 'Why is synthesis a smaller share of a T-heavy operation?',
+              options: ['Its long T stream takes most of the time', 'T-heavy Paulis are always native', 'T-heavy programs skip synthesis', 'Their chains are empty'],
               answer: 0,
-              why: 'Seating only picks slots within the same module.'
+              why: 'With 24 to 94 T injections in a row, the T stream dominates.'
             }
           },
           {
-            title: '3. Load gathers around the factory',
-            buildsOn: 'Overlap removes program-order waiting. Every chain still ends at the host, from Section 4.',
-            leadsTo: 'Next tab looks at T-heavy programs, where the factory itself is the limit.',
+            title: 'Seats set the synthesis cost',
+            buildsOn: 'Synthesis is most of a T-light operation. Section 5 said its level depends on which slots a piece touches.',
+            leadsTo: 'Next tab removes the program-order wait and finds a new problem near the host.',
             idea: [
-              'Once operations overlap, the busiest module sets the pace. With an end factory, modules near the host do the most work.',
-              'With commutation order, the busiest module’s share rises from 41% to 52% on the adder, 26% to 38% on 40 modules.',
-              'Balancing total load is not enough. On the multiplier a placement 6% better balanced ran 1.16× slower.'
+              'The reference compiler seats qubits by index, ignoring synthesis level.',
+              'Keep the same qubits on the same modules, but seat them by level: total synthesis level drops 28% on the adder, 27% on the multiplier.',
+              'A seat never lengthens a chain or moves work between modules, so this win *costs nothing* at run time.'
+            ],
+            sketch: [
+              B(40, 70, 520, 50, { c: 'red' }),
+              t(300, 103, 'seated by index', { c: 'red' }),
+              A(300, 130, 300, 170),
+              B(40, 180, 374, 50, { c: 'green' }),
+              t(227, 213, 'seated by level: 28% less', { c: 'green' }),
+              t(320, 280, 'same modules, same chains')
+            ],
+            takeaway: 'Better seats cut synthesis 28%, at no run-time cost.',
+            widget: null,
+            check: {
+              q: 'Why does a better seating cost nothing at run time?',
+              options: ['It never lengthens a chain or moves work between modules', 'It removes all T gates', 'It is done by the factory', 'It only changes rotation angles'],
+              answer: 0,
+              why: 'Seating only picks slots inside the same module.'
+            }
+          },
+          {
+            title: '3. Load gathers near the host',
+            buildsOn: 'Fix program order and operations overlap. Every chain still ends at the host, from the first tab of this section.',
+            leadsTo: 'Next tab shows why balancing total load is still not enough.',
+            idea: [
+              'Once operations overlap, the busiest module sets the pace.',
+              'Every chain runs to the host, so modules near the host carry the most work.',
+              'With commutation order, the busiest module’s share rises from 41% to 52% on the adder, and from 26% to 38% on 40 modules.'
             ],
             sketch: [
               B(40, 220, 80, 40), B(140, 190, 80, 70), B(240, 160, 80, 100),
               B(340, 110, 80, 150, { c: 'red' }), B(440, 60, 80, 200, { c: 'red' }),
-              ...bx(540, 200, 80, 60, 'F', { c: 'ink' }),
+              ...bx(540, 200, 80, 60, 'F'),
               t(480, 40, 'host', { c: 'red' }),
-              t(180, 300, 'far from factory'),
+              t(180, 300, 'far from the factory'),
               t(200, 90, 'busiest: 41% to 52%', { c: 'red' })
             ],
             takeaway: 'Every chain ends at the host, so work piles up next to it.',
             widget: null,
             check: {
-              q: 'On the multiplier, a placement balanced total load 6% better yet ran 1.16× slower. Why?',
-              options: [
-                'In some stretches it piled the active work onto one module',
-                'It used more T gates',
-                'It removed the factory',
-                'It broke commutation'
-              ],
+              q: 'After overlapping operations, what sets the run time?',
+              options: ['The busiest module, near the host', 'The longest program', 'The free modules', 'The first module on the line'],
               answer: 0,
-              why: 'The paper finds the host idled 1.9× longer: balance must hold over time, not only in total.'
+              why: 'Work that overlaps is limited by the module with the most of it.'
             }
           },
           {
-            title: '4. The factory bounds T-heavy programs',
-            buildsOn: 'Load near the host is a placement problem. On T-heavy programs the limit is the factory itself.',
-            leadsTo: 'Next section builds Paceline, with one step per bottleneck.',
+            title: 'Total balance is not enough',
+            buildsOn: 'Load piles up near the host. The obvious fix is to spread the total work evenly over modules.',
+            leadsTo: 'Next tab turns to T-heavy programs, where the limit is the factory itself.',
             idea: [
-              'A T-heavy rotation spends most of its time in its T stream. Each injection occupies the single factory.',
+              'On the multiplier, one placement balanced total load 6% better than another, yet ran 1.16× slower.',
+              'In some stretches it piled the active work onto one module, and the operations that needed the factory queued behind it.',
+              'The host then sat idle 1.9× longer. Balance must hold over time, not only in total.'
+            ],
+            sketch: [
+              t(160, 45, 'balanced in total', { c: 'green', size: 22 }),
+              B(60, 70, 60, 120, { c: 'green' }), B(130, 70, 60, 120, { c: 'green' }), B(200, 70, 60, 120, { c: 'green' }),
+              t(480, 45, 'but at one moment', { c: 'red', size: 22 }),
+              B(380, 70, 60, 120, { c: 'red' }), B(450, 160, 60, 30), B(520, 160, 60, 30),
+              t(410, 215, 'jam', { c: 'red', size: 20 }),
+              t(320, 270, 'host idles 1.9× longer', { c: 'red' })
+            ],
+            takeaway: 'Even total load can still jam one module at one moment.',
+            widget: null,
+            check: {
+              q: 'A placement balances total load better but runs slower. Why?',
+              options: ['It piles the work that runs at the same time onto one module', 'It uses fewer T gates', 'It removes the factory', 'It breaks commutation'],
+              answer: 0,
+              why: 'What matters is the load at each moment, not only the total.'
+            }
+          },
+          {
+            title: '4. The factory bounds T-heavy',
+            buildsOn: 'Balance over time is a placement problem. On T-heavy programs the limit is the factory itself.',
+            leadsTo: 'Next section builds Paceline, starting with the fix for program order.',
+            idea: [
+              'A T-heavy rotation spends most of its time in its T stream, and each injection holds the single factory.',
               'The factory is busy for up to 98% of the run. With one factory, Paceline reaches only 0.97 to 1.14× here.',
               'The fix is more T supply, which changes the hardware. Even T-light runs end up host-bound: busy 65 to 83%.'
             ],
             sketch: [
-              ...bx(40, 110, 130, 70, 'factory', { c: 'ink' }),
-              B(200, 120, 400, 50, { c: 'ink' }),
+              ...bx(40, 110, 130, 70, 'factory'),
               H(200, 120, 392, 50, { c: 'pink' }),
+              B(200, 120, 400, 50),
               t(400, 153, 'busy up to 98%'),
               t(320, 70, 'T-heavy run with one factory'),
               t(320, 240, 'no order or placement makes T faster', { c: 'red' })
@@ -1239,25 +1812,25 @@
         ]
       },
 
-      /* ============================ SECTION 7 (paper) ============================ */
+      /* ============================ SECTION 9 (paper) ============================ */
       {
-        title: 'The paper: the Paceline compiler',
-        intro: 'Paceline answers each bottleneck with one step: ordering, seating, placement, and extra factories for T-heavy work.',
-        bridge: 'You now hold Paceline: list-scheduled ordering, level-aware seating, two time-balanced placements and nearest-factory choice. Section 8 asks how much each step buys and whether the results hold.',
+        title: 'The paper: ordering and seating',
+        intro: 'Paceline answers the bottlenecks one step each. This section builds the first two: ordering, against program order, and seating, against synthesis cost.',
+        bridge: 'You now hold list-scheduled ordering and level-aware seating. Section 10 builds the hardest step, placement, and adds extra factories.',
         tabs: [
           {
             title: 'The pipeline',
-            buildsOn: 'Section 6 gave four bottlenecks. This tab lays out the compiler that answers them, in the order it runs.',
-            leadsTo: 'Next tab opens the ordering step, which answers bottleneck 1.',
+            buildsOn: 'Section 8 gave four bottlenecks. Section 7 said Paceline chooses placement, seating, factories and schedule.',
+            leadsTo: 'Next tab teaches list scheduling on a classical example, before using it on rotations.',
             idea: [
-              'Paceline runs placement first, then seating, then factory choice, then ordering. Order depends on chains, chains on placement.',
-              'It builds two placements, seats each by level, gives every rotation its nearest factory, and orders operations.',
-              'It times both in the execution model and keeps the faster.'
+              'Paceline runs placement first, then seating, then factory choice, then ordering.',
+              'That order matters: the order of operations depends on their chains, and the chains depend on the placement.',
+              'It builds two placements, runs every step on both, times both, and keeps the faster.'
             ],
             sketch: [
               ...bx(20, 120, 130, 56, 'placement', { c: 'blue' }),
               ...bx(170, 120, 130, 56, 'seating', { c: 'green' }),
-              ...bx(320, 120, 130, 56, 'factory', { c: 'ink' }),
+              ...bx(320, 120, 130, 56, 'factory'),
               ...bx(470, 120, 150, 56, 'ordering', { c: 'red' }),
               A(150, 148, 168, 148), A(300, 148, 318, 148), A(450, 148, 468, 148),
               t(320, 70, 'two candidates through every step'),
@@ -1273,53 +1846,138 @@
             }
           },
           {
-            title: 'Commutation-aware ordering',
-            buildsOn: 'Bottleneck 1 was program order. Section 2 showed any order that keeps the precedence graph’s arrows is valid.',
-            leadsTo: 'Next tab fixes the cost inside each operation by choosing slots, answering bottleneck 2.',
+            title: 'List scheduling, classically',
+            buildsOn: 'Ordering comes last in the pipeline. Section 2 gave the laundry example of tasks that wait for tasks.',
+            leadsTo: 'Next tab defines ready and start for rotations, the two numbers list scheduling needs.',
             idea: [
-              'An operation is *ready* once all its predecessors have issued. Its start is the latest clock on its chain’s modules.',
-              'It cannot start before the T outcome it waits for. Paceline issues the ready operation with the earliest start.',
-              'Ties go to the longest remaining path to the end, then to program order. This is *list scheduling*.'
+              'A kitchen: dishes, a few cooks, and rules like chop before fry.',
+              'Keep a list of dishes whose earlier steps are done. Each time, start the one that can begin soonest.',
+              'This is *list scheduling*. It is fast, and a dish that is free to go never waits behind a blocked one.'
             ],
             sketch: [
-              ...bx(40, 60, 160, 56, 'o₃: start 900', { c: 'red' }),
-              ...bx(40, 140, 160, 56, 'o₄: start 300', { c: 'green' }),
-              ...bx(40, 220, 160, 56, 'o₆: start 600'),
-              t(120, 40, 'ready list'),
-              A(210, 168, 330, 168, { c: 'green' }),
+              t(140, 45, 'ready list', { size: 24 }),
+              ...bx(40, 70, 200, 50, 'salad: now', { c: 'green' }),
+              ...bx(40, 135, 200, 50, 'soup: in 5 min'),
+              ...bx(40, 200, 200, 50, 'fry: in 9 min'),
+              A(250, 95, 360, 95, { c: 'green' }),
+              t(470, 100, 'start salad', { c: 'green' }),
+              t(470, 220, 'blocked dishes\nwait their turn')
+            ],
+            takeaway: 'List scheduling: start the ready job that can begin soonest.',
+            widget: null,
+            check: {
+              q: 'In list scheduling, which ready job starts next?',
+              options: ['The one that can begin soonest', 'The one written first', 'The longest one', 'A random one'],
+              answer: 0,
+              why: 'Starting what can begin soonest keeps workers from idling.'
+            }
+          },
+          {
+            title: 'Ready and start',
+            buildsOn: 'List scheduling needs to know which jobs are ready and when each can begin. Sections 2 and 6 hold both rules.',
+            leadsTo: 'Next tab runs the full rule, with ties, on a small example.',
+            idea: [
+              'An operation is *ready* once every operation with an arrow into it in the precedence graph has been issued.',
+              'Its *start* is the latest clock among the modules of its chain, as in Section 6.',
+              'It is also no earlier than the T injection outcome it waits for, the outcome wait.'
+            ],
+            sketch: [
+              O(80, 90, 22), O(80, 210, 22), O(260, 150, 22, { c: 'green' }),
+              A(100, 100, 238, 142), A(100, 200, 238, 158),
+              t(80, 55, 'issued'), t(80, 270, 'issued'),
+              t(260, 205, 'ready', { c: 'green' }),
+              ...bx(370, 80, 230, 50, 'latest clock: 900'),
+              ...bx(370, 170, 230, 50, 'outcome at: 700'),
+              t(485, 270, 'start = 900', { c: 'red' })
+            ],
+            takeaway: 'Ready: predecessors issued. Start: latest clock, after its outcome.',
+            widget: null,
+            check: {
+              q: 'Chain clocks say 900. The awaited T outcome arrives at 1100. When is the start?',
+              options: ['1100', '900', '200', '2000'],
+              answer: 0,
+              why: 'The start is the later of the latest clock and the awaited outcome.'
+            }
+          },
+          {
+            title: 'Earliest start first',
+            buildsOn: 'Every ready operation now has a start. This tab picks which one to issue.',
+            leadsTo: 'Next tab moves to seating, the fix for synthesis cost.',
+            idea: [
+              'Paceline issues the ready operation with the *earliest start*.',
+              'Ties go to the one with the longest remaining path to the end of the program, then to program order.',
+              'So an operation whose chain is free runs ahead of one blocked behind a busy module. More operations are in flight.'
+            ],
+            sketch: [
+              ...bx(40, 60, 170, 56, 'o₃: 900', { c: 'red' }),
+              ...bx(40, 140, 170, 56, 'o₄: 300', { c: 'green' }),
+              ...bx(40, 220, 170, 56, 'o₆: 600'),
+              t(125, 40, 'ready, with starts'),
+              A(220, 168, 330, 168, { c: 'green' }),
               t(470, 160, 'issue o₄ first', { c: 'green' }),
-              t(470, 230, 'o₃ waits for its\nmodules to free up', { c: 'red' })
+              t(470, 240, 'tie: longest path\nto the end wins')
             ],
             takeaway: 'Issue the ready operation that can start earliest.',
             widget: {
-              type: 'steps',
-              steps: [
-                { say: 'Program order: o₂ shares a module with o₁, so it waits, even though they commute.', show: 'o₁ … then o₂' },
-                { say: 'o₃ touches only free modules and has no arrow from o₁ or o₂.', show: 'o₃ ready, start = now' },
-                { say: 'Paceline issues o₃ ahead of the blocked o₂.', show: 'o₁ and o₃ run side by side' },
-                { say: 'o₂ issues as soon as its modules free up.', show: 'more operations in flight' }
+              type: 'frames',
+              frames: [
+                { t: 'Program order', h: 210, parts: [...bx(40, 40, 250, 50, 'o₁ on m1 to m5', { c: 'blue' }), ...bx(320, 40, 280, 50, 'o₂ on m4 to m5: waits', { c: 'red' }),
+                    ...bx(40, 120, 250, 50, 'o₃ on m6 to m8'), t(460, 150, 'o₃ waits behind o₂', { c: 'red', size: 22 })],
+                  say: 'In program order o₂ waits for o₁ because they share m4 and m5. o₃ waits too, just because it is written later.' },
+                { t: 'Ready set', h: 210, parts: [...bx(40, 40, 250, 50, 'o₂: start 2,500', { c: 'red' }), ...bx(40, 120, 250, 50, 'o₃: start 0', { c: 'green' }),
+                    t(460, 100, 'no arrows from o₁ or o₂ to o₃', { size: 20 })],
+                  say: 'Suppose o₃ commutes with o₁ and o₂, so it has no arrow into it. Its chain m6 to m8 is free now, so its start is 0.' },
+                { t: 'Earliest start first', h: 210, parts: [...bx(40, 40, 250, 50, 'o₁', { c: 'blue' }), ...bx(40, 120, 250, 50, 'o₃', { c: 'green' }),
+                    t(460, 100, 'side by side', { c: 'green', size: 24 })],
+                  say: 'Paceline issues o₃ now. o₁ and o₃ run at the same time on disjoint chains. o₂ issues when m4 and m5 free up.' }
               ]
             },
             check: {
-              q: 'Two ready operations both can start at the same time. Which does Paceline issue first?',
+              q: 'Two ready operations can both start at the same time. Which does Paceline issue first?',
               options: ['The one with the longer remaining path to the end', 'The one with fewer T gates', 'Always the first in program order', 'A random one'],
               answer: 0,
               why: 'Ties go to the longest remaining path, then program order.'
             }
           },
           {
-            title: 'Level-aware seating',
-            buildsOn: 'Bottleneck 2 was synthesis, set by the slots each piece Pₘ touches. Placement has already fixed each qubit’s module.',
-            leadsTo: 'Next tab returns to placement, the step that answers bottleneck 3.',
+            title: 'Seating as a cost',
+            buildsOn: 'Section 8 found seats set the synthesis cost. Placement has already fixed each qubit’s module.',
+            leadsTo: 'Next tab finds a good seating by swapping slots.',
             idea: [
-              'Paceline tabulates the level of all 4¹² Paulis on a module’s 12 logical qubits, once per code.',
-              'A seating σ maps a module’s qubits to its 11 slots. Its cost Cₘ(σ) sums level(σ(Pₘ)) over every piece on module m.',
-              'Local search: apply the slot swap that lowers the cost most, repeat until none helps. Try five starts, keep the best.'
+              'Paceline first lists the synthesis level of every Pauli on a module’s 12 logical qubits: 4¹² of them, once per code.',
+              'A *seating* σ puts a module’s qubits into its 11 slots. σ(Pₘ) is the piece Pₘ as it lands on those slots.',
+              'Cost of a seating: Cₘ(σ) = the sum of level(σ(Pₘ)) over every piece the program measures on module m.'
             ],
             math: [
               { h: 'The cost of a seating', eq: ['Cₘ(σ) = Σ level(σ(Pₘ))', 'sum over every piece Pₘ on module m'], why: 'It counts the native rotations synthesis spends on module m over the whole program.' },
-              { h: 'Why modules are separate', eq: ['C = C₁ + C₂ + C₃ + …'], why: 'A seat stays inside one module, so each Cₘ is minimised on its own.' },
               { h: 'Size of the table', eq: ['4¹² = 16,777,216 Paulis'], why: 'Four choices (I, X, Y, Z) on each of 12 logical qubits.' }
+            ],
+            sketch: [
+              B(40, 80, 280, 70),
+              ...bx(50, 90, 50, 50, 'a'), ...bx(110, 90, 50, 50, 'b'), ...bx(170, 90, 50, 50, 'c'),
+              t(180, 60, 'seating σ: qubits in slots'),
+              A(330, 115, 390, 115),
+              ...bx(400, 85, 200, 60, 'Cₘ(σ) = 40', { c: 'red' }),
+              t(320, 230, 'sum of levels of every piece on m'),
+              t(320, 285, 'lower cost: less synthesis', { c: 'green' })
+            ],
+            takeaway: 'A seating’s cost is the total synthesis level it causes.',
+            widget: null,
+            check: {
+              q: 'What does Cₘ(σ) count?',
+              options: ['The total synthesis level on module m under seating σ', 'The number of T gates', 'The number of links', 'The run time of module m'],
+              answer: 0,
+              why: 'It sums level(σ(Pₘ)) over every piece measured on module m.'
+            }
+          },
+          {
+            title: 'Swap until no swap helps',
+            buildsOn: 'Every seating now has a cost Cₘ(σ). This tab searches for a low one.',
+            leadsTo: 'Next section builds placement, which decides the modules that seating works inside.',
+            idea: [
+              '*Local search*: try every swap of two slots, empty slots included. Apply the swap that lowers the cost most.',
+              'Repeat until no swap lowers it. Do this from the current seating and from four random ones, and keep the best.',
+              'A seat stays inside one module, so each module is searched on its own.'
             ],
             sketch: [
               B(40, 80, 260, 70),
@@ -1330,28 +1988,72 @@
               t(470, 160, 'cost after: 31', { c: 'green' }),
               t(470, 250, 'repeat until\nno swap helps')
             ],
-            takeaway: 'Swap slots while total synthesis level falls.',
+            takeaway: 'Swap slots while total synthesis level falls. Try five starts.',
+            widget: {
+              type: 'steps',
+              steps: [
+                { say: 'Start from a seating with cost 40.', show: 'C = 40' },
+                { say: 'Try every pair of slots. Swapping b and c gives the biggest drop.', show: 'swap b, c: C = 31' },
+                { say: 'Try every pair again. The best swap now lowers it a little.', show: 'swap a, empty: C = 29' },
+                { say: 'No swap lowers the cost any more. Stop.', show: 'local best: 29' },
+                { say: 'Repeat from four random seatings and keep the lowest.', show: 'best of five starts' }
+              ]
+            },
+            check: {
+              q: 'Why can Paceline search each module’s seating on its own?',
+              options: ['A seat stays inside one module, so module costs add up separately', 'All modules hold the same qubits', 'Seating is done after the run', 'The factory seats the host'],
+              answer: 0,
+              why: 'Modules are independent, so each Cₘ is minimised by its own local search.'
+            }
+          }
+        ]
+      },
+
+      /* ============================ SECTION 10 (paper) ============================ */
+      {
+        title: 'The paper: placement and factories',
+        intro: 'Placement decides which module each qubit goes to. That sets every chain and how work divides over modules. This section builds it from a classical idea, then adds factories.',
+        bridge: 'You now hold the whole compiler: ordering, seating, two time-balanced placements and nearest-factory choice. Section 11 asks how much each step buys and whether the results hold.',
+        tabs: [
+          {
+            title: 'Graphs and hypergraphs',
+            buildsOn: 'Section 9 seated qubits inside modules. Placement must choose the modules first, and needs a picture of which qubits work together.',
+            leadsTo: 'Next tab cuts this picture into modules and prices the cut.',
+            idea: [
+              'A *graph* is dots joined by edges. Each edge joins exactly two dots.',
+              'A *hypergraph* lets one edge, a *hyperedge*, join any number of dots.',
+              'Here each logical qubit is a dot. Each operation is a hyperedge around its support, the qubits it touches.'
+            ],
+            sketch: [
+              t(140, 45, 'graph edge', { c: 'blue', size: 22 }),
+              O(80, 120, 14), O(200, 120, 14), L([[94, 120], [186, 120]], { c: 'blue' }),
+              t(470, 45, 'hyperedge', { c: 'red', size: 22 }),
+              O(400, 110, 14), O(470, 160, 14), O(540, 100, 14), O(500, 220, 14),
+              E(475, 155, 105, 90, { c: 'red', dash: true }),
+              t(470, 290, 'one operation, four qubits', { size: 20 }),
+              t(140, 200, 'two dots only', { size: 20 })
+            ],
+            takeaway: 'Qubits are dots. Each operation is a hyperedge around its qubits.',
             widget: null,
             check: {
-              q: 'Why can Paceline optimise each module’s seating on its own?',
-              options: ['A seat stays inside one module, so module costs add up separately', 'All modules have the same qubits', 'Seating is done after the run', 'The factory seats the host'],
+              q: 'An operation’s Pauli is ZIXY. Which dots does its hyperedge join?',
+              options: ['Qubits 1, 3 and 4', 'Qubits 1 and 2', 'All four qubits', 'Qubit 2 only'],
               answer: 0,
-              why: 'Modules are independent, so each Cₘ is minimised by local search on its own.'
+              why: 'The hyperedge joins the support: every qubit where the Pauli is not I.'
             }
           },
           {
-            title: 'Placement as a cut',
-            buildsOn: 'Bottleneck 3 was load near the host, a placement problem. This tab writes placement as a known problem from chip design.',
-            leadsTo: 'Next tab adds the timing: balance the load over the run, not just in total.',
+            title: 'Placement is a cut',
+            buildsOn: 'Qubits are dots and operations are hyperedges. Section 5 showed every extra module in a chain adds work.',
+            leadsTo: 'Next tab gives some operations more weight than others in this cost.',
             idea: [
-              'Classical first: in VLSI chip design, *min-cut placement* splits a circuit across regions with few wires between them.',
-              'Here each logical qubit is a vertex and each operation a *hyperedge* over its support. A module holds at most 11 vertices.',
-              'Cost Σ wⱼ(λⱼ − 1): operation j touches λⱼ modules, and each extra module adds a lead-in, a tail and joint work.'
+              'Classical first: chip designers split circuits into regions with few wires crossing. This is *min-cut placement*.',
+              'Here each module takes at most 11 dots. Operation j touches *λⱼ* modules.',
+              'Cost: Σ wⱼ(λⱼ − 1). An operation on one module costs 0. Each extra module adds a lead-in, a tail and joint work.'
             ],
             math: [
-              { h: 'The cost', eq: ['cost = Σⱼ wⱼ (λⱼ − 1)'], why: 'An operation on one module costs 0. Every extra module it spans adds wⱼ.' },
-              { h: 'Example', eq: ['op on 3 modules, weight 2', 'adds 2 × (3 − 1) = 4'] },
-              { h: 'Criticality weight', eq: ['wⱼ = (1 + tⱼ τT / τ₀)', '   × (longest path through j)', '   / (longest path in program)'], why: 'tⱼ T gates of length τT on a base length τ₀. Critical, T-heavy operations weigh more.' }
+              { h: 'The cost', eq: ['cost = Σⱼ wⱼ (λⱼ − 1)'], why: 'wⱼ is the weight of operation j. Next tab says how it is chosen.' },
+              { h: 'Example', eq: ['operation on 3 modules, weight 2', 'adds 2 × (3 − 1) = 4'] }
             ],
             sketch: [
               O(80, 120, 14), O(150, 90, 14), O(150, 170, 14), O(400, 110, 14), O(470, 160, 14), O(540, 100, 14),
@@ -1361,7 +2063,7 @@
               t(115, 240, 'module A', { c: 'blue' }),
               t(470, 240, 'module B', { c: 'blue' }),
               t(310, 290, 'cut operation: λ = 2', { c: 'red' }),
-              t(320, 40, 'qubits = vertices')
+              t(320, 40, 'qubits = dots')
             ],
             takeaway: 'Placement is a hypergraph cut. Each extra module an op spans costs.',
             widget: null,
@@ -1373,13 +2075,41 @@
             }
           },
           {
-            title: 'Balance over time',
-            buildsOn: 'The cut keeps chains short. Bottleneck 3 showed total balance is not enough, since work can pile up in stretches.',
-            leadsTo: 'Next tab combines these choices into Paceline’s two candidate placements.',
+            title: 'Weights: count or criticality',
+            buildsOn: 'The cut cost multiplies each operation by a weight wⱼ. This tab gives two ways to choose it.',
+            leadsTo: 'Next tab adds balance rules, so the cut does not pile work on one module.',
             idea: [
-              'A module’s *load* is the number of operations that touch it. *Whole-run balance* keeps every load within 10% of its share.',
-              '*Windowed balance* cuts the precedence graph by depth into four equal windows, and applies the same bound in each.',
-              'Modules must also be ordered along the line, since the host end is busiest.'
+              '*Count weights*: every operation weighs 1. Cut as few operations as possible.',
+              '*Criticality weights*: an operation weighs more if it has many T gates, or lies on a long path of the precedence graph.',
+              'So critical operations get short chains first.'
+            ],
+            math: [
+              { h: 'Criticality weight', eq: ['wⱼ = (1 + tⱼ τT / τ₀)', '   × (longest path through j)', '   / (longest path in program)'], why: 'tⱼ T injections of length τT, on a base length τ₀. Long T streams and critical paths weigh more.' }
+            ],
+            sketch: [
+              ...bx(40, 70, 260, 60, 'count: w = 1', { c: 'blue' }),
+              t(170, 170, 'all equal', { c: 'blue', size: 22 }),
+              ...bx(340, 70, 260, 60, 'criticality', { c: 'red' }),
+              t(470, 170, 'many T, long path:\nheavier', { c: 'red', size: 22 }),
+              t(320, 285, 'heavy operations are cut last')
+            ],
+            takeaway: 'Count weights treat all ops alike. Criticality favours critical ones.',
+            widget: null,
+            check: {
+              q: 'Under criticality weights, which operation weighs most?',
+              options: ['One with many T gates on the longest path', 'One with no T gates', 'One on a single module', 'One at the end of the program'],
+              answer: 0,
+              why: 'The weight grows with T count and with how long a path passes through it.'
+            }
+          },
+          {
+            title: 'Balance in total and over time',
+            buildsOn: 'The cut keeps chains short. Section 8 showed total balance alone still jams one module at one moment.',
+            leadsTo: 'Next tab places the modules along the line, since the host end is the busiest.',
+            idea: [
+              'A module’s *load* is the number of operations that touch it. *Whole-run balance*: every load within 10% of its share.',
+              'An operation’s *depth* is how far from the start it sits in the precedence graph.',
+              '*Windowed balance* cuts the program by depth into four windows of equal size, and applies the 10% bound in each.'
             ],
             sketch: [
               B(40, 70, 560, 50),
@@ -1387,7 +2117,7 @@
               B(40, 180, 140, 50, { c: 'green' }), B(180, 180, 140, 50, { c: 'green' }),
               B(320, 180, 140, 50, { c: 'green' }), B(460, 180, 140, 50, { c: 'green' }),
               t(110, 213, 'w1'), t(250, 213, 'w2'), t(390, 213, 'w3'), t(530, 213, 'w4'),
-              t(320, 275, 'each window balanced too', { c: 'green' })
+              t(320, 275, 'each depth window balanced too', { c: 'green' })
             ],
             takeaway: 'Windowed balance spreads work that runs at the same time.',
             widget: null,
@@ -1399,13 +2129,40 @@
             }
           },
           {
-            title: 'Two candidates',
-            buildsOn: 'Cut weights, balance rules and module orders can be combined in several ways. This tab says which two Paceline builds.',
-            leadsTo: 'Next tab changes the hardware itself with extra factories, the answer to bottleneck 4.',
+            title: 'Ordering modules along the line',
+            buildsOn: 'The cut divides qubits into groups. Modules sit on a line with the host at one end, so which group goes where matters.',
+            leadsTo: 'Next tab combines these choices into Paceline’s two candidate placements.',
             idea: [
-              'Candidate 1: criticality weights, whole-run balance, *recursive bisection* of the line.',
-              'Candidate 2: count weights, windowed balance, modules ordered by Sethi et al.’s rule, least-used farthest from the factory.',
-              'Neither dominates. Both are seated and ordered, and Paceline keeps the faster.'
+              '*Recursive bisection*: split the line in two, divide the qubits between the halves, repeat on each half.',
+              'An operation that already reaches one side pulls its other qubits toward it, to keep its chain short.',
+              'Other way: cut into all modules at once, then order them by Sethi et al.’s rule: the least-used module goes farthest from the factory.'
+            ],
+            sketch: [
+              B(40, 70, 560, 50),
+              L([[320, 60], [320, 130]], { c: 'red' }),
+              t(180, 103, 'half'), t(460, 103, 'half'),
+              B(40, 170, 270, 50), B(330, 170, 270, 50),
+              L([[175, 160], [175, 230]], { c: 'red' }), L([[465, 160], [465, 230]], { c: 'red' }),
+              t(320, 270, 'split, then split again', { c: 'red' }),
+              t(560, 50, 'factory end', { size: 20 })
+            ],
+            takeaway: 'Bisect the line repeatedly, or rank modules by use.',
+            widget: null,
+            check: {
+              q: 'Under Sethi et al.’s rule, where does the least-used module go?',
+              options: ['Farthest from the factory', 'Next to the factory', 'In the middle', 'Anywhere'],
+              answer: 0,
+              why: 'Busy modules sit near the host so their chains stay short.'
+            }
+          },
+          {
+            title: 'Two candidates',
+            buildsOn: 'Weights, balance rules and module orders combine in several ways. This tab says which two Paceline builds.',
+            leadsTo: 'Next tab changes the hardware itself with extra factories, the fix for bottleneck 4.',
+            idea: [
+              'Candidate 1: criticality weights, whole-run balance, recursive bisection. It keeps chains of critical operations short.',
+              'Candidate 2: count weights, windowed balance, Sethi’s order. It guards the host against bursts of work.',
+              'Neither always wins. Both are seated and ordered, and Paceline keeps the faster.'
             ],
             sketch: [
               B(40, 60, 260, 150, { c: 'blue' }),
@@ -1422,57 +2179,57 @@
               q: 'Why build two placements instead of one?',
               options: ['Neither dominates: each is faster on some programs', 'One is for T gates only', 'The second checks the first for errors', 'Two factories need two placements'],
               answer: 0,
-              why: 'The windowed candidate won on 10 of 28 held-out cells with headroom, and on the two multipliers.'
+              why: 'The windowed candidate won on 10 of 28 held-out test cases with room to improve, and on both multipliers.'
             }
           },
           {
             title: 'Extra factories',
-            buildsOn: 'Bottleneck 4 was a single busy factory. No compiler step makes it faster, so this tab changes the hardware.',
+            buildsOn: 'Bottleneck 4 was a single busy factory. No compiler step makes one factory faster, so this tab changes the hardware.',
             leadsTo: 'Next section measures every step, with and without extra factories.',
             idea: [
               'Each extra factory adds 823 physical qubits. Two layouts: one factory at each end, or one beside every third module.',
-              'Each rotation uses the nearest factory on either side of its support, the one with fewer links. Ties go to the end factory.',
-              'Ordering now matters more: independent rotations can use different factories at once.'
+              'Each rotation uses the nearest factory on either side of its support, the one needing fewer links. Ties go to the end one.',
+              'Now ordering matters more: independent rotations can use different factories at the same time.'
             ],
             sketch: [
-              ...bx(20, 80, 60, 50, 'F', { c: 'ink' }),
+              ...bx(20, 80, 60, 50, 'F'),
               B(100, 80, 60, 50), B(180, 80, 60, 50), B(260, 80, 60, 50), B(340, 80, 60, 50), B(420, 80, 60, 50),
-              ...bx(500, 80, 60, 50, 'F', { c: 'ink' }),
+              ...bx(500, 80, 60, 50, 'F'),
               t(290, 50, 'factory at each end'),
               B(40, 200, 330, 40),
-              ...bx(160, 250, 50, 40, 'F', { c: 'ink' }),
-              ...bx(310, 250, 50, 40, 'F', { c: 'ink' }),
+              ...bx(160, 250, 50, 40, 'F'),
+              ...bx(310, 250, 50, 40, 'F'),
               t(520, 230, 'one every\nthird module')
             ],
-            takeaway: 'Extra factories, each 823 qubits. Each rotation uses the nearest.',
+            takeaway: 'Extra factories, 823 qubits each. Each rotation uses the nearest.',
             widget: null,
             check: {
               q: 'With several factories, which one does a rotation use?',
               options: ['The nearest one on either side of its support, needing fewer links', 'Always the end factory', 'The least busy one at run time', 'A random one'],
               answer: 0,
-              why: 'Fewer links keeps the chain short and its failure low. Choosing by when a factory is free is future work.'
+              why: 'Fewer links keeps the chain short and its failure low.'
             }
           }
         ]
       },
 
-      /* ============================ SECTION 8 (paper) ============================ */
+      /* ============================ SECTION 11 (paper) ============================ */
       {
         title: 'The paper: results and limits',
         intro: 'The paper tests Paceline on 24 programs, step by step, with and without extra factories, and checks its own model.',
-        bridge: 'You can now explain why bicycle machines wait, how Paceline overlaps work, and what extra factories add. Next for the field: choosing each rotation’s factory by when it becomes free, for long T-heavy programs.',
+        bridge: 'You can now explain why bicycle machines wait, how Paceline overlaps work, and what extra factories add. The paper’s next step: choose each rotation’s factory by when it becomes free, for long T-heavy programs.',
         tabs: [
           {
             title: 'How it was tested',
-            buildsOn: 'Section 7 built Paceline. This tab fixes the test bench before any number is read.',
+            buildsOn: 'Section 10 finished Paceline. Section 6 defined the baseline and speed-up.',
             leadsTo: 'Next tab reads the first result: what each step buys on the reference machine.',
             idea: [
               '24 programs: 6 T-light (four adders, two multipliers) and 18 T-heavy (simulation, QFT, learning, swap-test).',
-              'Paceline was designed on 6 of them and *held out* the other 18. Machines have 3 to 40 modules, error rate 10⁻⁴.',
-              'Every speed-up is over the baseline. Averages are *geometric means*.'
+              'Paceline was designed on 6 of them, and the other 18 were *held out* to test it fairly. Machines have 3 to 40 modules.',
+              'A *cell* is one program on one machine layout. Speed-ups are averaged with the *geometric mean*.'
             ],
             math: [
-              { h: 'Geometric mean of speed-ups', eq: ['two programs: 2× and 8×', '√(2 × 8) = √16 = 4×'], why: 'Ratios multiply, so the n-th root of their product is the fair average.' }
+              { h: 'Geometric mean of speed-ups', eq: ['two programs: 2× and 8×', '√(2 × 8) = √16 = 4×'], why: 'Ratios multiply, so the n-th root of their product is the fair average. The plain mean would say 5×.' }
             ],
             sketch: [
               ...bx(40, 70, 170, 60, '6 T-light', { c: 'blue' }),
@@ -1485,19 +2242,19 @@
             takeaway: '24 programs, 18 held out, compared against the baseline.',
             widget: null,
             check: {
-              q: 'Why hold programs out from the design?',
-              options: ['To test on programs the rules were not tuned to', 'Because they were too large', 'To save compile time', 'Because they had no T gates'],
+              q: 'Speed-ups of 1× and 4×. What is their geometric mean?',
+              options: ['2×', '2.5×', '4×', '5×'],
               answer: 0,
-              why: 'Held-out programs show whether the rules generalise.'
+              why: '√(1 × 4) = √4 = 2.'
             }
           },
           {
             title: 'What each step buys',
             buildsOn: 'The bench is fixed. This tab adds Paceline’s steps one at a time on the reference machine, T-light programs.',
-            leadsTo: 'Next tab reads the side effect on failure probability and links.',
+            leadsTo: 'Next tab reads the side effect on links and failure probability.',
             idea: [
-              'Ordering alone: 1.25×. Adding seating: 1.48×. Adding placement: 2.16× (geometric means over T-light programs).',
-              'Placement helps most on the 433-qubit adder, the largest machine (40 modules): 2.71×.',
+              'Ordering alone: 1.25×. Adding seating: 1.48×. Adding placement: 2.16×. Geometric means over T-light programs.',
+              'Placement helps most on the 433-qubit adder, the largest machine at 40 modules, which reaches 2.71×.',
               'On T-heavy programs the same steps give only 1.02× on average, since the factory sets the pace.'
             ],
             sketch: [
@@ -1525,11 +2282,11 @@
           },
           {
             title: 'Fewer links, lower failure',
-            buildsOn: 'Paceline runs T-light programs 2.16× faster. Section 3 said failure is about Σ Nᵢ Pᵢ over instruction uses.',
+            buildsOn: 'Paceline runs T-light programs 2.16× faster. Section 4 said failure is about Σ Nᵢ Pᵢ over instruction uses.',
             leadsTo: 'Next tab adds extra factories and measures compiler and hardware together.',
             idea: [
-              'Paceline’s placement uses 22 to 49% fewer links than the baseline.',
-              'Fewer inter-module measurements, so failure probability falls to 0.73 to 0.96 of the baseline’s, 0.88 on average.',
+              'Paceline’s placement uses 22 to 49% fewer links than the baseline, so fewer inter-module measurements.',
+              'Failure probability falls to 0.73 to 0.96 of the baseline’s, 0.88 on average.',
               'Ordering leaves failure unchanged. Seating lowers it by at most 1%.'
             ],
             sketch: [
@@ -1553,20 +2310,20 @@
           },
           {
             title: 'Compiler and factories together',
-            buildsOn: 'Section 7 added extra factories. This tab compares factories alone, Paceline alone, and both.',
-            leadsTo: 'Next tab asks whether these numbers can be trusted.',
+            buildsOn: 'Section 10 added extra factories. This tab compares factories alone, Paceline alone, and both.',
+            leadsTo: 'Next tab asks whether the placement rules work on programs they were not tuned on.',
             idea: [
-              'Factories alone help little: T-light 1.00× and 0.99×, T-heavy 1.08× and 1.18×. In program order, operations wait on each other.',
+              'Factories alone help little: T-light 1.00× and 0.99×, T-heavy 1.08× and 1.18×. In program order operations still wait.',
               'Both together, two factories: T-light 2.82×, T-heavy 1.73×.',
               'One every third module: 3.47× and 2.37×, and 5.50× on the 196-qubit TFIM. Failure stays at most 0.2% above the baseline.'
             ],
             sketch: [
               L([[60, 280], [600, 280]]),
-              B(90, 255, 70, 25, { c: 'ink' }), B(170, 250, 70, 30, { c: 'blue' }), B(250, 130, 70, 150, { c: 'green' }),
-              t(205, 120, 'T-heavy, every third module'),
+              B(90, 255, 70, 25), B(170, 250, 70, 30, { c: 'blue' }), B(250, 130, 70, 150, { c: 'green' }),
+              t(205, 100, 'T-heavy, every third module', { size: 22 }),
               t(125, 245, '1.18×', { size: 20 }), t(205, 240, '1.02×', { size: 20 }),
               t(285, 160, '2.37×', { c: 'green' }),
-              t(480, 130, 'factories alone', { c: 'ink' }),
+              t(480, 130, 'factories alone'),
               t(480, 180, 'Paceline alone', { c: 'blue' }),
               t(480, 230, 'both', { c: 'green' })
             ],
@@ -1583,36 +2340,58 @@
             },
             check: {
               q: 'Why do extra factories alone barely help?',
-              options: [
-                'In program order, operations still wait on each other, so factories sit idle',
-                'Extra factories make more errors',
-                'They are too far from the host',
-                'They produce no magic states'
-              ],
+              options: ['In program order operations still wait on each other, so factories sit idle', 'Extra factories make more errors', 'They are too far from the host', 'They produce no magic states'],
               answer: 0,
               why: 'Factories only pay once operations can overlap, which ordering and placement allow.'
             }
           },
           {
-            title: 'Can the numbers be trusted',
-            buildsOn: 'The speed-ups come from the execution model and a design made on 6 programs. This tab checks both.',
-            leadsTo: 'Next tab runs the whole story once and lists what the paper does not cover.',
+            title: 'Does it hold on new programs',
+            buildsOn: 'The speed-ups so far mix design and held-out programs. Section 10 built two placement candidates.',
+            leadsTo: 'Next tab checks the timing model itself, and the ordering against exact answers.',
             idea: [
-              'Held out: a placement rule fixed before the runs gave 1.96× on held-out T-light programs, 1.94× over 28 cells with headroom.',
-              'Exact timing of 6 cells: speed-ups 1 to 3% above the model, so the model slightly understates the gains.',
-              'On 37 small slices solved exactly, the order is 1.3% above optimal on average, against 4.1% for program order.'
+              'Before any held-out run, the authors froze one placement rule. It gave 1.96× on the 4 held-out T-light programs.',
+              'A cell has *headroom* if, with the reference placement plus Paceline’s order and seating, it still runs 1.25× above the floor.',
+              'Over the 28 held-out cells with headroom, the frozen rule gave 1.94×.',
+              'The two candidates, chosen after those runs, give 2.17× and 2.21×, and are never slower than the reference placement.'
             ],
             keys: [
-              { tone: 'x', h: 'Two criteria missed by the fixed rule', t: 'One T-heavy program ran at 0.95×, below the 0.98× limit. Against a 600 s local search it was 19% slower at the 80th percentile, above the 15% limit. The two candidates close most of this gap.' }
+              { tone: 'x', h: 'Two criteria the frozen rule missed', t: 'One T-heavy program ran at 0.95×, below the 0.98× limit. Against a 600 s local search it was 19% slower at the 80th percentile, above the 15% limit. The two candidates close most of this gap.' }
             ],
             sketch: [
-              ...bx(30, 60, 180, 60, 'held out', { c: 'blue' }),
-              ...bx(230, 60, 180, 60, 'exact timing', { c: 'green' }),
-              ...bx(430, 60, 180, 60, 'exact order', { c: 'red' }),
-              t(120, 170, '1.94×'), t(320, 170, '+1 to 3%'), t(520, 170, '1.3% off'),
-              t(320, 260, 'placement: median 5.9 s per cell')
+              ...bx(40, 70, 260, 70, 'frozen rule', { c: 'blue' }),
+              ...bx(340, 70, 260, 70, 'two candidates', { c: 'green' }),
+              t(170, 185, '1.96×, 1.94×', { c: 'blue' }),
+              t(470, 185, '2.17×, 2.21×', { c: 'green' }),
+              t(170, 240, 'fixed before', { size: 20 }), t(470, 240, 'chosen after', { size: 20 }),
+              t(320, 295, 'held-out programs only')
             ],
-            takeaway: 'Gains hold on held-out programs, and the model slightly understates them.',
+            takeaway: 'A rule frozen in advance still gives about 1.95× on held-out work.',
+            widget: null,
+            check: {
+              q: 'Why does the frozen rule’s result matter more than the two candidates’?',
+              options: ['It was fixed before the held-out runs, so it was not tuned on them', 'It is faster', 'It uses more factories', 'It was tested on design programs only'],
+              answer: 0,
+              why: 'The candidates were chosen after seeing held-out results, so their numbers are post hoc.'
+            }
+          },
+          {
+            title: 'Checking the model',
+            buildsOn: 'All run times so far come from the execution model of Section 6. This tab checks that model and the ordering rule.',
+            leadsTo: 'Next tab runs the whole story once and lists what the paper leaves out.',
+            idea: [
+              'Exact timing of 6 cells gave speed-ups 1 to 3% above the model, so the model slightly understates the gains.',
+              'On 37 small slices of 6 to 10 operations solved exactly, the ordering is 1.3% above optimal on average, 11% at worst.',
+              'Program order on the same slices: 4.1% on average, 37% at worst. Placement takes a median of 5.9 s per cell.'
+            ],
+            sketch: [
+              ...bx(30, 60, 180, 60, 'exact timing', { c: 'green' }),
+              ...bx(230, 60, 180, 60, 'exact order', { c: 'blue' }),
+              ...bx(430, 60, 180, 60, 'compile time'),
+              t(120, 170, '+1 to 3%', { c: 'green' }), t(320, 170, '1.3% off', { c: 'blue' }), t(520, 170, '5.9 s median'),
+              t(320, 260, 'model is slightly cautious', { c: 'green' })
+            ],
+            takeaway: 'The model slightly understates gains. The order is near optimal.',
             widget: null,
             check: {
               q: 'Exact timing gave speed-ups 1 to 3% above the model. What does that say?',
@@ -1624,11 +2403,11 @@
           {
             title: 'The whole story, once',
             buildsOn: 'Every earlier section, in order. This tab runs the chain once and states what the paper leaves out.',
-            leadsTo: 'Open question: choose each rotation’s factory by when it becomes free, the next step the paper names for long T-heavy programs.',
+            leadsTo: 'Open question: choose each rotation’s factory by when it becomes free, the next step the paper names.',
             idea: [
-              'Bicycle machines save qubits but run slowly. Most run time is waiting, for four reasons.',
-              'Program order serialises: fix by ordering. Synthesis: fix by seating. Load near the factory: fix by placement. Factory: add more.',
-              'Limits: no decoding delay is modelled, all times come from the model, and factory choice ignores when a factory is free.'
+              'Bicycle machines save qubits but run slowly. Most of a run is waiting, for four reasons.',
+              'Program order: fix by ordering. Synthesis: fix by seating. Load near the host: fix by placement. One factory: add more.',
+              'Limits: no decoding delay is modelled, most times come from the model, and factory choice ignores when a factory is free.'
             ],
             sketch: [
               ...bx(20, 50, 290, 50, 'program order', { c: 'red' }), ...bx(330, 50, 290, 50, 'ordering', { c: 'green' }),
