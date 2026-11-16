@@ -75,7 +75,7 @@
       {
         group: 'The bicycle machine',
         items: [
-          { term: 'bivariate bicycle code', aka: ['bicycle code', 'bicycle codes', 'bicycle-code'], means: 'A family of codes that store many logical qubits per block. About 10× fewer physical qubits than the surface code.' },
+          { term: 'bivariate bicycle code', aka: ['bicycle code', 'bicycle codes', 'bicycle-code'], means: 'Codes whose checks are built from two cyclic shift patterns, A and B, on a 2D torus. Many logical qubits per block.' },
           { term: 'gross code', means: 'The bicycle code [[144, 12, 12]]: 144 qubits, 12 logical qubits, distance 12.' },
           { term: 'block', aka: ['code block'], means: 'One copy of the gross code, holding 12 logical qubits.' },
           { term: 'LPU', aka: ['logical processing unit'], means: 'The unit beside each block that performs its logical measurements.' },
@@ -90,6 +90,8 @@
           { term: 'inter-module measurement', aka: ['inter-module measurements'], means: 'Measure a Pauli product across two neighbouring modules. 120 timesteps.' },
           { term: 'timestep', aka: ['timesteps'], means: 'The unit of time: one physical gate.' },
           { term: 'automorphism', means: 'A symmetry of a code: shuffle its physical qubits and the code looks the same.' },
+          { term: 'torus', means: 'A grid whose edges wrap round, like the surface of a doughnut.' },
+          { term: 'cyclic shift', aka: ['cyclic shifts'], means: 'Move every qubit one site along x or y, wrapping round at the edge.' },
           { term: 'Pauli measurement', aka: ['measuring a Pauli product'], means: 'Asks one ±1 question about a Pauli product, and nothing more.' },
           { term: 'native Clifford rotation', aka: ['native Clifford rotations'], means: 'A Clifford step the LPU can do directly. Each costs one in-module measurement.' },
           { term: 'P ⊗ Z', means: 'P on the data and Z on a magic state, measured jointly. Turns the data by π/4 about P.' },
@@ -601,12 +603,12 @@
       {
         title: 'Background: the bicycle machine',
         intro: 'The paper’s machine stores 12 logical qubits per block, does its logic by measuring Pauli products, and joins blocks in a line. This section builds it and its four instructions.',
-        bridge: 'You now hold modules on a line, each an LPU with a pivot and 11 slots, a factory on its host, and four timed instructions. Section 4 runs and times one rotation on this machine.',
+        bridge: 'You now hold bicycle-code blocks, modules on a line, each an LPU with a pivot and 11 slots, a factory on its host, and four timed instructions. Section 4 runs and times one rotation on this machine.',
         tabs: [
           {
             title: 'Many logical qubits per block',
             buildsOn: 'Section 2 ended with a program as rotations on logical qubits. This tab asks what holds those logical qubits.',
-            leadsTo: 'Next tab shows how logic is done on such a block: by measuring Pauli products.',
+            leadsTo: 'Next tab opens the block: what makes this code a bicycle code.',
             idea: [
               'A surface-code patch holds 1 logical qubit, and needs hundreds to thousands of physical qubits for it.',
               'A *bivariate bicycle code* packs many into one *block*. The *gross code* [[144, 12, 12]] holds 12 logical qubits.',
@@ -632,8 +634,85 @@
             }
           },
           {
+            title: 'What makes it a bicycle code',
+            buildsOn: 'The gross code holds 12 logical qubits in one block of 144 data qubits. This tab opens the block to see how its checks are built.',
+            leadsTo: 'Next tab shows how logic is done on such a block: by measuring Pauli products.',
+            idea: [
+              'Lay the block on a 12 × 6 grid whose edges wrap round, a *torus*. Each site holds two data qubits, L and R: 144 in all.',
+              'A *cyclic shift* steps one site and wraps round: x along the 12 side, y along the 6 side. Twelve x steps come back home.',
+              'Each check touches 6 data qubits: 3 L picked by a shift pattern A, 3 R picked by a pattern B. Two cyclic patterns: a *bi-cycle*.',
+              '*Bivariate*: the shifts go two ways, x and y. Shifts commute, so AB = BA, which makes every X check commute with every Z check.'
+            ],
+            keys: [
+              { tone: 'main', h: 'Bicycle is the build. The shift automorphism is a consequence.', t: 'Checks use relative steps, not fixed places. Slide *every* qubit one step along x or y and each check lands on another check: the code looks the same. That free symmetry is the *shift automorphism*. It moves the logical qubits among themselves.' }
+            ],
+            math: [
+              { h: 'The two shifts', eq: ['x: one step along the 12 side,  x¹² = 1', 'y: one step along the 6 side,   y⁶ = 1', 'xy = yx'], why: 'Wrapping round means 12 x steps or 6 y steps return every qubit home.' },
+              { h: 'The gross code patterns', eq: ['A = x³ + y + y²', 'B = y³ + x + x²'], why: 'A + means “and also”: A picks the L qubits 3 steps along x, 1 along y, and 2 along y.' },
+              { h: 'The checks', eq: ['X checks: H_X = [ A | B ]', 'Z checks: H_Z = [ Bᵀ | Aᵀ ]'], why: 'Left block acts on L qubits, right block on R qubits.' },
+              { h: 'Why X and Z checks commute', eq: ['H_X H_Zᵀ = A B + B A', '        = 2 A B = 0  (mod 2)'], why: 'Shifts in x and y commute, so AB = BA and the two terms cancel.' },
+              { h: 'Counting', eq: ['data: 2 × 12 × 6 = 144', 'with one X and one Z check per site: 288', '[[144, 12, 12]]: 12 logical, distance 12'], why: '144 is a gross, a dozen dozens, hence the gross code.' }
+            ],
+            sketch: [
+              B(40, 60, 300, 180),
+              L([[115, 60], [115, 240]], { dash: true }), L([[190, 60], [190, 240]], { dash: true }), L([[265, 60], [265, 240]], { dash: true }),
+              L([[40, 120], [340, 120]], { dash: true }), L([[40, 180], [340, 180]], { dash: true }),
+              A(345, 150, 380, 150, { c: 'blue' }), A(190, 245, 190, 280, { c: 'blue' }),
+              t(190, 45, 'torus: edges wrap round', { size: 20 }),
+              t(420, 155, 'x', { c: 'blue' }), t(190, 305, 'y', { c: 'blue' }),
+              ...bx(440, 60, 170, 50, 'A: 3 shifts', { c: 'red' }),
+              ...bx(440, 130, 170, 50, 'B: 3 shifts', { c: 'green' }),
+              t(525, 220, 'two cycles:', { size: 22 }),
+              t(525, 250, 'a bi-cycle', { size: 22 })
+            ],
+            takeaway: 'Bicycle: checks built from two cyclic shift patterns, A and B.',
+            widget: {
+              type: 'frames',
+              frames: [
+                { t: 'The grid', h: 220, parts: [
+                    B(60, 30, 330, 160), L([[170, 30], [170, 190]], { dash: true }), L([[280, 30], [280, 190]], { dash: true }), L([[60, 110], [390, 110]], { dash: true }),
+                    D(115, 70), D(225, 70), D(335, 70), D(115, 150), D(225, 150), D(335, 150),
+                    t(510, 90, 'each site:\nL and R', { size: 20 }), t(510, 170, '12 × 6 sites', { size: 20 })],
+                  say: 'A small piece of the grid. Each site holds two data qubits, L and R. The real grid is 12 by 6, and its edges wrap round like a doughnut.' },
+                { t: 'A shift wraps round', h: 220, parts: [
+                    ...bx(40, 60, 90, 50, '1'), ...bx(140, 60, 90, 50, '2'), ...bx(240, 60, 90, 50, '…'), ...bx(340, 60, 90, 50, '12'),
+                    K([[385, 115], [385, 165], [85, 165], [85, 118]], { c: 'blue' }),
+                    t(235, 200, 'x from site 12 lands on site 1', { c: 'blue', size: 20 })],
+                  eq: ['x¹² = 1,   y⁶ = 1'],
+                  say: 'x moves every qubit one site along the long side. Off the end, it comes back at the start. So 12 x steps change nothing.' },
+                { t: 'One check', h: 220, parts: [
+                    ...bx(250, 80, 140, 56, 'X check', { c: 'blue' }),
+                    A(250, 95, 120, 45, { c: 'red' }), A(250, 108, 120, 105, { c: 'red' }), A(250, 121, 120, 165, { c: 'red' }),
+                    A(390, 95, 520, 45, { c: 'green' }), A(390, 108, 520, 105, { c: 'green' }), A(390, 121, 520, 165, { c: 'green' }),
+                    t(70, 110, 'L via A', { c: 'red', size: 20 }), t(575, 110, 'R via B', { c: 'green', size: 20 })],
+                  eq: ['A = x³ + y + y²,   B = y³ + x + x²'],
+                  say: 'An X check at a site touches 3 L qubits, at the steps listed in A, and 3 R qubits, at the steps in B. Every check uses the same steps from its own site.' },
+                { t: 'Checks commute', h: 220, parts: [
+                    t(320, 60, 'Hx · Hzᵀ = AB + BA', { size: 26 }), A(320, 76, 320, 106),
+                    H(200, 120, 240, 44, { c: 'yellow' }), t(320, 150, '= 0 (mod 2)', { c: 'green', size: 26 })],
+                  say: 'A valid code needs every X check to commute with every Z check. Here that is AB + BA = 0. It holds because x and y shifts commute, so AB = BA, and 2AB is 0 mod 2.' },
+                { t: 'Slide everything', h: 220, parts: [
+                    ...bx(60, 50, 200, 56, 'check at site s', { c: 'blue' }), A(270, 78, 370, 78, { c: 'blue' }), t(320, 60, 'x', { c: 'blue' }),
+                    ...bx(380, 50, 220, 56, 'check at site s + 1', { c: 'blue' }),
+                    t(320, 160, 'the code looks the same', { c: 'green', size: 22 })],
+                  say: 'Move every qubit one step along x. Each check lands on the check of the next site, so the code is unchanged. That is the shift automorphism. It does move the logical qubits, which the machine uses so its LPU can reach them.' }
+              ]
+            },
+            check: {
+              q: 'Is the shift automorphism what “bicycle” means?',
+              options: [
+                'No: bicycle means the checks are built from two cyclic shift patterns, and the shift automorphism follows from that',
+                'Yes: bicycle is another word for the shift automorphism',
+                'No: bicycle means two blocks are joined by a coupler',
+                'Yes: the code shifts two qubits at a time'
+              ],
+              answer: 0,
+              why: 'The cyclic build comes first. Because checks are defined by relative shifts, sliding everything is a symmetry for free.'
+            }
+          },
+          {
             title: 'Measuring a Pauli product',
-            buildsOn: 'A block holds 12 logical qubits. Section 1 defined Pauli products. This tab asks what it means to measure one.',
+            buildsOn: 'A block holds 12 logical qubits behind its bicycle checks. Section 1 defined Pauli products. This tab asks what measuring one means.',
             leadsTo: 'Next tab uses this kind of measurement to perform a rotation, the thing a program is made of.',
             idea: [
               'Measuring a Pauli product asks one yes or no question. The answer is *+1* or *−1*.',
@@ -774,7 +853,7 @@
             idea: [
               '*In-module measurement*: a Pauli on one module. *Inter-module measurement*: a Pauli product across two neighbouring modules.',
               '*T injection*: a magic state measured jointly with the host’s pivot, never with a data slot.',
-              '*Shift automorphism*: a symmetry of the code that moves logical qubits so the LPU can reach them.',
+              '*Shift automorphism*: slide the block one step along x or y, as in the bicycle tab. It moves logical qubits so the LPU can reach them.',
               'Time counts *timesteps*, one per physical gate. Both measurements take 120. A T injection holds the factory 109 more.'
             ],
             keys: [
