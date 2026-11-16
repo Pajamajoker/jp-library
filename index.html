@@ -640,6 +640,8 @@ Rules
   { type: 'pauli', codes: ['bit3', 'phase3', 'shor9'], decode: true, logical: true, say: ['intro line', ...] }
       tap qubits to place X, Z or Y errors. Each check row rings its clashes with the error and shows +1 or −1.
       decode: a minimum-weight decoder and a verdict (fixed, fixed up to a check, or a logical error). logical: buttons that apply X_L and Z_L.
+  { type: 'bicycle' }   the gross bivariate bicycle code [[144,12,12]] on its 12 x 6 torus. Click X or Z checks to see their six
+      data qubits (patterns A and B, with wrap-around), pick one of each to count shared qubits, and shift to show the automorphism.
   null   no widget
 
 If you need a widget that does not exist, use 'steps' and say so in a one-line comment at the top of the file so the library owner can add it.
@@ -797,7 +799,7 @@ const NB=window.NB={list:[],loadErrors:[],
     D:(x,y,o)=>Object.assign({t:'dot',x,y},o)
   }};
 const PART_TYPES=['text','box','arrow','line','curve','ellipse','hl','dot'];
-const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap','shor','frames','pauli'];
+const WIDGETS=['qubit','multi','steps','surface','scaling','stack','snap','shor','frames','pauli','bicycle'];
 function validate(nb){
   const E=[];const bad=/[—–]/;
   const need=(c,m)=>{if(!c)E.push(m);};
@@ -1729,6 +1731,82 @@ W.scaling=function(o){
   draw();
   return h('div',{class:'w'},h('div',{class:'sl'},h('label',null,'physical error'),inp,out),hist,
     h('div',{class:'mini'},'Rough model: logical rate ≈ 0.1 · (p / 1%)^((d+1)/2). Bar length is on a log scale. Qubits needed: 17, 49, 97, 161.'),msg);
+};
+
+/* gross bivariate bicycle code [[144,12,12]] on a 12 x 6 torus: { type: 'bicycle' }
+   Each site (i,j) holds an X check, data qubits L and R, and a Z check.
+   X check at s: L at s + {x^3, y, y^2} (pattern A), R at s + {y^3, x, x^2} (pattern B).
+   Z check at s: L at s - {y^3, x, x^2} (B transposed), R at s - {x^3, y, y^2} (A transposed). */
+W.bicycle=function(o){
+  const NX=12,NY=6,C=46,OX=56,OY=46,md=(a,n)=>((a%n)+n)%n;
+  const AT=[{d:[3,0],n:'x³'},{d:[0,1],n:'y'},{d:[0,2],n:'y²'}],BT=[{d:[0,3],n:'y³'},{d:[1,0],n:'x'},{d:[2,0],n:'x²'}];
+  const NEG={'x³':'x⁻³','y':'y⁻¹','y²':'y⁻²','y³':'y⁻³','x':'x⁻¹','x²':'x⁻²'},neg=n=>NEG[n];
+  const SUP=['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹','¹⁰','¹¹','¹²'];
+  const supp=(type,i,j)=>{const out=[];
+    if(type==='X'){AT.forEach(t=>out.push({q:'L',d:t.d,n:t.n,pat:'A'}));BT.forEach(t=>out.push({q:'R',d:t.d,n:t.n,pat:'B'}));}
+    else{BT.forEach(t=>out.push({q:'L',d:[-t.d[0],-t.d[1]],n:neg(t.n),pat:'B'}));AT.forEach(t=>out.push({q:'R',d:[-t.d[0],-t.d[1]],n:neg(t.n),pat:'A'}));}
+    return out.map(e=>Object.assign(e,{i:md(i+e.d[0],NX),j:md(j+e.d[1],NY),ri:i+e.d[0],rj:j+e.d[1]}));};
+  const pos=(kind,i,j)=>{const x=OX+i*C,y=OY+j*C;return kind==='X'?[x+12,y+12]:kind==='L'?[x+34,y+12]:kind==='R'?[x+12,y+34]:[x+34,y+34];};
+  const W_=OX+NX*C+24,H_=OY+NY*C+30;
+  const svg=sv('svg',{viewBox:'0 0 '+W_+' '+H_,role:'img','aria-label':'Gross code on a 12 by 6 torus',style:'width:100%;min-width:600px;height:auto;display:block;touch-action:manipulation'});
+  const gGrid=sv('g',{}),gLines=sv('g',{}),gNodes=sv('g',{}),gTop=sv('g',{});svg.append(gGrid,gLines,gNodes,gTop);
+  const T_=(x,y,s,o2)=>sv('text',Object.assign({x,y,'font-size':12,'font-family':'var(--f-mono)',fill:'var(--muted)','text-anchor':'middle'},o2||{}),s);
+  for(let i=0;i<NX;i++){gGrid.append(T_(OX+i*C+C/2,OY-8,String(i)));}
+  for(let j=0;j<NY;j++){gGrid.append(T_(OX-14,OY+j*C+C/2+4,String(j)));}
+  for(let i=0;i<=NX;i++)gGrid.append(sv('line',{x1:OX+i*C,y1:OY,x2:OX+i*C,y2:OY+NY*C,stroke:'var(--line)','stroke-width':i%NX?1:2,'stroke-dasharray':i%NX?'':'6 4'}));
+  for(let j=0;j<=NY;j++)gGrid.append(sv('line',{x1:OX,y1:OY+j*C,x2:OX+NX*C,y2:OY+j*C,stroke:'var(--line)','stroke-width':j%NY?1:2,'stroke-dasharray':j%NY?'':'6 4'}));
+  gGrid.append(T_(OX+NX*C/2,16,'x →  12 sites. Right edge is glued to left edge.',{fill:'var(--ink)'}),
+    T_(16,OY+NY*C/2,'y ↓  6 sites. Bottom glued to top.',{fill:'var(--ink)',transform:'rotate(-90 16 '+(OY+NY*C/2)+')'}));
+  const node={};
+  const mkNode=(kind,i,j)=>{const [x,y]=pos(kind,i,j);let el;
+    if(kind==='X'||kind==='Z'){const col=kind==='X'?'var(--sk-red)':'var(--sk-blue)';
+      el=sv('rect',{x:x-7,y:y-7,width:14,height:14,rx:2,fill:'var(--surface)',stroke:col,'stroke-width':2});
+      const g=sv('g',{tabindex:0,role:'button','aria-label':kind+' check at site '+i+', '+j,style:'cursor:pointer'},el);
+      const act=()=>pick(kind,i,j);g.addEventListener('click',act);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}});
+      gNodes.append(g);}
+    else{el=sv('circle',{cx:x,cy:y,r:7,fill:kind==='R'?'var(--muted)':'var(--surface)',stroke:'var(--ink)','stroke-width':1.5,'fill-opacity':kind==='R'?.35:1});gNodes.append(el);}
+    node[kind+i+','+j]={el,x,y,kind};};
+  for(let i=0;i<NX;i++)for(let j=0;j<NY;j++)['X','L','R','Z'].forEach(k=>mkNode(k,i,j));
+  let sel={X:null,Z:null},shift=[0,0];
+  const msg=h('div',{class:'msg'}),info=h('div',{class:'mini mono',style:'white-space:pre-wrap;line-height:1.55'});
+  function pick(kind,i,j){sel[kind]=(sel[kind]&&sel[kind][0]===i&&sel[kind][1]===j)?null:[i,j];shift=[0,0];draw();}
+  const colPat=p=>p==='A'?'var(--amber)':'var(--ok)';
+  function line(x1,y1,x2,y2,col,dash){gLines.append(sv('line',{x1,y1,x2,y2,stroke:col,'stroke-width':2.4,'stroke-linecap':'round','stroke-dasharray':dash?'5 4':'',opacity:.9}));}
+  function route(type,ci,cj,e){const [x0,y0]=pos(type,ci,cj),[x1,y1]=pos(e.q,e.i,e.j),col=colPat(e.pat);
+    const wrapX=e.ri<0||e.ri>=NX,wrapY=e.rj<0||e.rj>=NY;
+    if(!wrapX&&!wrapY){line(x0,y0,x1,y1,col);return;}
+    if(wrapX){const ex=e.ri>=NX?OX+NX*C:OX,sx=e.ri>=NX?OX:OX+NX*C;line(x0,y0,ex,y1,col);line(sx,y1,x1,y1,col,true);
+}
+    else{const ey=e.rj>=NY?OY+NY*C:OY,sy=e.rj>=NY?OY:OY+NY*C;line(x0,y0,x1,ey,col);line(x1,sy,x1,y1,col,true);
+}}
+  function draw(){gLines.textContent='';gTop.textContent='';
+    Object.values(node).forEach(n=>{if(n.kind==='L'||n.kind==='R'){n.el.setAttribute('stroke','var(--ink)');n.el.setAttribute('stroke-width',1.5);n.el.setAttribute('r',7);}
+      else{const col=n.kind==='X'?'var(--sk-red)':'var(--sk-blue)';n.el.setAttribute('fill','var(--surface)');n.el.setAttribute('stroke',col);}});
+    const lines=[],touched={};
+    ['X','Z'].forEach(type=>{const s=sel[type];if(!s)return;const ci=md(s[0]+shift[0],NX),cj=md(s[1]+shift[1],NY);
+      const cn=node[type+ci+','+cj];cn.el.setAttribute('fill',type==='X'?'var(--sk-red)':'var(--sk-blue)');
+      const sp=supp(type,ci,cj);sp.forEach(e=>{route(type,ci,cj,e);const k=e.q+e.i+','+e.j;touched[k]=(touched[k]||[]).concat(type);
+        const n=node[k];n.el.setAttribute('stroke',colPat(e.pat));n.el.setAttribute('stroke-width',3.5);n.el.setAttribute('r',9);
+        gTop.append(sv('text',{x:n.x+(e.q==='L'?0:-2),y:n.y-11,'font-size':11,'font-weight':'700',fill:colPat(e.pat),'text-anchor':'middle','font-family':'var(--f-mono)'},e.n));});
+      lines.push(type+' check at site ('+ci+','+cj+') touches 6 data qubits:\n  L via '+(type==='X'?'A':'Bᵀ')+': '+sp.filter(e=>e.q==='L').map(e=>e.n+' → ('+e.i+','+e.j+')').join('   ')+
+        '\n  R via '+(type==='X'?'B':'Aᵀ')+': '+sp.filter(e=>e.q==='R').map(e=>e.n+' → ('+e.i+','+e.j+')').join('   '));});
+    let shared=0;Object.entries(touched).forEach(([k,v])=>{if(v.length===2){shared++;const n=node[k];gTop.append(sv('circle',{cx:n.x,cy:n.y,r:13,fill:'none',stroke:'var(--ink)','stroke-width':2,'stroke-dasharray':'3 2'}));}});
+    info.textContent=lines.join('\n\n')||'Nothing selected.';
+    let m;
+    if(!sel.X&&!sel.Z)m='Click any red square (an X check) or blue square (a Z check). Each site holds, clockwise from top left: X check, data L, Z check, data R.';
+    else if(sel.X&&sel.Z)m='The X check and Z check share '+shared+' data qubit'+(shared===1?'':'s')+' (dashed rings). '+(shared%2===0?'An even number, so they commute. Try other pairs: it is always 0 or 2, because AB = BA.':'Odd: they would not commute.');
+    else m='Orange lines follow pattern A, green lines pattern B. Every check uses the same six steps from its own site. Dashed segments are the part of a path that wraps round the torus and comes in from the opposite edge. Now pick a check of the other colour, or shift.';
+    if(shift[0]||shift[1])m='Shifted by x'+SUP[shift[0]]+' y'+SUP[shift[1]]+'. Every qubit moved, so every check moved onto another site’s check with the identical pattern: the code is unchanged. That is the shift automorphism.'+(shift[0]===12||shift[1]===6?' Back to the start: x¹² = 1, y⁶ = 1.':'');
+    msg.textContent=m;}
+  const Bt=(t,fn)=>h('button',{class:'btn sm',type:'button',onclick:fn},t);
+  const ex=(X,Z)=>()=>{sel={X,Z};shift=[0,0];draw();};
+  const doShift=(a,b)=>()=>{if(!sel.X&&!sel.Z)sel.X=[1,1];shift=[shift[0]+a,shift[1]+b];if(shift[0]>12)shift[0]=1;if(shift[1]>6)shift[1]=1;draw();};
+  draw();
+  return h('div',{class:'w'},msg,h('div',{style:'overflow-x:auto;-webkit-overflow-scrolling:touch'},svg),
+    h('div',{class:'btns'},Bt('One X check',ex([1,1],null)),Bt('One Z check',ex(null,[7,3])),Bt('X and Z sharing 2',ex([1,1],[3,3])),Bt('X and Z sharing 0',ex([1,1],[7,3])),Bt('Clear',ex(null,null))),
+    h('div',{class:'btns'},Bt('Shift everything by x',doShift(1,0)),Bt('Shift everything by y',doShift(0,1))),
+    info,
+    h('div',{class:'mini'},'72 sites × (2 data + 2 checks) = 288 physical qubits: 144 data, 72 X checks, 72 Z checks. A = x³ + y + y², B = y³ + x + x².'));
 };
 
 /* stacked time bar */

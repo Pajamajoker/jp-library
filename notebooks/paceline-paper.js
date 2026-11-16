@@ -6,6 +6,20 @@
   const { T, B, A, L, K, O, E, H, D } = NB.sk;
   const t = (x, y, s, o) => T(x, y, s, Object.assign({ anchor: 'middle', size: 24 }, o || {}));
   const bx = (x, y, w, h, s, o) => [B(x, y, w, h, o), t(x + w / 2, y + h / 2 + 8, s, o)];
+  /* bicycle-code drawings: site (i, j) holds X (top left), L (top right), R (bottom left), Z (bottom right) */
+  const cell = (ox, oy, cw, ch) => (i, j, k) => [ox + i * cw + cw * (k === 'X' || k === 'R' ? 0.28 : 0.72), oy + j * ch + ch * (k === 'X' || k === 'L' ? 0.3 : 0.74)];
+  const gridP = (ox, oy, cw, ch, nc, nr) => {
+    const v = [], hz = [];
+    for (let i = 1; i < nc; i++) { const x = ox + i * cw; v.push(...(i % 2 ? [[x, oy], [x, oy + nr * ch]] : [[x, oy + nr * ch], [x, oy]])); }
+    for (let j = 1; j < nr; j++) { const y = oy + j * ch; hz.push(...(j % 2 ? [[ox, y], [ox + nc * cw, y]] : [[ox + nc * cw, y], [ox, y]])); }
+    return [B(ox, oy, nc * cw, nr * ch, { dash: true }), L(v, { dash: true }), L(hz, { dash: true })];
+  };
+  const arr = (P, from, to, k, c) => {
+    const [x1, y1] = P(from[0], from[1], 'X'), [x2, y2] = P(to[0], to[1], k), d = Math.hypot(x2 - x1, y2 - y1);
+    return A(x1 + (x2 - x1) * 9 / d, y1 + (y2 - y1) * 9 / d, x2 - (x2 - x1) * 6 / d, y2 - (y2 - y1) * 6 / d, { c });
+  };
+  const xsq = (P, i, j) => { const [x, y] = P(i, j, 'X'); return B(x - 8, y - 8, 16, 16, { c: 'red' }); };
+  const PS = cell(220, 30, 70, 64), PF = cell(40, 20, 70, 44);
 
   NB.register({
     id: 'paceline-paper',
@@ -638,70 +652,75 @@
             buildsOn: 'The gross code holds 12 logical qubits in one block of 144 data qubits. This tab opens the block to see how its checks are built.',
             leadsTo: 'Next tab shows how logic is done on such a block: by measuring Pauli products.',
             idea: [
-              'Lay the block on a 12 × 6 grid whose edges wrap round, a *torus*. Each site holds two data qubits, L and R: 144 in all.',
-              'A *cyclic shift* steps one site and wraps round: x along the 12 side, y along the 6 side. Twelve x steps come back home.',
-              'Each check touches 6 data qubits: 3 L picked by a shift pattern A, 3 R picked by a pattern B. Two cyclic patterns: a *bi-cycle*.',
-              '*Bivariate*: the shifts go two ways, x and y. Shifts commute, so AB = BA, which makes every X check commute with every Z check.'
+              'Each *site* of a 12 × 6 grid holds four qubits: an X check, data qubits L and R, and a Z check. The edges wrap round: a *torus*.',
+              'A *cyclic shift* moves one site and wraps: x along the 12 side, y along the 6 side. Twelve x steps come back home.',
+              'An X check at site s touches L at s + x³, y, y² (pattern A) and R at s + y³, x, x² (pattern B). Two cyclic patterns: a *bi-cycle*.',
+              '*Bivariate*: shifts go two ways. They commute, so AB = BA, and that makes every X check commute with every Z check.'
             ],
             keys: [
               { tone: 'main', h: 'Bicycle is the build. The shift automorphism is a consequence.', t: 'Checks use relative steps, not fixed places. Slide *every* qubit one step along x or y and each check lands on another check: the code looks the same. That free symmetry is the *shift automorphism*. It moves the logical qubits among themselves.' }
             ],
             math: [
               { h: 'The two shifts', eq: ['x: one step along the 12 side,  x¹² = 1', 'y: one step along the 6 side,   y⁶ = 1', 'xy = yx'], why: 'Wrapping round means 12 x steps or 6 y steps return every qubit home.' },
-              { h: 'The gross code patterns', eq: ['A = x³ + y + y²', 'B = y³ + x + x²'], why: 'A + means “and also”: A picks the L qubits 3 steps along x, 1 along y, and 2 along y.' },
-              { h: 'The checks', eq: ['X checks: H_X = [ A | B ]', 'Z checks: H_Z = [ Bᵀ | Aᵀ ]'], why: 'Left block acts on L qubits, right block on R qubits.' },
-              { h: 'Why X and Z checks commute', eq: ['H_X H_Zᵀ = A B + B A', '        = 2 A B = 0  (mod 2)'], why: 'Shifts in x and y commute, so AB = BA and the two terms cancel.' },
+              { h: 'The gross code patterns', eq: ['A = x³ + y + y²', 'B = y³ + x + x²'], why: 'Read + as “and also”: A picks the qubits 3 steps along x, 1 along y, and 2 along y.' },
+              { h: 'The checks', eq: ['X check at s: L at s + A,  R at s + B', 'Z check at s: L at s − B,  R at s − A', 'as matrices: [A | B] and [Bᵀ | Aᵀ]'], why: 'A transpose runs the same steps backwards, so Z checks use the patterns in reverse.' },
+              { h: 'Why X and Z checks commute', eq: ['overlap count = A B + B A', '              = 2 A B = 0  (mod 2)'], why: 'Shifts in x and y commute, so AB = BA. Every X and Z pair shares 0 or 2 qubits.' },
               { h: 'Counting', eq: ['data: 2 × 12 × 6 = 144', 'with one X and one Z check per site: 288', '[[144, 12, 12]]: 12 logical, distance 12'], why: '144 is a gross, a dozen dozens, hence the gross code.' }
             ],
             sketch: [
-              B(40, 60, 300, 180),
-              L([[115, 60], [115, 240]], { dash: true }), L([[190, 60], [190, 240]], { dash: true }), L([[265, 60], [265, 240]], { dash: true }),
-              L([[40, 120], [340, 120]], { dash: true }), L([[40, 180], [340, 180]], { dash: true }),
-              A(345, 150, 380, 150, { c: 'blue' }), A(190, 245, 190, 280, { c: 'blue' }),
-              t(190, 45, 'torus: edges wrap round', { size: 20 }),
-              t(420, 155, 'x', { c: 'blue' }), t(190, 305, 'y', { c: 'blue' }),
-              ...bx(440, 60, 170, 50, 'A: 3 shifts', { c: 'red' }),
-              ...bx(440, 130, 170, 50, 'B: 3 shifts', { c: 'green' }),
-              t(525, 220, 'two cycles:', { size: 22 }),
-              t(525, 250, 'a bi-cycle', { size: 22 })
+              t(105, 75, 'one site', { size: 22 }),
+              B(30, 90, 150, 150),
+              t(67, 150, 'X', { c: 'red', size: 30 }), t(143, 150, 'L', { size: 30 }), t(67, 215, 'R', { size: 30 }), t(143, 215, 'Z', { c: 'blue', size: 30 }),
+              ...gridP(220, 30, 70, 64, 5, 4),
+              xsq(PS, 0, 0),
+              arr(PS, [0, 0], [3, 0], 'L', 'red'), arr(PS, [0, 0], [0, 1], 'L', 'red'), arr(PS, [0, 0], [0, 2], 'L', 'red'),
+              arr(PS, [0, 0], [0, 3], 'R', 'green'), arr(PS, [0, 0], [1, 0], 'R', 'green'), arr(PS, [0, 0], [2, 0], 'R', 'green'),
+              t(105, 280, 'A to L: x³, y, y²', { c: 'red', size: 17 }), t(105, 308, 'B to R: y³, x, x²', { c: 'green', size: 17 })
             ],
-            takeaway: 'Bicycle: checks built from two cyclic shift patterns, A and B.',
-            widget: {
-              type: 'frames',
-              frames: [
-                { t: 'The grid', h: 220, parts: [
-                    B(60, 30, 330, 160), L([[170, 30], [170, 190]], { dash: true }), L([[280, 30], [280, 190]], { dash: true }), L([[60, 110], [390, 110]], { dash: true }),
-                    D(115, 70), D(225, 70), D(335, 70), D(115, 150), D(225, 150), D(335, 150),
-                    t(510, 90, 'each site:\nL and R', { size: 20 }), t(510, 170, '12 × 6 sites', { size: 20 })],
-                  say: 'A small piece of the grid. Each site holds two data qubits, L and R. The real grid is 12 by 6, and its edges wrap round like a doughnut.' },
-                { t: 'A shift wraps round', h: 220, parts: [
-                    ...bx(40, 60, 90, 50, '1'), ...bx(140, 60, 90, 50, '2'), ...bx(240, 60, 90, 50, '…'), ...bx(340, 60, 90, 50, '12'),
-                    K([[385, 115], [385, 165], [85, 165], [85, 118]], { c: 'blue' }),
-                    t(235, 200, 'x from site 12 lands on site 1', { c: 'blue', size: 20 })],
-                  eq: ['x¹² = 1,   y⁶ = 1'],
-                  say: 'x moves every qubit one site along the long side. Off the end, it comes back at the start. So 12 x steps change nothing.' },
-                { t: 'One check', h: 220, parts: [
-                    ...bx(250, 80, 140, 56, 'X check', { c: 'blue' }),
-                    A(250, 95, 120, 45, { c: 'red' }), A(250, 108, 120, 105, { c: 'red' }), A(250, 121, 120, 165, { c: 'red' }),
-                    A(390, 95, 520, 45, { c: 'green' }), A(390, 108, 520, 105, { c: 'green' }), A(390, 121, 520, 165, { c: 'green' }),
-                    t(70, 110, 'L via A', { c: 'red', size: 20 }), t(575, 110, 'R via B', { c: 'green', size: 20 })],
-                  eq: ['A = x³ + y + y²,   B = y³ + x + x²'],
-                  say: 'An X check at a site touches 3 L qubits, at the steps listed in A, and 3 R qubits, at the steps in B. Every check uses the same steps from its own site.' },
-                { t: 'Checks commute', h: 220, parts: [
-                    t(320, 60, 'Hx · Hzᵀ = AB + BA', { size: 26 }), A(320, 76, 320, 106),
-                    H(200, 120, 240, 44, { c: 'yellow' }), t(320, 150, '= 0 (mod 2)', { c: 'green', size: 26 })],
-                  say: 'A valid code needs every X check to commute with every Z check. Here that is AB + BA = 0. It holds because x and y shifts commute, so AB = BA, and 2AB is 0 mod 2.' },
-                { t: 'Slide everything', h: 220, parts: [
-                    ...bx(60, 50, 200, 56, 'check at site s', { c: 'blue' }), A(270, 78, 370, 78, { c: 'blue' }), t(320, 60, 'x', { c: 'blue' }),
-                    ...bx(380, 50, 220, 56, 'check at site s + 1', { c: 'blue' }),
-                    t(320, 160, 'the code looks the same', { c: 'green', size: 22 })],
-                  say: 'Move every qubit one step along x. Each check lands on the check of the next site, so the code is unchanged. That is the shift automorphism. It does move the logical qubits, which the machine uses so its LPU can reach them.' }
+            takeaway: 'Bicycle: every check uses the same two cyclic step patterns, A and B.',
+            widget: { type: 'bicycle' },
+            deeper: {
+              l1: [
+                { t: 'One site', h: 200, parts: [B(240, 30, 160, 140), t(280, 90, 'X', { c: 'red', size: 30 }), t(360, 90, 'L', { size: 30 }), t(280, 150, 'R', { size: 30 }), t(360, 150, 'Z', { c: 'blue', size: 30 }),
+                    t(520, 90, 'X, Z: check qubits', { size: 18 }), t(520, 150, 'L, R: data qubits', { size: 18 })],
+                  say: 'The block is built from 72 identical sites. Each holds two data qubits, L and R, and two check qubits, one for an X check and one for a Z check.' },
+                { t: 'A 12 × 6 torus', h: 220, parts: [B(120, 30, 400, 160, { dash: true }), A(530, 110, 600, 110, { c: 'blue' }), A(110, 110, 40, 110, { c: 'blue' }),
+                    t(320, 115, '12 × 6 sites', { size: 26 }), t(320, 210, 'off the right edge: back on the left. Same for top and bottom.', { size: 16 })],
+                  say: 'Lay the 72 sites on a grid 12 wide and 6 tall. Glue the right edge to the left and the bottom to the top. The surface is a torus, a doughnut: no edges at all.' },
+                { t: 'Cyclic shifts', h: 200, parts: [...bx(40, 60, 90, 50, '0'), ...bx(150, 60, 90, 50, '1'), ...bx(260, 60, 90, 50, '…'), ...bx(370, 60, 90, 50, '11'),
+                    K([[415, 115], [415, 160], [85, 160], [85, 118]], { c: 'blue' }), t(560, 90, 'x', { c: 'blue', size: 30 })],
+                  eq: ['x: (i, j) → (i + 1, j),  mod 12', 'y: (i, j) → (i, j + 1),  mod 6'],
+                  say: 'x moves every site one step along the 12 side; from column 11 it lands on column 0. y does the same along the 6 side. Twelve x steps, or six y steps, change nothing.' },
+                { t: 'Pattern A: three L qubits', h: 220, parts: [...gridP(40, 20, 70, 44, 5, 4), xsq(PF, 0, 0),
+                    arr(PF, [0, 0], [3, 0], 'L', 'red'), arr(PF, [0, 0], [0, 1], 'L', 'red'), arr(PF, [0, 0], [0, 2], 'L', 'red'),
+                    t(PF(3, 0, 'L')[0] + 20, PF(3, 0, 'L')[1] + 22, 'x³', { c: 'red', size: 18 }), t(PF(0, 1, 'L')[0] + 22, PF(0, 1, 'L')[1] + 6, 'y', { c: 'red', size: 18 }),
+                    t(PF(0, 2, 'L')[0] + 22, PF(0, 2, 'L')[1] + 6, 'y²', { c: 'red', size: 18 }),
+                    t(510, 100, 'A = x³ + y + y²', { c: 'red', size: 22 })],
+                  say: 'The X check at site s touches the L qubit three sites along x, the L qubit one site along y, and the L qubit two sites along y. That list is pattern A.' },
+                { t: 'Pattern B: three R qubits', h: 220, parts: [...gridP(40, 20, 70, 44, 5, 4), xsq(PF, 0, 0),
+                    arr(PF, [0, 0], [0, 3], 'R', 'green'), arr(PF, [0, 0], [1, 0], 'R', 'green'), arr(PF, [0, 0], [2, 0], 'R', 'green'),
+                    t(PF(0, 3, 'R')[0] + 22, PF(0, 3, 'R')[1] + 6, 'y³', { c: 'green', size: 18 }), t(PF(1, 0, 'R')[0], PF(1, 0, 'R')[1] + 22, 'x', { c: 'green', size: 18 }),
+                    t(PF(2, 0, 'R')[0], PF(2, 0, 'R')[1] + 22, 'x²', { c: 'green', size: 18 }),
+                    t(510, 100, 'B = y³ + x + x²', { c: 'green', size: 22 })],
+                  say: 'It also touches the R qubit three sites along y, and the R qubits one and two sites along x. That list is pattern B. In total the check touches 6 data qubits.' },
+                { t: 'Every site, same steps', h: 200, parts: [t(320, 60, 'X check at s:  L at s + A,  R at s + B', { c: 'red', size: 20 }), t(320, 110, 'Z check at s:  L at s − B,  R at s − A', { c: 'blue', size: 20 }),
+                    t(320, 170, '72 X checks + 72 Z checks, one pattern each', { size: 18 })],
+                  say: 'All 72 X checks use the same steps from their own site. The Z checks use the same two patterns run backwards, with the roles of L and R swapped. Two cyclic patterns build every check: a bi-cycle.' },
+                { t: 'Why they commute', h: 200, parts: [t(320, 60, 'shared qubits = AB + BA', { size: 24 }), A(320, 76, 320, 104),
+                    H(190, 115, 260, 44, { c: 'yellow' }), t(320, 145, '= 2AB = 0 (mod 2)', { c: 'green', size: 24 })],
+                  say: 'An X check and a Z check must clash an even number of times. Counting their shared qubits gives AB + BA. Shifts commute, so AB = BA and the count is always even: 0 or 2 in the gross code. Try it in the widget.' },
+                { t: 'Slide everything', h: 200, parts: [...bx(40, 50, 220, 56, 'check at s', { c: 'red' }), A(270, 78, 370, 78, { c: 'blue' }), t(320, 60, 'x', { c: 'blue', size: 24 }),
+                    ...bx(380, 50, 220, 56, 'check at s + x', { c: 'red' }), t(320, 160, 'same pattern: the code is unchanged', { c: 'green', size: 20 })],
+                  say: 'Move every qubit one site along x. Each check’s six qubits move with it, so it becomes exactly the check at the next site. The whole code maps onto itself: the shift automorphism.' },
+                { t: 'What it buys', h: 200, parts: [t(320, 50, '144 data + 144 checks = 288 qubits', { size: 20 }), t(320, 100, '[[144, 12, 12]]: 12 logical qubits, distance 12', { size: 20 }),
+                    t(320, 160, 'a shift moves the 12 logical qubits around', { c: 'green', size: 20 })],
+                  say: 'The result stores 12 logical qubits at distance 12 in 288 physical qubits. The shift keeps the code but moves the logical qubits among themselves, which the machine uses so its LPU can reach the one it needs.' }
               ]
             },
             check: {
               q: 'Is the shift automorphism what “bicycle” means?',
               options: [
-                'No: bicycle means the checks are built from two cyclic shift patterns, and the shift automorphism follows from that',
+                'No: bicycle means every check is built from two cyclic shift patterns, and the shift automorphism follows from that',
                 'Yes: bicycle is another word for the shift automorphism',
                 'No: bicycle means two blocks are joined by a coupler',
                 'Yes: the code shifts two qubits at a time'
