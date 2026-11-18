@@ -2,6 +2,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -484,6 +485,25 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .snap-sk{margin-bottom:10px}.snap-tally{margin-top:8px}
 .snap-sk .pop{animation:skpop .45s ease both}@keyframes skpop{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.snap-sk .pop{animation:none}}
+
+/* Phones */
+.snapw{grid-template-columns:minmax(0,1fr)}
+@media (max-width:600px){
+  /* iOS zooms into any field under 16px when it is focused */
+  .gsearch,.cs-q,.ref-q,select,input[type=text],input[type=search]{font-size:16px}
+  /* keep the floating Cheat sheet button off the last button on the page */
+  body:not(.home){padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .cs-fab{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .mplayer{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .cs-panel{bottom:calc(8px + env(safe-area-inset-bottom,0px))!important}
+  .sec-head .ref-link,.ref-link{margin-left:0}
+}
+@media (hover:none){
+  /* no sticky lift effects after a tap on touch screens */
+  .btn:hover,a.card:hover,a.sec:hover,.pill:hover,.feat-art:hover,.tile:hover .tile-art{transform:none}
+  .tplay{opacity:1;transform:none}
+  button,a,.opt,.chip{-webkit-tap-highlight-color:transparent}
+}
 </style>
 
 <div id="app"></div>
