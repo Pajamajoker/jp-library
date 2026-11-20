@@ -3,6 +3,7 @@ window.NB_FILES = [
   'notebooks/quantum-basics.js',
   'notebooks/qec-basics.js',
   'notebooks/tandemqec-paper.js',
+  'notebooks/tandemqec-simulator.js',
   'notebooks/qseam-background.js',
   'notebooks/paceline-paper.js'
 ];
